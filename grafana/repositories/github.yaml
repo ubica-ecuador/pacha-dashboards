@@ -1,0 +1,25 @@
+# This repo's dashboards/ on a public instance, from main on GitHub, in the
+# folder "Pacha dashboards" (uid `dashboards`, the repository's name). A save
+# in Grafana is a commit here. Polls every 60 s; no webhook, so GitHub never
+# has to reach Grafana. Pacha's compose.dashboards.yaml mounts this folder and
+# sets DASHBOARDS_GIT_URL and DASHBOARDS_GIT_BRANCH; PACHA_GIT_TOKEN must be
+# allowed to write this repo.
+apiVersion: provisioning.grafana.app/v0alpha1
+kind: Repository
+metadata:
+  name: dashboards
+spec:
+  title: Pacha dashboards
+  type: github
+  github:
+    url: ${DASHBOARDS_GIT_URL}
+    branch: ${DASHBOARDS_GIT_BRANCH}
+    path: dashboards/
+  sync:
+    enabled: true
+    target: folder
+    intervalSeconds: 60
+  workflows: [write]
+secure:
+  token:
+    create: "${PACHA_GIT_TOKEN}"

@@ -1,0 +1,17 @@
+# This clone's dashboards/, read-write, in the folder "Pacha dashboards" (uid
+# `dashboards`). Pacha's compose.dashboards.yaml mounts it at
+# /var/lib/pacha/extra-dashboards.
+apiVersion: provisioning.grafana.app/v0alpha1
+kind: Repository
+metadata:
+  name: dashboards
+spec:
+  title: Pacha dashboards
+  type: local
+  local:
+    path: /var/lib/pacha/extra-dashboards
+  sync:
+    enabled: true
+    target: folder
+    intervalSeconds: 10
+  workflows: [write]

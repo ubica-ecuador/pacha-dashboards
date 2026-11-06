@@ -1,0 +1,11 @@
+{
+  "name": "pacha-dashboards",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test:stack": "PACHA_DIR=${PACHA_DIR:-../pacha} node --test --test-concurrency=1 \"tests/stack/*.test.mjs\""
+  }
+}

@@ -1,0 +1,5 @@
+node_modules/
+CLAUDE.local.md
+# Built on each instance by datasets/<name>/build.sh, never committed.
+datasets/*/*.parquet
+datasets/*/*.glb
