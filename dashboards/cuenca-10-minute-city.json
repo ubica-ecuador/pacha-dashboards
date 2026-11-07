@@ -1,0 +1,1115 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "cuenca-10-minute-city"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Is Cuenca a 10-minute city? Every street coloured by how many of six daily needs (food, a pharmacy, a health centre, a school, a park, a stop) are within a walk of 1 to 15 minutes on a clock you drag or play, timed by R5 on the city's streets.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Play the clock.** Its window is a walk, leaving home at 7:00: drag its end anywhere from 7:01 to 7:15, or press play to grow it a minute at a time. Every street of Cuenca takes the colour of how many of six daily needs are within that walk of it, and the figures and charts follow at every step. Hover a street for the minutes to each need. After the first load nothing goes back to the server: Chaski (DuckDB-WASM) holds the walks in your browser, Mosaic filters the charts and kepler.gl the map, on your graphics card.\n\n**The walks** come from [R5](https://github.com/conveyal/r5), Conveyal's routing engine, running for Cuenca on Ubica's servers on OpenStreetMap's streets and paths, on flat ground at 1.3 m/s (4.7 km/h). R5 lays a grid of cells of about 153 m on the city and walked from every cell holding a need to every cell around it, within 15 minutes; a walk on the flat is as long either way, so that is the walk from each cell to its nearest place of each kind. A cell counts as within *m* minutes when R5 reaches it in less than *m*. The hills are not in it: with them, many of these walks would be longer uphill.\n\n**The six needs.** *Food*: corner shops, groceries, minimarkets, bakeries and food distributors from the city's trade permits, and the markets and fairs of fresh produce. *Health*: the centres, clinics and hospitals of the Ministry of Health's register. *Schools*: every level up to the end of secondary. These three are [LlactaLAB](https://llactalab.ucuenca.edu.ec)'s land uses of Cuenca (Universidad de Cuenca), a snapshot whose date its catalogue does not give, so a shop opened or closed since is not in it. *Pharmacies* join the permits' with [Overture Maps](https://overturemaps.org)'s (release 2026-10-21), as neither has them all. *Parks and squares* are LlactaLAB's 381 public parks by their entrances (reserves left out), *stops* those of the city's GTFS for its 37 bus routes and its tram.\n\n**People** are LlactaLAB's population per building (Google Open Buildings, with the population spread over them), summed per cell: 566,000 people in the area R5 covers, the city and the parishes around it. **Streets** are Overture's (from OpenStreetMap, ODbL), cut at the cells' edges. People and streets are built by Pacha's `datasets/cuenca-access/build.sh`, the needs and walks by `datasets/cuenca-walk/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards), which needs the R5 instance of Cuenca: only pacha.ubica.dev has it.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-all": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the people of Cuenca (LlactaLAB, per building) within the walk of all six needs.",
+          "id": 4,
+          "links": [],
+          "title": "All six needs",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: reach, filterBy: $cityFilters }\n    text: { sql: \"round(100 * (coalesce(sum(share) FILTER (WHERE k = 6), 0)))::INTEGER::VARCHAR || ' %'\" }\n    frameAnchor: middle\n    fill: '#FCF7B6'\n    fontSize: 38\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-clock": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The walk, minute by minute, leaving home at 7:00: the bars count the needs that come within reach at each minute, cell by cell. Drag the window's end, or press play to grow it from the first minute to fifteen; the map, the figures and the charts follow at every step.",
+          "id": 2,
+          "links": [],
+          "title": "The walk's clock, leaving home at 7:00: drag the window's end, or press play",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 15,
+                "filters": "cityFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "needs within reach",
+                "playMode": "grow",
+                "playMotion": "step",
+                "selection": "",
+                "stepMs": 1400,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-curve": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each minute of the walk, the people of Cuenca split by how many of the six needs they reach: pale yellow all six, dark purple none. The clock's window shows the minutes up to its end.",
+          "id": 6,
+          "links": [],
+          "title": "The people of Cuenca by the needs they reach, minute by minute",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The people of Cuenca by how many of the six needs a walk of each minute\n# reaches, a bar per minute stacked to the whole city, all six at the bottom;\n# the clock's window keeps the minutes up to its end, so the bars come in as\n# the clock plays.\nparams:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: barY\n    data: { from: curve, filterBy: $cityFilters }\n    x: minute\n    y: share\n    fill: within\n    order: ['6 of 6', '5 of 6', '4 of 6', '3 of 6', '2 of 6', '1 of 6', '0 of 6']\n    inset: 0.5\nxDomain: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]\nyDomain: [0, 1]\nxLabel: Minutes on foot →\nyLabel: ↑ People\nyTickFormat: '%'\nmarginLeft: 40\ncolorDomain: ['0 of 6', '1 of 6', '2 of 6', '3 of 6', '4 of 6', '5 of 6', '6 of 6']\ncolorRange: ['#4B1667', '#81206C', '#B5355A', '#DE5636', '#F48713', '#F8C232', '#FCF7B6']\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The streets of every cell once per need within 15 minutes, the soonest\n-- first: the clock's window filters them on the GPU (mosaicSelection), with\n-- no query, and a cell's streets show the colour of its last need within\n-- the walk, drawn over the others. Hover for the minutes to each need.\nSELECT r.time, r.within, c.food, c.pharmacy, c.health, c.school, c.park, c.stop, s.geometry\nFROM $reach AS r\nJOIN $streets AS s USING (px, py)\nJOIN $cells AS c USING (px, py)\nORDER BY r.k"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The places of the six needs, as faint dots.\nSELECT need, name, latitude, longitude FROM $needs"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every street of Cuenca coloured by how many of six daily needs (a food shop or market, a pharmacy, a health centre, a school, a park, a bus or tram stop) are within the walk on the clock above, from dark purple (one) to pale yellow (all six); a street with none is the base map's. Hover a street for the minutes to each; the dots are the places.",
+          "id": 1,
+          "links": [],
+          "title": "Every street by the daily needs within the walk",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "isSplit": false,
+                      "latitude": -2.897,
+                      "longitude": -79.004,
+                      "mapViewMode": "MODE_2D",
+                      "pitch": 0,
+                      "zoom": 12.4
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": false,
+                          "show": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "walk",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "sum",
+                            "defaultTimeFormat": "L LT",
+                            "interval": "1-minute",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1794034800000,
+                            1794035400000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "within"
+                              },
+                              {
+                                "name": "food"
+                              },
+                              {
+                                "name": "pharmacy"
+                              },
+                              {
+                                "name": "health"
+                              },
+                              {
+                                "name": "school"
+                              },
+                              {
+                                "name": "park"
+                              },
+                              {
+                                "name": "stop"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "need"
+                              },
+                              {
+                                "name": "name"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "needs",
+                        "streets"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              235,
+                              235,
+                              235
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "The places of the six needs",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 0.5,
+                              "outline": false,
+                              "radius": 1.5,
+                              "thickness": 1
+                            }
+                          },
+                          "id": "needs",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "sizeField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              252,
+                              247,
+                              182
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Streets by the needs within the walk",
+                            "textLabel": [],
+                            "visConfig": {
+                              "enable3d": false,
+                              "filled": false,
+                              "opacity": 1,
+                              "strokeColor": [
+                                252,
+                                247,
+                                182
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "0 of 6",
+                                    "#4B1667"
+                                  ],
+                                  [
+                                    "1 of 6",
+                                    "#81206C"
+                                  ],
+                                  [
+                                    "2 of 6",
+                                    "#B5355A"
+                                  ],
+                                  [
+                                    "3 of 6",
+                                    "#DE5636"
+                                  ],
+                                  [
+                                    "4 of 6",
+                                    "#F48713"
+                                  ],
+                                  [
+                                    "5 of 6",
+                                    "#F8C232"
+                                  ],
+                                  [
+                                    "6 of 6",
+                                    "#FCF7B6"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4B1667",
+                                  "#81206C",
+                                  "#B5355A",
+                                  "#DE5636",
+                                  "#F48713",
+                                  "#F8C232",
+                                  "#FCF7B6"
+                                ],
+                                "name": "Needs within reach",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 1,
+                              "stroked": true,
+                              "thickness": 1.1
+                            }
+                          },
+                          "id": "streets",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": {
+                              "name": "within",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicSelection": "cityFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-needs": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "For each need, the share of the people of Cuenca within the clock's walk of one (in colour) and within 15 minutes (grey).",
+          "id": 7,
+          "links": [],
+          "title": "Each need within the walk",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The people within the walk of each need (coloured), over those within 15\n# minutes (grey, the whole clock).\nparams:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: reach }\n    x: { sum: share }\n    y: need\n    fill: '#3A3A44'\n  - mark: barX\n    data: { from: reach, filterBy: $cityFilters }\n    x: { sum: share }\n    y: need\n    fill: '#F48713'\nxDomain: [0, 1]\nyDomain: ['Food shop or market', 'Pharmacy', 'Health centre', 'School', 'Park or square', 'Bus or tram stop']\nxLabel: People of Cuenca →\nxTickFormat: '%'\nyLabel: null\nmarginLeft: 120\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-none": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the people of Cuenca within the walk of none of the six needs: mostly the rural parishes around the city.",
+          "id": 5,
+          "links": [],
+          "title": "None of the six",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: reach, filterBy: $cityFilters }\n    text: { sql: \"round(100 * (1 - coalesce(sum(share) FILTER (WHERE k = 1), 0)))::INTEGER::VARCHAR || ' %'\" }\n    frameAnchor: middle\n    fill: '#B5355A'\n    fontSize: 38\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-walk": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The walk: where the clock's window ends.",
+          "id": 3,
+          "links": [],
+          "title": "Walk",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: clock, filterBy: $cityFilters }\n    text: { sql: \"coalesce(max(minute), 0)::INTEGER::VARCHAR || ' min'\" }\n    frameAnchor: middle\n    fill: '#F48713'\n    fontSize: 38\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-clock"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 26,
+              "width": 16,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-walk"
+              },
+              "height": 4,
+              "width": 2,
+              "x": 16,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-all"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 18,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-none"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 21,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-curve"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 16,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-needs"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 16,
+              "y": 20
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 7,
+              "width": 24,
+              "x": 0,
+              "y": 31
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "demographics",
+      "duckdb",
+      "kepler",
+      "mobility",
+      "mosaic"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-6h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Cuenca on foot: the daily needs within a 10-minute walk",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cells with the minutes to each need",
+          "multi": false,
+          "name": "cells",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cells",
+              "refId": "cells",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every cell of R5's grid of Cuenca (Web Mercator,\n-- zoom 10, about 153 m) with people or a street (datasets/cuenca-access): the\n-- people LlactaLAB counts in it and, from datasets/cuenca-walk (where R5 runs),\n-- the minutes on foot to the nearest place of each of six daily needs, which R5\n-- walked on the city's streets at 1.3 m/s; null past 15 minutes. px and py are\n-- the cell's column and row, which the streets join on.\nWITH walk AS (\n  SELECT px, py,\n         min(minutes) FILTER (WHERE need = 'Food') AS food,\n         min(minutes) FILTER (WHERE need = 'Pharmacy') AS pharmacy,\n         min(minutes) FILTER (WHERE need = 'Health') AS health,\n         min(minutes) FILTER (WHERE need = 'School') AS school,\n         min(minutes) FILTER (WHERE need = 'Park') AS park,\n         min(minutes) FILTER (WHERE need = 'Transit') AS stop\n  FROM read_parquet('http://feeds/datasets/cuenca-walk/walk.parquet')\n  GROUP BY px, py\n),\npeople AS (\n  SELECT px, py, population FROM read_parquet('http://feeds/datasets/cuenca-access/population.parquet')\n),\ncells AS (\n  SELECT px, py FROM people\n  UNION SELECT DISTINCT px, py FROM read_parquet('http://feeds/datasets/cuenca-access/streets.parquet')\n)\nSELECT c.px::DOUBLE AS px, c.py::DOUBLE AS py, coalesce(p.population, 0)::DOUBLE AS population,\n       w.food::DOUBLE AS food, w.pharmacy::DOUBLE AS pharmacy, w.health::DOUBLE AS health, w.school::DOUBLE AS school, w.park::DOUBLE AS park, w.stop::DOUBLE AS stop\nFROM cells AS c\nLEFT JOIN people AS p USING (px, py)\nLEFT JOIN walk AS w USING (px, py)\nORDER BY py, px",
+                  "refId": "cells"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Streets of Cuenca",
+          "multi": false,
+          "name": "streets",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "streets",
+              "refId": "streets",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every road of Cuenca in Overture Maps, cut at\n-- the edges of R5's cells (datasets/cuenca-access), simplified to 2 m and\n-- rounded to 1 m, which the map cannot tell apart at street scale. The\n-- pieces of a cell all take its colour, so they come as one MultiLineString\n-- per cell: 20,000 features instead of 72,000.\nWITH parts AS (\n  SELECT px, py, unnest(ST_Dump(ST_ReducePrecision(ST_Simplify(geometry, 0.00002), 0.00001))).geom AS g\n  FROM read_parquet('http://feeds/datasets/cuenca-access/streets.parquet')\n)\nSELECT px::DOUBLE AS px, py::DOUBLE AS py, ST_AsGeoJSON(ST_Collect(list(g)))::VARCHAR AS geometry\nFROM parts\nWHERE ST_GeometryType(g) = 'LINESTRING' AND NOT ST_IsEmpty(g)\nGROUP BY px, py",
+                  "refId": "streets"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Places of the six needs",
+          "multi": false,
+          "name": "needs",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "needs",
+              "refId": "needs",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the places of the six daily needs\n-- (datasets/cuenca-walk/needs.parquet), one row per place; a park once per\n-- entrance.\nSELECT CASE need\n         WHEN 'Food' THEN 'Food shop or market'\n         WHEN 'Pharmacy' THEN 'Pharmacy'\n         WHEN 'Health' THEN 'Health centre'\n         WHEN 'School' THEN 'School'\n         WHEN 'Park' THEN 'Park or square'\n         WHEN 'Transit' THEN 'Bus or tram stop'\n       END AS need, name, latitude, longitude\nFROM read_parquet('http://feeds/datasets/cuenca-walk/needs.parquet')",
+                  "refId": "needs"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Each need within reach, per cell, on the clock",
+          "multi": false,
+          "name": "reach",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "reach",
+              "refId": "reach",
+              "source": {
+                "sql": "-- In your browser, once: one row per cell and need within a 15-minute walk.\n-- time is the walk's clock: the middle of the minute the need comes within\n-- reach (R5 counts a cell within m minutes when it reaches it in less than m,\n-- so minute m runs from m - 1 to m), leaving home at 7:00. k is\n-- the need's place among its cell's, the soonest first: when the clock's\n-- window ends at minute m, a cell keeps its rows of k = 1 to n, n the needs\n-- within m, and its streets take the colour of the last, drawn on top. share\n-- is the cell's part of the people of Cuenca, so a sum of share over the rows\n-- of one k or one need is a part of the city.\nWITH people AS (SELECT sum(population) AS total FROM $cells),\nlong AS (\n  SELECT c.px, c.py, c.population, k.ord, k.need,\n         CASE k.col WHEN 'food' THEN c.food WHEN 'pharmacy' THEN c.pharmacy WHEN 'health' THEN c.health WHEN 'school' THEN c.school WHEN 'park' THEN c.park WHEN 'stop' THEN c.stop END AS minutes\n  FROM $cells AS c,\n       (VALUES (1, 'food', 'Food shop or market'), (2, 'pharmacy', 'Pharmacy'), (3, 'health', 'Health centre'), (4, 'school', 'School'), (5, 'park', 'Park or square'), (6, 'stop', 'Bus or tram stop')) AS k(ord, col, need)\n),\nranked AS (\n  SELECT *, row_number() OVER (PARTITION BY px, py ORDER BY minutes, ord) AS k\n  FROM long\n  WHERE minutes IS NOT NULL\n)\nSELECT px, py, need, minutes, k, k::VARCHAR || ' of 6' AS within,\n       population / people.total AS share,\n       TIMESTAMP '2026-11-07 07:00:00' + (minutes - 1) * INTERVAL 1 MINUTE + INTERVAL 30 SECOND AS time\nFROM ranked, people\nORDER BY k",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Minutes of the walk",
+          "multi": false,
+          "name": "clock",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "clock",
+              "refId": "clock",
+              "source": {
+                "sql": "-- In your browser: one row per minute of the walk, on the clock's axis. Its\n-- latest minute in the window is the walk the panels show.\nSELECT m::INTEGER AS minute, TIMESTAMP '2026-11-07 07:00:00' + (m - 1) * INTERVAL 1 MINUTE + INTERVAL 30 SECOND AS time\nFROM range(1, 16) AS t(m)",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "People by needs reached, minute by minute",
+          "multi": false,
+          "name": "curve",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "curve",
+              "refId": "curve",
+              "source": {
+                "sql": "-- In your browser, once: for every minute of the walk, the share of the people\n-- of Cuenca by how many of the six needs they reach by then (exactly n, 0 to\n-- 6). Rows of the clock: the window shows the minutes up to its end.\nWITH people AS (SELECT sum(population) AS total FROM $cells),\ncounts AS (\n  SELECT t.m AS minute, c.population,\n         coalesce(c.food \u003c= t.m, false)::INTEGER\n         + coalesce(c.pharmacy \u003c= t.m, false)::INTEGER\n         + coalesce(c.health \u003c= t.m, false)::INTEGER\n         + coalesce(c.school \u003c= t.m, false)::INTEGER\n         + coalesce(c.park \u003c= t.m, false)::INTEGER\n         + coalesce(c.stop \u003c= t.m, false)::INTEGER AS n\n  FROM $cells AS c, range(1, 16) AS t(m)\n)\nSELECT minute::INTEGER AS minute, n, n::VARCHAR || ' of 6' AS within, sum(population) / any_value(people.total) AS share,\n       TIMESTAMP '2026-11-07 07:00:00' + (minute - 1) * INTERVAL 1 MINUTE + INTERVAL 30 SECOND AS time\nFROM counts, people\nGROUP BY minute, n\nORDER BY n DESC, minute",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-11-07T07:00:00.000Z",
+            "value": "2026-11-07T07:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "walk_from",
+          "query": "2026-11-07T07:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-11-07T07:10:00.000Z",
+            "value": "2026-11-07T07:10:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "walk_to",
+          "query": "2026-11-07T07:10:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The walk's clock",
+          "multi": false,
+          "name": "cityFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$reach",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$walk_from",
+                  "label": "Minutes on foot",
+                  "name": "time",
+                  "to": "$walk_to",
+                  "type": "range",
+                  "upper": "closed"
+                }
+              ],
+              "kind": "filters",
+              "refId": "cityFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
