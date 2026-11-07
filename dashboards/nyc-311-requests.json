@@ -1,0 +1,1742 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "nyc-311-requests"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Four weeks of New York City's 311 service requests, from NYC Open Data through the gateway: every parking, noise, heat, pothole or rubbish complaint on a map by theme, how fast each agency closes them and when the city calls, with filters and a timeline answered in your browser by Chaski and Mosaic.",
+    "editable": true,
+    "elements": {
+      "card-day": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Of the requests closed, the share closed less than 24 hours after they were made.",
+          "id": 6,
+          "links": [],
+          "title": "Closed within a day",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  requestFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: requests, filterBy: $requestFilters }\n    text: { sql: \"coalesce(printf('%.0f %%', 100.0 * count(*) FILTER (WHERE hours \u003c= 24) / nullif(count(hours), 0)), '–')\" }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "card-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- In epoch milliseconds: a stat reduces numbers, not times.\nSELECT epoch_ms(max(time))::DOUBLE AS time FROM $requests"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the newest request in the data was made. NYC Open Data adds requests once a day, a few days after they were made.",
+          "id": 7,
+          "links": [],
+          "title": "Latest request",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "card-open": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Of those, the ones not closed yet.",
+          "id": 5,
+          "links": [],
+          "title": "Still open",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  requestFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: requests, filterBy: $requestFilters }\n    text: { sql: \"count(*) FILTER (WHERE closed_in = 'Still open')\" }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "card-requests": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Requests under every filter and in the area drawn.",
+          "id": 4,
+          "links": [],
+          "title": "Requests",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  requestFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: requests, filterBy: $requestFilters }\n    text: { count: }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "About the data",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### New York City 311 service requests\n\n311 is New York's number for everything that is not an emergency: a car across a driveway, a party\nnext door, no heat, a pothole, a dead tree. Each call, app report or web form becomes a *service\nrequest*, passed to the agency that handles it, and published on NYC Open Data with where it was,\nwhat it was about and when it was closed.\n\n| | |\n| --- | --- |\n| **Source** | [311 Service Requests from 2010 to Present](https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9) (NYC Open Data, Socrata), read through the gateway's `/nyc311/` route |\n| **Window** | the last four weeks (28 days, so each day of the week counts four times), from midnight New York time; Open Data publishes requests a few days after they are made, so the last days are empty or partial |\n| **Pipeline** | the server's DuckDB reads one CSV, which the gateway builds from Socrata at most once an hour → Chaski, DuckDB in your browser → every panel, with Mosaic for the linked views |\n| **Licence** | NYC Open Data [terms of use](https://www.nyc.gov/home/terms-of-use.page): free to use |\n\n**Themes** group the 173 complaint types by the agency that answers them: NYPD's parking and vehicle\ncomplaints, every *Noise* type (NYPD and DEP), HPD's housing conditions (heat, plumbing, paint,\nleaks), DSNY's sanitation, DOT's streets, signs and street lights, DEP, Parks and Health together as\n*Environment* (water, sewers, trees, rodents), NYPD's other matters with Homeless Services as *Street\nlife*, and Buildings with the rest as *Other*.\n**Closed** is how long a request took, from when it was made to when the agency closed it; a request\nclosed is not always a problem fixed (NYPD closes a noise call once officers have answered it).\nUnder 2 % of requests have no place and are left off the map, not off the counts.\n\n**Everything is answered in your browser.** The timeline, the filters, the map and the charts share\none Mosaic selection: pick themes or boroughs, brush the hours, press play or draw an area on the map,\nand the rest follows. Times are New York's on the timeline and in the week chart.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-filters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Pick themes, boroughs, how fast requests were closed, the hour they were made, the agency or how they came in. Every panel follows.",
+          "id": 3,
+          "links": [],
+          "title": "Filters",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 24,
+                "filters": "requestFilters",
+                "layout": "auto",
+                "maxValues": 9,
+                "noun": "requests",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- All four weeks, once: the filters reach the map as Mosaic clauses and are applied\n-- there, on the GPU, with no query.\nSELECT id, time, latitude, longitude, theme, type, descriptor, agency, borough, closed_in, channel, hour, hours\nFROM $requests\nWHERE latitude IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every request of the four weeks with a place, coloured by theme. The filters, the timeline and an area drawn on the map filter it at once, in your browser.",
+          "id": 2,
+          "links": [],
+          "title": "Requests by theme",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "requestArea",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.705,
+                      "longitude": -73.975,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 9.4
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "threeDBuildingColor": [
+                        64.2493441415438,
+                        75.42314312268185,
+                        102.42649066043215
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "window",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "sum",
+                            "defaultTimeFormat": "L  H A",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "theme",
+                          "name": [
+                            "theme"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "borough",
+                          "name": [
+                            "borough"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "closed_in",
+                          "name": [
+                            "closed_in"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "agency",
+                          "name": [
+                            "agency"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "channel",
+                          "name": [
+                            "channel"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "hour",
+                          "name": [
+                            "hour"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            0,
+                            23
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "descriptor"
+                              },
+                              {
+                                "name": "agency"
+                              },
+                              {
+                                "name": "borough"
+                              },
+                              {
+                                "name": "closed_in"
+                              },
+                              {
+                                "name": "hours"
+                              },
+                              {
+                                "name": "channel"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [
+                            {
+                              "id": "f98gedj",
+                              "layerIds": [
+                                "density"
+                              ],
+                              "stops": {
+                                "appear": 1,
+                                "fade": 4.5,
+                                "full": 3,
+                                "gone": 5.3
+                              }
+                            },
+                            {
+                              "id": "njd3w1r",
+                              "layerIds": [
+                                "reports"
+                              ],
+                              "stops": {
+                                "appear": 3.9,
+                                "fade": 8,
+                                "full": 6.2,
+                                "gone": 12
+                              }
+                            }
+                          ],
+                          "enabled": true
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "requests"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              241,
+                              92,
+                              23
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Requests",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Parking",
+                                    "#3987e5"
+                                  ],
+                                  [
+                                    "Housing",
+                                    "#d95926"
+                                  ],
+                                  [
+                                    "Noise",
+                                    "#199e70"
+                                  ],
+                                  [
+                                    "Sanitation",
+                                    "#c98500"
+                                  ],
+                                  [
+                                    "Streets",
+                                    "#d55181"
+                                  ],
+                                  [
+                                    "Environment",
+                                    "#008300"
+                                  ],
+                                  [
+                                    "Street life",
+                                    "#9085e9"
+                                  ],
+                                  [
+                                    "Other",
+                                    "#e66767"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3987e5",
+                                  "#d95926",
+                                  "#199e70",
+                                  "#c98500",
+                                  "#d55181",
+                                  "#008300",
+                                  "#9085e9",
+                                  "#e66767"
+                                ],
+                                "name": "311 themes",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.75,
+                              "outline": false,
+                              "radius": 2.2,
+                              "radiusRange": [
+                                3,
+                                40
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 0.99
+                            }
+                          },
+                          "id": "requests",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "theme",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicSelection": "requestFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-themes": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Requests by theme under the other filters: the colours of the map.",
+          "id": 8,
+          "links": [],
+          "title": "What New York asks for",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  requestFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: requests, filterBy: $requestFilters }\n    x: { count: }\n    y: theme\n    fill: theme\n    inset: 1\nyDomain: ['Parking', 'Housing', 'Noise', 'Sanitation', 'Streets', 'Environment', 'Street life', 'Other']\ncolorDomain: ['Parking', 'Housing', 'Noise', 'Sanitation', 'Streets', 'Environment', 'Street life', 'Other']\ncolorRange: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767']\nxLabel: requests →\nyLabel: null\nmarginLeft: 90\nmarginRight: 16\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Requests made in each 12 hours of the four weeks. Drag to keep a window, press play to slide it.",
+          "id": 1,
+          "links": [],
+          "title": "Timeline",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 56,
+                "filters": "requestFilters",
+                "layout": "timeline",
+                "maxValues": 9,
+                "noun": "requests",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-types": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT type AS \"Complaint\", theme AS \"Theme\",\n       count(*)::DOUBLE AS \"Requests\",\n       count(*) FILTER (WHERE closed_in = 'Still open')::DOUBLE AS \"Still open\",\n       round(median(hours), 1) AS \"Median hours\",\n       round(100.0 * count(*) FILTER (WHERE hours \u003c= 24) / nullif(count(hours), 0)) AS \"In a day (%)\"\nFROM $requests\nWHERE $__crossfilter($requestFilters)\nGROUP BY ALL\nORDER BY \"Requests\" DESC\nLIMIT 50"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The 50 complaint types with the most requests under the filters: how many, how many are still open, how long the closed ones took (median, in hours) and the share of them closed within a day.",
+          "id": 10,
+          "links": [],
+          "title": "Complaint types",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "filterable": false,
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Theme"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Environment": {
+                                "color": "#008300",
+                                "index": 5
+                              },
+                              "Housing": {
+                                "color": "#d95926",
+                                "index": 1
+                              },
+                              "Noise": {
+                                "color": "#199e70",
+                                "index": 2
+                              },
+                              "Other": {
+                                "color": "#e66767",
+                                "index": 7
+                              },
+                              "Parking": {
+                                "color": "#3987e5",
+                                "index": 0
+                              },
+                              "Sanitation": {
+                                "color": "#c98500",
+                                "index": 3
+                              },
+                              "Street life": {
+                                "color": "#9085e9",
+                                "index": 6
+                              },
+                              "Streets": {
+                                "color": "#d55181",
+                                "index": 4
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Complaint"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 175
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Requests"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3987e5",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 105
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Still open"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": []
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-week": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Requests by the hour and the day of the week they were made, New York time, under every filter: noise at night and at weekends, heat in the morning.",
+          "id": 9,
+          "links": [],
+          "title": "When New York calls",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  requestFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: week\n    label: requests in the hour, over four weeks\n  - name: week\n    plot:\n      - mark: cell\n        data: { from: requests, filterBy: $requestFilters }\n        x: hour\n        y: day\n        fill: { count: }\n        inset: 0.5\n    xDomain: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]\n    yDomain: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]\n    colorScale: linear\n    colorRange: ['#104281', '#cde2fb']\n    xLabel: hour of day (New York) →\n    yLabel: null\n    marginLeft: 40\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-timeline"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-filters"
+              },
+              "height": 23,
+              "width": 6,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 23,
+              "width": 12,
+              "x": 6,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-requests"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-open"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-day"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 12
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-latest"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 15
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-themes"
+              },
+              "height": 11,
+              "width": 6,
+              "x": 18,
+              "y": 18
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-week"
+              },
+              "height": 13,
+              "width": 9,
+              "x": 0,
+              "y": 29
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-types"
+              },
+              "height": 13,
+              "width": 15,
+              "x": 9,
+              "y": 29
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 14,
+              "width": 24,
+              "x": 0,
+              "y": 42
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "city",
+      "duckdb",
+      "kepler",
+      "mosaic"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-28d",
+      "hideTimepicker": true,
+      "timezone": "America/New_York",
+      "to": "now"
+    },
+    "title": "New York 311: what the city is asked to fix",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Four weeks of 311 requests in the browser, read by the server through the gateway when the dashboard opens.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "requests",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "requests",
+              "refId": "requests",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: New York City's 311 service requests of the last four weeks\n-- (NYC Open Data, dataset erm2-nwe9), through the gateway (http://feeds/nyc311/...), which\n-- builds /nyc311/requests/\u003cday\u003e.csv from Socrata (it takes Socrata two minutes) and keeps\n-- one copy for every visitor. The URL names the day 28 days ago; past midnight the gateway\n-- may still hand over yesterday's copy while it builds today's, so the window is cut here.\n-- Socrata keeps New York wall-clock time with no zone: time is UTC here, the clock of the\n-- map and the timeline; hour and day stay New York's, for the week chart.\nSET force_download = true;\nSET VARIABLE since = (timezone('America/New_York', now())::DATE - 28)::TIMESTAMP;\nSET VARIABLE url = 'http://feeds/nyc311/requests/' || strftime(getvariable('since'), '%Y-%m-%d') || '.csv';\nWITH r AS (\n  SELECT * FROM read_csv(getvariable('url'), header = true, columns = {\n    'unique_key': 'BIGINT', 'created_date': 'TIMESTAMP', 'closed_date': 'TIMESTAMP',\n    'agency': 'VARCHAR', 'complaint_type': 'VARCHAR', 'descriptor': 'VARCHAR',\n    'status': 'VARCHAR', 'borough': 'VARCHAR', 'latitude': 'DOUBLE', 'longitude': 'DOUBLE',\n    'open_data_channel_type': 'VARCHAR'})\n)\nSELECT\n  unique_key::VARCHAR AS id,\n  timezone('UTC', timezone('America/New_York', created_date)) AS time,\n  -- Eight themes from 173 complaint types, by the agency that answers them: the map's\n  -- and the charts' colours.\n  CASE WHEN complaint_type ILIKE 'noise%' THEN 'Noise'\n       WHEN agency = 'HPD' THEN 'Housing'\n       WHEN agency = 'NYPD' AND regexp_matches(complaint_type, '(?i)parking|vehicle|driveway') THEN 'Parking'\n       WHEN agency IN ('NYPD', 'DHS') THEN 'Street life'\n       WHEN agency = 'DSNY' THEN 'Sanitation'\n       WHEN agency = 'DOT' THEN 'Streets'\n       WHEN agency IN ('DEP', 'DPR', 'DOHMH') THEN 'Environment'\n       ELSE 'Other' END AS theme,\n  complaint_type AS type,\n  descriptor,\n  agency,\n  CASE borough WHEN 'MANHATTAN' THEN 'Manhattan' WHEN 'BROOKLYN' THEN 'Brooklyn'\n               WHEN 'QUEENS' THEN 'Queens' WHEN 'BRONX' THEN 'The Bronx'\n               WHEN 'STATEN ISLAND' THEN 'Staten Island' ELSE 'Unspecified' END AS borough,\n  CASE open_data_channel_type WHEN 'ONLINE' THEN 'Online' WHEN 'MOBILE' THEN 'App'\n                              WHEN 'PHONE' THEN 'Phone' ELSE 'Unknown' END AS channel,\n  -- Hours from the request to its closing: none while it is open, nor for the few\n  -- hundred closed before they were made.\n  CASE WHEN status = 'Closed' AND closed_date \u003e= created_date\n       THEN round(epoch(closed_date - created_date) / 3600, 2) END AS hours,\n  CASE WHEN status IS DISTINCT FROM 'Closed' THEN 'Still open'\n       WHEN closed_date IS NULL OR closed_date \u003c created_date THEN 'Time unknown'\n       WHEN closed_date - created_date \u003c INTERVAL 1 HOUR THEN 'Within an hour'\n       WHEN closed_date - created_date \u003c INTERVAL 1 DAY THEN 'Within a day'\n       WHEN closed_date - created_date \u003c INTERVAL 7 DAY THEN 'Within a week'\n       ELSE 'After a week' END AS closed_in,\n  hour(created_date) AS hour,\n  strftime(created_date, '%a') AS day,\n  round(latitude, 5) AS latitude,\n  round(longitude, 5) AS longitude\nFROM r\nWHERE created_date \u003e= getvariable('since')\nORDER BY time",
+                  "refId": "requests"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Theme",
+          "multi": true,
+          "name": "theme",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "theme",
+              "sql": "SELECT DISTINCT theme AS value FROM $requests WHERE theme IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Borough",
+          "multi": true,
+          "name": "borough",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "borough",
+              "sql": "SELECT DISTINCT borough AS value FROM $requests WHERE borough IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Closed",
+          "multi": true,
+          "name": "closed_in",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "closed_in",
+              "sql": "SELECT DISTINCT closed_in AS value FROM $requests WHERE closed_in IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Agency",
+          "multi": true,
+          "name": "agency",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "agency",
+              "sql": "SELECT DISTINCT agency AS value FROM $requests WHERE agency IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Made by",
+          "multi": true,
+          "name": "channel",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "channel",
+              "sql": "SELECT DISTINCT channel AS value FROM $requests WHERE channel IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "requestFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "requestTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "hour_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "hour_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "requestArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "What the filters keep",
+          "multi": false,
+          "name": "requestFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$requests",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$requestFrom",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$requestTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "theme",
+                  "label": "Theme",
+                  "name": "theme",
+                  "type": "in",
+                  "variable": "$theme"
+                },
+                {
+                  "column": "borough",
+                  "label": "Borough",
+                  "name": "borough",
+                  "type": "in",
+                  "variable": "$borough"
+                },
+                {
+                  "column": "closed_in",
+                  "label": "Closed",
+                  "name": "closed_in",
+                  "type": "in",
+                  "variable": "$closed_in"
+                },
+                {
+                  "column": "hour",
+                  "from": "$hour_lo",
+                  "label": "Hour of day (New York)",
+                  "name": "hour",
+                  "to": "$hour_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "agency",
+                  "label": "Agency",
+                  "name": "agency",
+                  "type": "in",
+                  "variable": "$agency"
+                },
+                {
+                  "column": "channel",
+                  "label": "Made by",
+                  "name": "channel",
+                  "type": "in",
+                  "variable": "$channel"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$requestArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "requestFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

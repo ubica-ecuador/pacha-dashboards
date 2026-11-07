@@ -1,0 +1,5 @@
+# NYC 311 (nyc-311-requests): four weeks of requests, about 11 MB gzipped, take
+# Socrata about two minutes to build; one copy, rebuilt once an hour at most and
+# kept a month without visitors.
+proxy_cache_path /var/cache/nginx/nyc311 levels=1:2 keys_zone=nyc311:1m
+                 max_size=200m inactive=30d use_temp_path=off;

@@ -1,0 +1,30 @@
+    # NYC 311 service requests (NYC Open Data, Socrata, dataset erm2-nwe9),
+    # behind nyc-311-requests. /nyc311/requests/<day>.csv is every request
+    # created since that day (New York time, as Socrata keeps it), with the
+    # columns the dashboard reads. Socrata takes about two minutes to build it,
+    # longer than Grafana waits, so the cache keeps one copy under one key
+    # whatever the day: past the hour, or past midnight when the URL names a new
+    # day, the next visitor gets the old copy at once while nginx builds the new
+    # one in the background (the dashboard cuts the window itself). The dataset
+    # is updated once a day. Socrata asks for an app
+    # token past a light rate: FEED_NYC_OPEN_DATA_APP_TOKEN in .env, optional
+    # (an empty header is not sent).
+    location ~ "^/nyc311/requests/(20[2-9][0-9]-[01][0-9]-[0-3][0-9])\.csv$" {
+        set $nyc_open_data data.cityofnewyork.us;
+        proxy_pass https://$nyc_open_data/resource/erm2-nwe9.csv?%24select=unique_key,created_date,closed_date,agency,complaint_type,descriptor,status,borough,latitude,longitude,open_data_channel_type&%24where=created_date%3E%3D%27$1T00:00:00%27&%24order=unique_key&%24limit=1000000;
+        proxy_set_header Host $nyc_open_data;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header X-App-Token "${FEED_NYC_OPEN_DATA_APP_TOKEN}";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache nyc311;
+        proxy_cache_key nyc311-requests;
+        proxy_cache_valid 200 1h;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_ignore_client_abort on;
+        proxy_read_timeout 300s;
+        proxy_cache_lock on;
+        proxy_cache_lock_timeout 300s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
