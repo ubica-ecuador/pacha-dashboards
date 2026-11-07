@@ -29,6 +29,10 @@ New dashboards are made here, not in Pacha.
 - **A dataset:** `datasets/<name>/build.sh`, as in Pacha; the files it writes are git-ignored
   and served at `http://feeds/datasets/<name>/<file>.parquet` (and `.glb` to browsers), after
   Pacha's own datasets of the same name, so pick a name Pacha does not use.
+- **Its card on the home page:** Pacha's home lists this folder's dashboards with the Gallery
+  (and those tagged `plus` with Plus). Its picture is `screenshots/<uid>.jpg`, a 16:9 crop of
+  the map about 700 × 394 (Pacha's `scripts/screenshots.mjs` takes one; move it here). Without
+  one the card shows a plain background.
 - **Tests:** `tests/stack/<uid>.test.mjs`. Import `loadDashboard` and the other dashboard
   helpers from `../lib/dashboards.mjs`, everything else (Grafana, DuckDB, the browser, the
   stack's URL) from `../lib/pacha.mjs`. Run with `npm run test:stack` (it sets

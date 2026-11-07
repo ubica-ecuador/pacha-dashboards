@@ -24,3 +24,8 @@ for (const file of files) {
     assert.equal(own.includes('plus'), plus, plus ? 'a Plus panel needs the plus tag' : 'plus tag without a Plus panel');
   });
 }
+
+test('every screenshot is named after a dashboard here', () => {
+  const shots = readdirSync(new URL('../../screenshots/', import.meta.url)).filter((f) => !f.startsWith('.'));
+  for (const shot of shots) assert.ok(files.includes(shot.replace(/\.jpg$/, '.json')), `${shot} names no dashboard`);
+});
