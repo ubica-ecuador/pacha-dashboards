@@ -78,10 +78,10 @@
               "transformations": []
             }
           },
-          "description": "The share of the people of Cuenca (LlactaLAB, per building) within the walk of all six needs.",
+          "description": "",
           "id": 4,
           "links": [],
-          "title": "All six needs",
+          "title": "All six",
           "vizConfig": {
             "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
@@ -93,7 +93,7 @@
               "options": {
                 "preaggregate": true,
                 "reads": "",
-                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: reach, filterBy: $cityFilters }\n    text: { sql: \"round(100 * (coalesce(sum(share) FILTER (WHERE k = 6), 0)))::INTEGER::VARCHAR || ' %'\" }\n    frameAnchor: middle\n    fill: '#FCF7B6'\n    fontSize: 38\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: reach, filterBy: $cityFilters }\n    text: { sql: \"round(100 * (coalesce(sum(share) FILTER (WHERE k = 6), 0)))::INTEGER::VARCHAR || ' %'\" }\n    frameAnchor: middle\n    fill: '#FCF7B6'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
                 "variables": ""
               }
             },
@@ -153,7 +153,7 @@
               "transformations": []
             }
           },
-          "description": "Each minute of the walk, the people of Cuenca split by how many of the six needs they reach: pale yellow all six, dark purple none. The clock's window shows the minutes up to its end.",
+          "description": "Each minute of the walk, the people of Cuenca split by how many of the six needs they reach: pale yellow all six, dark purple none. The clock's window shows the minutes up to its end. The cards above read its last bar: the walk, the share of people within it of all six needs and of none (mostly the rural parishes around the city).",
           "id": 6,
           "links": [],
           "title": "The people of Cuenca by the needs they reach, minute by minute",
@@ -566,10 +566,10 @@
               "transformations": []
             }
           },
-          "description": "The share of the people of Cuenca within the walk of none of the six needs: mostly the rural parishes around the city.",
+          "description": "",
           "id": 5,
           "links": [],
-          "title": "None of the six",
+          "title": "None",
           "vizConfig": {
             "group": "ubica-chaski-mosaic-panel",
             "kind": "VizConfig",
@@ -581,7 +581,7 @@
               "options": {
                 "preaggregate": true,
                 "reads": "",
-                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: reach, filterBy: $cityFilters }\n    text: { sql: \"round(100 * (1 - coalesce(sum(share) FILTER (WHERE k = 1), 0)))::INTEGER::VARCHAR || ' %'\" }\n    frameAnchor: middle\n    fill: '#B5355A'\n    fontSize: 38\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: reach, filterBy: $cityFilters }\n    text: { sql: \"round(100 * (1 - coalesce(sum(share) FILTER (WHERE k = 1), 0)))::INTEGER::VARCHAR || ' %'\" }\n    frameAnchor: middle\n    fill: '#B5355A'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
                 "variables": ""
               }
             },
@@ -600,7 +600,7 @@
               "transformations": []
             }
           },
-          "description": "The walk: where the clock's window ends.",
+          "description": "",
           "id": 3,
           "links": [],
           "title": "Walk",
@@ -615,7 +615,7 @@
               "options": {
                 "preaggregate": true,
                 "reads": "",
-                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: clock, filterBy: $cityFilters }\n    text: { sql: \"coalesce(max(minute), 0)::INTEGER::VARCHAR || ' min'\" }\n    frameAnchor: middle\n    fill: '#F48713'\n    fontSize: 38\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "spec": "params:\n  cityFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: clock, filterBy: $cityFilters }\n    text: { sql: \"coalesce(max(minute), 0)::INTEGER::VARCHAR || ' min'\" }\n    frameAnchor: middle\n    fill: '#F48713'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
                 "variables": ""
               }
             },
@@ -649,7 +649,7 @@
                 "name": "panel-map"
               },
               "height": 26,
-              "width": 16,
+              "width": 15,
               "x": 0,
               "y": 5
             }
@@ -662,8 +662,8 @@
                 "name": "panel-walk"
               },
               "height": 4,
-              "width": 2,
-              "x": 16,
+              "width": 3,
+              "x": 15,
               "y": 5
             }
           },
@@ -701,8 +701,8 @@
                 "name": "panel-curve"
               },
               "height": 11,
-              "width": 8,
-              "x": 16,
+              "width": 9,
+              "x": 15,
               "y": 9
             }
           },
@@ -714,8 +714,8 @@
                 "name": "panel-needs"
               },
               "height": 11,
-              "width": 8,
-              "x": 16,
+              "width": 9,
+              "x": 15,
               "y": 20
             }
           },

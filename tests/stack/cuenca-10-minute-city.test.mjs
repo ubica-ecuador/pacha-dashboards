@@ -90,7 +90,7 @@ test('opens on a 10-minute walk with every panel drawn, and a step of the clock 
   try {
     const card = async (title) => (await (await view.panel(title)).innerText()).replace(title, '').trim();
     assert.equal(await card('Walk'), '10 min');
-    const all10 = Number((await card('All six needs')).replace(/\D/g, ''));
+    const all10 = Number((await card('All six')).replace(/\D/g, ''));
     assert.ok(all10 > 20 && all10 < 40, `${all10} % with all six in 10 minutes`);
     // One step forward: an 11-minute walk reaches more.
     const clock = await view.panel("The walk's clock, leaving home at 7:00: drag the window's end, or press play");
@@ -101,7 +101,7 @@ test('opens on a 10-minute walk with every panel drawn, and a step of the clock 
       { timeout: 60_000 },
     );
     await view.page.waitForTimeout(2000);
-    const all11 = Number((await card('All six needs')).replace(/\D/g, ''));
+    const all11 = Number((await card('All six')).replace(/\D/g, ''));
     assert.ok(all11 >= all10, `${all11} % in 11 minutes, ${all10} % in 10`);
     assert.equal(await view.panelErrors(), 0);
     assert.deepEqual(await view.page.getByTestId('mosaic-error').allInnerTexts(), []);
