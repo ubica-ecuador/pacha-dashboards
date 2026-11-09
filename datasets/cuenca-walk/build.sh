@@ -10,6 +10,10 @@
 #                  cuenca-access's places.parquet
 #   walk.parquet   one row per cell and need within a 15-minute walk: the
 #                  cell's px and py, the need and the minutes to its nearest
+#   hubs.parquet   for cuenca-10-minute-utopia, HUBS places with all six needs
+#                  each, opened one by one where each brings all six within a
+#                  10-minute walk to the most people (utopia.sql, hub.sql,
+#                  plan.sql); gained.parquet, the cells each one brings them to
 #
 # R5 walks from each cell holding a need (about 2,300) to every cell around it,
 # on flat ground at 1.3 m/s. On the flat a walk is as long one way as the
@@ -40,10 +44,14 @@ RELEASE=${RELEASE:-2026-10-21.0}
 PACHA_DIR=${PACHA_DIR:-$here/../../../pacha}
 ISO_CONTAINER=${ISO_CONTAINER:-iso-cuenca}
 PARALLEL=${PARALLEL:-3}
+HUBS=${HUBS:-60}
 DATE=${DATE:-2026-09-02}
 LLACTALAB=https://appsllactalab.ucuenca.edu.ec/geoserver/geonode
 places="$PACHA_DIR/datasets/cuenca-access/places.parquet"
-[ -f "$places" ] || { echo "$places is missing: run Pacha's datasets/cuenca-access/build.sh first" >&2; exit 1; }
+population="$PACHA_DIR/datasets/cuenca-access/population.parquet"
+for f in "$places" "$population"; do
+  [ -f "$f" ] || { echo "$f is missing: run Pacha's datasets/cuenca-access/build.sh first" >&2; exit 1; }
+done
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -80,10 +88,15 @@ mkdir "$work/out"
 echo "Walks from $(wc -l < "$work/cells.csv") cells, through $ISO_CONTAINER ..."
 docker exec -i -e PARALLEL="$PARALLEL" -e DATE="$DATE" "$ISO_CONTAINER" \
   python3 -c "$(cat "$here/walk.py")" < "$work/cells.csv" > "$work/raw.csv"
-(cd "$work/out" && "$work/duckdb" -bail -c "SET VARIABLE raw = '$work/raw.csv'" -c ".read '$here/walk.sql'")
+# The walks, then the hubs: hub.sql once per hub, in the same session.
+for _ in $(seq "$HUBS"); do echo ".read '$here/hub.sql'"; done > "$work/hubs.sql"
+echo "Walks and $HUBS hubs ..."
+(cd "$work/out" && "$work/duckdb" -bail \
+  -c "SET VARIABLE raw = '$work/raw.csv'; SET VARIABLE population = '$population'" \
+  -c ".read '$here/walk.sql'" -c ".read '$here/utopia.sql'" -c ".read '$work/hubs.sql'" -c ".read '$here/plan.sql'")
 
 # Replaced by a rename: a reader never sees half a file.
-for f in needs walk; do
+for f in needs walk hubs gained; do
   cp "$work/out/$f.parquet" "./.$f.parquet.tmp"
   chmod a+r "./.$f.parquet.tmp"
   mv "./.$f.parquet.tmp" "./$f.parquet"

@@ -1,0 +1,1297 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "cuenca-10-minute-utopia"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "What would make Cuenca a 10-minute city? An imagined plan of 60 hubs with the six daily needs (food, a pharmacy, a health centre, a school, a park, a stop), one a month from 2027, each where it brings all six within a 10-minute walk to the most people; play it on a timeline and watch the streets they reach.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "About the plan",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**An imagined plan.** For the #30DayMapChallenge's *Utopia*: what would make Cuenca a 10-minute city? Today 30 % of its people have all six daily needs (a food shop or market, a pharmacy, a health centre, a school, a park or square, a bus or tram stop) within a 10-minute walk, as [Cuenca on foot](/d/cuenca-10-minute-city) shows. The plan opens a *hub* a month from January 2027: one place with all six. Each goes where it brings all six to the most people who lack them, in a cell that already holds one need (a shop, a stop, a school), so somewhere people already go. Sixty hubs, five years, bring 195,000 more people all six: 64 % of Cuenca. Play the timeline to open them one by one; after the first load nothing goes back to the server: Chaski (DuckDB-WASM) holds the plan in your browser, Mosaic filters the charts and kepler.gl the map, on your graphics card.\n\n**How the hubs are placed.** A greedy choice, one hub at a time (`datasets/cuenca-walk/hub.sql` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards)): among the 2,289 cells of R5's grid that hold a need today, the one whose 10-minute walk reaches the most people still without all six; ties to the northernmost cell. A good plan, not the best one: each hub is the best next step, given the ones before. Each brings fewer people than the last, from 9,000 to 1,400. Two limits: hubs only go where a need is today, and 15 % of the people, mostly in the rural parishes, have none within 10 minutes, so no hub at today's places reaches them; with every hub there could be, the plan stops at 85 %. Health centres alone would not do it: placed the same way, new ones stop at 49 %, as half the people lack two needs or more.\n\n**The walks** are R5's ([Conveyal](https://github.com/conveyal/r5)), on OpenStreetMap's streets and paths, on flat ground at 1.3 m/s (4.7 km/h), on a grid of cells of about 153 m: a cell is within 10 minutes when R5 reaches it in less than 10. The hills are not in it. The needs are [LlactaLAB](https://llactalab.ucuenca.edu.ec)'s land uses of Cuenca (Universidad de Cuenca: the city's trade permits, the Ministry of Health's register, schools up to secondary, the public parks), [Overture Maps](https://overturemaps.org)'s pharmacies and the stops of the city's GTFS; the people, LlactaLAB's population per building, 566,000 in the area R5 covers; the streets, Overture's (from OpenStreetMap, ODbL). A hub is named after the stop nearest it. All of it is built by `datasets/cuenca-walk/build.sh`, which needs the R5 instance of Cuenca: only pacha.ubica.dev has it.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-all": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "All six",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  planFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: curve, filterBy: $planFilters }\n    text: { sql: \"round(100 * coalesce(max(all6), 0))::INTEGER::VARCHAR || ' %'\" }\n    frameAnchor: middle\n    fill: '#FCF7B6'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-curve": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "After each month of the plan, the share of the people of Cuenca with all six needs within a 10-minute walk: pale yellow those who have them today, cyan those the hubs open so far bring them to. The plan's window shows the months up to its end; the cards above read its last bar. Each hub brings fewer people than the one before: the first reaches 9,000, the sixtieth 1,400.",
+          "id": 6,
+          "links": [],
+          "title": "The people of Cuenca with all six needs within 10 minutes, hub by hub",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The share of the people of Cuenca with all six needs within a 10-minute walk\n# after each hub of the plan, stacked: today's at the bottom, the hubs' on top.\nparams:\n  planFilters: { select: crossfilter }\nplot:\n  - mark: barY\n    data: { from: curve, filterBy: $planFilters }\n    x: hub\n    y: share\n    fill: part\n    order: ['Today', 'With the hubs']\n    inset: 0.3\nxDomain: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60]\nxTicks: [0, 12, 24, 36, 48, 60]\nyDomain: [0, 1]\nxLabel: Hubs opened →\nyLabel: ↑ People with all six\nyTickFormat: '%'\nmarginLeft: 40\ncolorDomain: ['Today', 'With the hubs']\ncolorRange: ['#FCF7B6', '#22D3EE']\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-gained": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "More people",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  planFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: gain, filterBy: $planFilters }\n    text: { sql: \"'+' || format('{:,}', round(coalesce(sum(population), 0))::BIGINT)\" }\n    frameAnchor: middle\n    fill: '#22D3EE'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-hubs": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 3,
+          "links": [],
+          "title": "Hubs",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  planFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: plan, filterBy: $planFilters }\n    text: { sql: \"coalesce(max(hub), 0)::INTEGER::VARCHAR\" }\n    frameAnchor: middle\n    fill: '#22D3EE'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-lacked": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "For each need, the people the hubs open so far bring all six to who have none within a 10-minute walk today (cyan), over those of the whole plan (grey). Almost all of them lack a health centre.",
+          "id": 7,
+          "links": [],
+          "title": "What the people the hubs reach lack today",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The people the hubs bring all six to, by the needs they lack today: the\n# hubs in the plan's window (cyan) over the whole plan (grey).\nparams:\n  planFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: lacked }\n    x: { sum: population }\n    y: need\n    fill: '#3A3A44'\n  - mark: barX\n    data: { from: lacked, filterBy: $planFilters }\n    x: { sum: population }\n    y: need\n    fill: '#22D3EE'\nyDomain: ['Food shop or market', 'Pharmacy', 'Health centre', 'School', 'Park or square', 'Bus or tram stop']\nxLabel: People →\nyLabel: null\nxTickFormat: 's'\nmarginLeft: 120\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every street as it is today, by how many of the six needs are within a\n-- 10-minute walk of it. Hover for the minutes to each. n comes to Chaski\n-- as a DOUBLE: cast to INTEGER first, or the label reads '5.0 of 6'.\nSELECT c.n::INTEGER::VARCHAR || ' of 6' AS today, c.food, c.pharmacy, c.health, c.school, c.park, c.stop, s.geometry\nFROM $streets AS s\nJOIN $cells AS c USING (px, py)\nORDER BY c.n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The streets a hub brings all six to, with the month it opens: the plan's\n-- window filters them on the GPU (mosaicSelection), with no query.\nSELECT h.time, h.hub, h.stop, h.opens, s.geometry\nFROM $streets AS s\nJOIN $cells AS c USING (px, py)\nJOIN $hubs AS h USING (hub)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The hubs, numbered in the order they open.\nSELECT time, hub, stop, opens, people, latitude, longitude FROM $hubs"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every street of Cuenca as it is today, by how many of six daily needs (a food shop or market, a pharmacy, a health centre, a school, a park, a bus or tram stop) are within a 10-minute walk of it, from dark purple (none) to pale yellow (all six); in cyan, the streets the hubs open so far bring all six to, and the hubs, numbered in the order they open. Hover a street or a hub for its details.",
+          "id": 1,
+          "links": [],
+          "title": "Cuenca today, and the streets the hubs bring all six needs to",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "isSplit": false,
+                      "latitude": -2.888,
+                      "longitude": -79.006,
+                      "mapViewMode": "MODE_2D",
+                      "pitch": 0,
+                      "zoom": 12.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": false,
+                          "show": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-B",
+                            "grafana-C"
+                          ],
+                          "enabled": true,
+                          "id": "plan",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "sum",
+                            "defaultTimeFormat": "L",
+                            "interval": "1-month",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1796083200000,
+                            1956528000000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "today"
+                              },
+                              {
+                                "name": "food"
+                              },
+                              {
+                                "name": "pharmacy"
+                              },
+                              {
+                                "name": "health"
+                              },
+                              {
+                                "name": "school"
+                              },
+                              {
+                                "name": "park"
+                              },
+                              {
+                                "name": "stop"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "hub"
+                              },
+                              {
+                                "name": "stop"
+                              },
+                              {
+                                "name": "opens"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "hub"
+                              },
+                              {
+                                "name": "stop"
+                              },
+                              {
+                                "name": "opens"
+                              },
+                              {
+                                "name": "people"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "hubs",
+                        "gained",
+                        "today"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "isVisible": true,
+                            "label": "The hubs open so far",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "color": [
+                                  8,
+                                  24,
+                                  32
+                                ],
+                                "field": {
+                                  "name": "hub",
+                                  "type": "integer"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  0
+                                ],
+                                "outlineWidth": 0,
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 40,
+                              "radiusRange": [
+                                3,
+                                45
+                              ],
+                              "strokeColor": [
+                                8,
+                                24,
+                                32
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "hubs",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "sizeField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              34,
+                              211,
+                              238
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Streets the hubs bring all six to",
+                            "textLabel": [],
+                            "visConfig": {
+                              "enable3d": false,
+                              "filled": false,
+                              "opacity": 1,
+                              "strokeColor": [
+                                34,
+                                211,
+                                238
+                              ],
+                              "strokeOpacity": 1,
+                              "stroked": true,
+                              "thickness": 1.4
+                            }
+                          },
+                          "id": "gained",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              252,
+                              247,
+                              182
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Streets by the needs within 10 minutes today",
+                            "textLabel": [],
+                            "visConfig": {
+                              "enable3d": false,
+                              "filled": false,
+                              "opacity": 1,
+                              "strokeColor": [
+                                252,
+                                247,
+                                182
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "0 of 6",
+                                    "#4B1667"
+                                  ],
+                                  [
+                                    "1 of 6",
+                                    "#81206C"
+                                  ],
+                                  [
+                                    "2 of 6",
+                                    "#B5355A"
+                                  ],
+                                  [
+                                    "3 of 6",
+                                    "#DE5636"
+                                  ],
+                                  [
+                                    "4 of 6",
+                                    "#F48713"
+                                  ],
+                                  [
+                                    "5 of 6",
+                                    "#F8C232"
+                                  ],
+                                  [
+                                    "6 of 6",
+                                    "#FCF7B6"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4B1667",
+                                  "#81206C",
+                                  "#B5355A",
+                                  "#DE5636",
+                                  "#F48713",
+                                  "#F8C232",
+                                  "#FCF7B6"
+                                ],
+                                "name": "Needs within reach",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 0.85,
+                              "stroked": true,
+                              "thickness": 1.1
+                            }
+                          },
+                          "id": "today",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "strokeColorField": {
+                              "name": "today",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicSelection": "planFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-plan": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "An imagined plan: from January 2027, Cuenca opens a hub a month, a place with all six daily needs, each where it brings them within a 10-minute walk to the most people who lack them. A bar per month, the first today (December 2026). Drag the window's end, or press play to open the hubs one by one; the map, the figures and the charts follow at every step.",
+          "id": 2,
+          "links": [],
+          "title": "The plan, a hub a month from 2027: drag the window's end, or press play",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 61,
+                "filters": "planFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "months of the plan",
+                "playMode": "grow",
+                "playMotion": "step",
+                "selection": "",
+                "stepMs": 1200,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-plan"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 26,
+              "width": 15,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-hubs"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 15,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-all"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 18,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-gained"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 21,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-curve"
+              },
+              "height": 11,
+              "width": 9,
+              "x": 15,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-lacked"
+              },
+              "height": 11,
+              "width": 9,
+              "x": 15,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 32
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "demographics",
+      "duckdb",
+      "kepler",
+      "mobility",
+      "mosaic"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-6h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Cuenca, a 10-minute city: a utopia in 60 hubs",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cells with the minutes to each need and the hub that brings all six",
+          "multi": false,
+          "name": "cells",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cells",
+              "refId": "cells",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every cell of R5's grid of Cuenca (Web Mercator,\n-- zoom 10, about 153 m) with people or a street (datasets/cuenca-access): the\n-- people LlactaLAB counts in it and, from datasets/cuenca-walk (where R5 runs),\n-- the minutes on foot to the nearest place of each of six daily needs today\n-- (null past 15 minutes), n the needs within 10 minutes, and hub, the hub of\n-- the plan that brings all six within 10 minutes (null: none of the 60, or\n-- all six already). px and py are the cell's column and row.\nWITH walk AS (\n  SELECT px, py,\n         min(minutes) FILTER (WHERE need = 'Food') AS food,\n         min(minutes) FILTER (WHERE need = 'Pharmacy') AS pharmacy,\n         min(minutes) FILTER (WHERE need = 'Health') AS health,\n         min(minutes) FILTER (WHERE need = 'School') AS school,\n         min(minutes) FILTER (WHERE need = 'Park') AS park,\n         min(minutes) FILTER (WHERE need = 'Transit') AS stop,\n         count(*) FILTER (WHERE minutes \u003c= 10) AS n\n  FROM read_parquet('http://feeds/datasets/cuenca-walk/walk.parquet')\n  GROUP BY px, py\n),\npeople AS (\n  SELECT px, py, population FROM read_parquet('http://feeds/datasets/cuenca-access/population.parquet')\n),\ncells AS (\n  SELECT px, py FROM people\n  UNION SELECT DISTINCT px, py FROM read_parquet('http://feeds/datasets/cuenca-access/streets.parquet')\n)\nSELECT c.px::DOUBLE AS px, c.py::DOUBLE AS py, coalesce(p.population, 0)::DOUBLE AS population,\n       w.food::DOUBLE AS food, w.pharmacy::DOUBLE AS pharmacy, w.health::DOUBLE AS health, w.school::DOUBLE AS school, w.park::DOUBLE AS park, w.stop::DOUBLE AS stop,\n       coalesce(w.n, 0)::INTEGER AS n, g.hub::INTEGER AS hub\nFROM cells AS c\nLEFT JOIN people AS p USING (px, py)\nLEFT JOIN walk AS w USING (px, py)\nLEFT JOIN read_parquet('http://feeds/datasets/cuenca-walk/gained.parquet') AS g USING (px, py)\nORDER BY py, px",
+                  "refId": "cells"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Streets of Cuenca",
+          "multi": false,
+          "name": "streets",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "streets",
+              "refId": "streets",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every road of Cuenca in Overture Maps, cut at\n-- the edges of R5's cells (datasets/cuenca-access), simplified to 2 m and\n-- rounded to 1 m, one MultiLineString per cell: 20,000 features.\nWITH parts AS (\n  SELECT px, py, unnest(ST_Dump(ST_ReducePrecision(ST_Simplify(geometry, 0.00002), 0.00001))).geom AS g\n  FROM read_parquet('http://feeds/datasets/cuenca-access/streets.parquet')\n)\nSELECT px::DOUBLE AS px, py::DOUBLE AS py, ST_AsGeoJSON(ST_Collect(list(g)))::VARCHAR AS geometry\nFROM parts\nWHERE ST_GeometryType(g) = 'LINESTRING' AND NOT ST_IsEmpty(g)\nGROUP BY px, py",
+                  "refId": "streets"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The hubs of the plan",
+          "multi": false,
+          "name": "hubs",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "hubs",
+              "refId": "hubs",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the plan's hubs (datasets/cuenca-walk/hubs.parquet),\n-- in the order they open, one a month from January 2027: each the cell, among\n-- those holding a need today, whose 10-minute walk reaches the most people\n-- still without all six. Named by the stop nearest its centre.\nSELECT hub, latitude, longitude, stop, people,\n       TIMESTAMP '2026-12-15 00:00:00' + hub * INTERVAL 1 MONTH AS time,\n       strftime(TIMESTAMP '2026-12-15 00:00:00' + hub * INTERVAL 1 MONTH, '%B %Y') AS opens\nFROM read_parquet('http://feeds/datasets/cuenca-walk/hubs.parquet')\nORDER BY hub",
+                  "refId": "hubs"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The plan, month by month",
+          "multi": false,
+          "name": "plan",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "plan",
+              "refId": "plan",
+              "source": {
+                "sql": "-- In your browser: the plan's calendar, a row a month: today (December 2026,\n-- hub 0) and the month each hub opens. The timeline's window is the plan so far.\nSELECT 0 AS hub, TIMESTAMP '2026-12-15 00:00:00' AS time\nUNION ALL\nSELECT hub, time FROM $hubs\nORDER BY hub",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "People with all six, hub by hub",
+          "multi": false,
+          "name": "curve",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "curve",
+              "refId": "curve",
+              "source": {
+                "sql": "-- In your browser, once: after each month of the plan, the share of the people\n-- of Cuenca who reach all six needs within a 10-minute walk, split into those\n-- who do today and those the hubs open so far bring them to. all6 is the sum.\nWITH t AS (\n  SELECT sum(population) AS total, sum(population) FILTER (WHERE n = 6) AS base FROM $cells\n),\ng AS (SELECT hub, sum(population) AS people FROM $cells WHERE hub IS NOT NULL GROUP BY hub),\nc AS (\n  SELECT p.hub, p.time, coalesce(sum(g.people) OVER (ORDER BY p.hub), 0) AS gained\n  FROM $plan AS p LEFT JOIN g USING (hub)\n)\nSELECT c.hub::INTEGER AS hub, c.time, k.part,\n       CASE k.part WHEN 'Today' THEN t.base ELSE c.gained END / t.total AS share,\n       (t.base + c.gained) / t.total AS all6\nFROM c, t, (VALUES ('Today'), ('With the hubs')) AS k(part)\n-- Today's rows first: Mosaic stacks in the order of the rows.\nORDER BY k.part, c.hub",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cells the hubs bring all six to",
+          "multi": false,
+          "name": "gain",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "gain",
+              "refId": "gain",
+              "source": {
+                "sql": "-- In your browser, once: the cells the hubs bring all six to, with the month\n-- their hub opens, the people in them and their share of Cuenca's.\nWITH t AS (SELECT sum(population) AS total FROM $cells)\nSELECT c.hub, h.time, c.population, c.population / t.total AS share\nFROM $cells AS c JOIN $hubs AS h USING (hub), t",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "What the people the hubs reach lack today",
+          "multi": false,
+          "name": "lacked",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "lacked",
+              "refId": "lacked",
+              "source": {
+                "sql": "-- In your browser, once: for each need, the people the hubs bring all six to\n-- who lack it today (none within 10 minutes), with the month of their hub.\nSELECT h.time, k.need, c.population\nFROM $cells AS c\nJOIN $hubs AS h USING (hub),\n     (VALUES ('food', 'Food shop or market'), ('pharmacy', 'Pharmacy'), ('health', 'Health centre'), ('school', 'School'), ('park', 'Park or square'), ('stop', 'Bus or tram stop')) AS k(col, need)\nWHERE coalesce(CASE k.col WHEN 'food' THEN c.food WHEN 'pharmacy' THEN c.pharmacy WHEN 'health' THEN c.health WHEN 'school' THEN c.school WHEN 'park' THEN c.park WHEN 'stop' THEN c.stop END, 99) \u003e 10",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-12-01T00:00:00.000Z",
+            "value": "2026-12-01T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "plan_from",
+          "query": "2026-12-01T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2032-01-01T00:00:00.000Z",
+            "value": "2032-01-01T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "plan_to",
+          "query": "2032-01-01T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The plan",
+          "multi": false,
+          "name": "planFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$plan",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$plan_from",
+                  "label": "Hubs opened",
+                  "name": "time",
+                  "to": "$plan_to",
+                  "type": "range",
+                  "upper": "closed"
+                }
+              ],
+              "kind": "filters",
+              "refId": "planFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
