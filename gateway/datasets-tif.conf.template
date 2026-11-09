@@ -1,0 +1,10 @@
+    # GeoTIFFs a dataset of this repo builds (datasets/<name>/build.sh), for
+    # Pacha's tile server: a kepler map names http://feeds/datasets/<name>/<file>.tif
+    # as its raster_url and TiTiler reads it here, in ranges. Only on the feeds
+    # server, which browsers never reach. A rebuild replaces a file by a rename.
+    location ~ "^/datasets/([a-z0-9-]+/[a-z0-9_-]+\.tif)$" {
+        root /srv;
+        types { image/tiff tif; }
+        add_header Cache-Control no-cache always;
+        try_files /datasets-extra/$1 =404;
+    }

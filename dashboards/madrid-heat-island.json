@@ -1,0 +1,1150 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "madrid-heat-island"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Madrid's surface temperature in July 2026 against its own countryside, from Landsat (30 m, 12:55) and MODIS (1 km, 22:39): by day the city is cooler than the dry fields around it, at night it keeps the heat. Hover a map for a square kilometre's figures; brush how built-up it is.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Surface temperature, not air.** What satellites measure in the thermal infrared is how hot the ground, the roofs, the roads and the leaves are, which is not the air you feel. July 2026's clear passes over a 60 km square around Puerta del Sol: four of Landsat 8 and 9 at 12:55, Madrid's clock (30 m; their thermal band is 100 m, resampled by USGS), and the month of MODIS Terra at 11:33 and 22:39 (1 km). Terra crosses earlier every year since its orbit was left to drift in 2020; in July 2026 those were its times over Madrid. Each map and chart is the median of the month, in °C against **the countryside**: the median of the square kilometres under 5 % built-up (ESA WorldCover 2021, 10 m), 49.5 °C at 12:55, 39.3 °C at 11:33 and 24.5 °C at 22:39. **The city** in the cards is the 520 square kilometres at least half built-up.\n\n**Why the city is cooler by day.** In July the countryside around Madrid is mostly dry cropland, grass and scrub (WorldCover), which the midday sun heats more than the city's streets, shaded by buildings and trees, and far more than its parks, woods and rivers. At night the fields lose their heat to the sky within hours, while the city's stone, asphalt and narrow streets give back what they stored all day: the heat island is a night thing.\n\n**The data.** Landsat Collection 2 Level-2 surface temperature (USGS; clouds and their shadows masked by its QA band) and MODIS MOD11A1 v6.1 (NASA LP DAAC; good-quality retrievals only), both read as COGs from [Microsoft Planetary Computer](https://planetarycomputer.microsoft.com); [ESA WorldCover](https://esa-worldcover.org) 2021 (CC BY 4.0). Built by `datasets/madrid-heat/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards): GDAL warps every pass into the frame, numpy takes the medians, DuckDB writes the Parquet. The maps are two one-byte COGs with a colour table, painted by Pacha's TiTiler; the charts load once into your browser (Chaski, DuckDB-WASM) and Mosaic redraws them as you brush.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-built": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The more built-up, the cooler by day and the warmer at night: the median of the square kilometres in each tenth of built-up (ESA WorldCover 2021), against the countryside. Drag across it to keep those squares in the profile.",
+          "id": 7,
+          "links": [],
+          "title": "By how built-up the square is",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The median of the square kilometres in each tenth of built-up, by pass,\n# against the countryside. Brush it to keep those squares in the profile.\nparams:\n  cellFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: built\n  - name: built\n    plot:\n      - mark: ruleY\n        data: [0]\n        stroke: currentColor\n        strokeOpacity: 0.35\n      - mark: lineY\n        data: { from: long, filterBy: $cellFilters }\n        x: built\n        y: { median: vs }\n        stroke: series\n        strokeWidth: 2.5\n        curve: monotone-x\n      - mark: dot\n        data: { from: long, filterBy: $cellFilters }\n        x: built\n        y: { median: vs }\n        fill: series\n        r: 2.5\n      - select: intervalX\n        as: $cellFilters\n    colorDomain: ['By day, 12:55 (Landsat, 30 m)', 'By day, 11:33 (MODIS, 1 km)', 'By night, 22:39 (MODIS, 1 km)']\n    colorRange: ['#F2A93B', '#F7D79A', '#7B8CF5']\n    xDomain: [0, 100]\n    yDomain: [-7, 6]\n    xLabel: 'Built-up share of the square kilometre (%) →'\n    yLabel: '↑ °C against the countryside'\n    marginLeft: 36\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-cityday": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the 520 square kilometres at least half built-up against the countryside's, by Landsat at 12:55 in July 2026: negative is cooler.",
+          "id": 1,
+          "links": [],
+          "title": "The city by day",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The city's median against the countryside's, from the city dataset.\nplot:\n  - mark: text\n    data: { from: city }\n    text: { sql: \"printf('%+.1f', max(day)) || ' °C'\" }\n    frameAnchor: middle\n    fill: '#67a9cf'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-citynight": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the 520 square kilometres at least half built-up against the countryside's, by MODIS at 22:39 in July 2026: positive is warmer.",
+          "id": 2,
+          "links": [],
+          "title": "The city by night",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The city's median against the countryside's, from the city dataset.\nplot:\n  - mark: text\n    data: { from: city }\n    text: { sql: \"printf('%+.1f', max(night)) || ' °C'\" }\n    frameAnchor: middle\n    fill: '#ef8a62'\n    fontSize: 26\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-day": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The picture: Landsat, 12:55, against the countryside, painted by Pacha's tile server from the\n-- colour table the file carries (rasterPainted).\nSELECT 'http://feeds/datasets/madrid-heat/day.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every square kilometre, invisible until hovered: its figures.\nSELECT round(landsat, 1) AS \"Day, 12:55 (°C)\", round(landsat_vs, 1) AS \"Day, against the countryside\",\n       round(night, 1) AS \"Night, 22:39 (°C)\", round(night_vs, 1) AS \"Night, against the countryside\",\n       round(100 * built)::INTEGER AS \"Built-up (%)\", round(dist_km, 1) AS \"From Puerta del Sol (km)\", geometry\nFROM $cells"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Landsat 8 and 9 surface temperature at 12:55 (Madrid's clock), 30 m, the median of July 2026's four clear passes, against the countryside's 49.5 °C. The parks, the rivers and the woods are the coolest; the dry fields to the south and east the hottest. Hover for a square kilometre's figures, by day and by night.",
+          "id": 4,
+          "links": [],
+          "title": "By day, 12:55: the city is cooler than its fields",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "isSplit": false,
+                      "latitude": 40.425,
+                      "longitude": -3.69,
+                      "mapViewMode": "MODE_2D",
+                      "pitch": 0,
+                      "zoom": 10.2
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": false,
+                          "show": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-B": [
+                              {
+                                "name": "Day, 12:55 (°C)"
+                              },
+                              {
+                                "name": "Day, against the countryside"
+                              },
+                              {
+                                "name": "Night, 22:39 (°C)"
+                              },
+                              {
+                                "name": "Night, against the countryside"
+                              },
+                              {
+                                "name": "Built-up (%)"
+                              },
+                              {
+                                "name": "From Puerta del Sol (km)"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "squares",
+                        "surface"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Square kilometres (hover)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.01,
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "strokeOpacity": 0,
+                              "stroked": false,
+                              "thickness": 0.5
+                            }
+                          },
+                          "id": "squares",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-A-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Landsat, 12:55, against the countryside",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "surface",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-key": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The colour scale of both maps: each pixel's July median against the countryside's, the median of the square kilometres under 5 % built-up. Beyond ±6 °C the colour stays.",
+          "id": 3,
+          "links": [],
+          "title": "Both maps, in °C against the countryside",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The maps' colours, the same scale on both: °C against the countryside.\nplot:\n  - mark: rectX\n    data: { from: key }\n    x1: v\n    x2: { sql: v + 0.12 }\n    fill: v\n    inset: 0\ncolorScale: linear\ncolorDomain: [-6, -3, -1, 0, 1, 3, 6]\ncolorRange: ['#2166ac', '#67a9cf', '#d1e5f0', '#f7f7f7', '#fddbc7', '#ef8a62', '#b2182b']\nxDomain: [-6, 6]\nxTicks: [-6, -3, -1, 0, 1, 3, 6]\nxLabel: '°C against the countryside: blue cooler, red warmer'\nxLabelAnchor: center\nyAxis: null\nmarginTop: 4\nmarginLeft: 16\nmarginRight: 16\nmarginBottom: 32\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-landcover": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Water and trees are the coolest by day, fields the hottest: Landsat's 30 m pixels at 12:55 by their ESA WorldCover class, against the countryside: the bar is the middle half, coloured by its median on the maps' scale; the line runs from the 10th to the 90th percentile; the tick is the median.",
+          "id": 8,
+          "links": [],
+          "title": "By land cover, at 12:55",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Landsat's 30 m pixels by land cover, by day: the middle half as a bar\n# coloured by its median on the maps' scale, the 10th to 90th percentiles as a\n# line, the median as a tick.\nplot:\n  - mark: ruleX\n    data: [0]\n    stroke: currentColor\n    strokeOpacity: 0.35\n  - mark: ruleY\n    data: { from: landcover }\n    y: class\n    x1: p10\n    x2: p90\n    stroke: currentColor\n    strokeOpacity: 0.5\n  - mark: barX\n    data: { from: landcover }\n    y: class\n    x1: p25\n    x2: p75\n    fill: p50\n    inset: 4\n  - mark: tickX\n    data: { from: landcover }\n    y: class\n    x: p50\n    stroke: currentColor\n    strokeWidth: 2\n    inset: 4\nyDomain: ['Water', 'Trees', 'Built-up', 'Bare ground', 'Scrub and grass', 'Cropland']\ncolorScale: linear\ncolorDomain: [-6, -3, -1, 0, 1, 3, 6]\ncolorRange: ['#2166ac', '#67a9cf', '#d1e5f0', '#f7f7f7', '#fddbc7', '#ef8a62', '#b2182b']\ncolorClamp: true\nxDomain: [-22, 6]\nxLabel: '°C against the countryside at 12:55 →'\nyLabel: null\nmarginLeft: 110\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-night": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The picture: MODIS, 22:39, against the countryside, painted by Pacha's tile server from the\n-- colour table the file carries (rasterPainted).\nSELECT 'http://feeds/datasets/madrid-heat/night.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every square kilometre, invisible until hovered: its figures.\nSELECT round(landsat, 1) AS \"Day, 12:55 (°C)\", round(landsat_vs, 1) AS \"Day, against the countryside\",\n       round(night, 1) AS \"Night, 22:39 (°C)\", round(night_vs, 1) AS \"Night, against the countryside\",\n       round(100 * built)::INTEGER AS \"Built-up (%)\", round(dist_km, 1) AS \"From Puerta del Sol (km)\", geometry\nFROM $cells"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "MODIS Terra surface temperature at 22:39 (Madrid's clock), 1 km, the median of July 2026's good-quality nights, against the countryside's 24.5 °C. The city and its ring of towns stay warm; the countryside, and the hills to the north, cool. Hover for a square kilometre's figures, by day and by night.",
+          "id": 5,
+          "links": [],
+          "title": "By night, 22:39: it keeps the heat",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "isSplit": false,
+                      "latitude": 40.425,
+                      "longitude": -3.69,
+                      "mapViewMode": "MODE_2D",
+                      "pitch": 0,
+                      "zoom": 10.2
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": false,
+                          "show": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-B": [
+                              {
+                                "name": "Day, 12:55 (°C)"
+                              },
+                              {
+                                "name": "Day, against the countryside"
+                              },
+                              {
+                                "name": "Night, 22:39 (°C)"
+                              },
+                              {
+                                "name": "Night, against the countryside"
+                              },
+                              {
+                                "name": "Built-up (%)"
+                              },
+                              {
+                                "name": "From Puerta del Sol (km)"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "squares",
+                        "surface"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Square kilometres (hover)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.01,
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "strokeOpacity": 0,
+                              "stroked": false,
+                              "thickness": 0.5
+                            }
+                          },
+                          "id": "squares",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-A-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "MODIS, 22:39, against the countryside",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "surface",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-profile": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the square kilometres at each distance from Puerta del Sol, against the countryside: below zero by day, above it at night, both fading by 20 km. Brush the built-up chart to keep only squares that built-up.",
+          "id": 6,
+          "links": [],
+          "title": "Out from Puerta del Sol",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The median of the square kilometres at each distance from Puerta del Sol,\n# by pass, against the countryside. The brush on the built-up chart keeps only\n# the squares that built-up.\nparams:\n  cellFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: profile\n  - name: profile\n    plot:\n      - mark: ruleY\n        data: [0]\n        stroke: currentColor\n        strokeOpacity: 0.35\n      - mark: lineY\n        data: { from: long, filterBy: $cellFilters }\n        x: km\n        y: { median: vs }\n        stroke: series\n        strokeWidth: 2.5\n        curve: monotone-x\n      - mark: dot\n        data: { from: long, filterBy: $cellFilters }\n        x: km\n        y: { median: vs }\n        fill: series\n        r: 2.5\n    colorDomain: ['By day, 12:55 (Landsat, 30 m)', 'By day, 11:33 (MODIS, 1 km)', 'By night, 22:39 (MODIS, 1 km)']\n    colorRange: ['#F2A93B', '#F7D79A', '#7B8CF5']\n    xDomain: [0, 30]\n    yDomain: [-7, 6]\n    xLabel: 'Kilometres from Puerta del Sol →'\n    yLabel: '↑ °C against the countryside'\n    marginLeft: 36\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-cityday"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-citynight"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 5,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-key"
+              },
+              "height": 4,
+              "width": 14,
+              "x": 10,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-day"
+              },
+              "height": 18,
+              "width": 12,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-night"
+              },
+              "height": 18,
+              "width": 12,
+              "x": 12,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-profile"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 0,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-built"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 8,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-landcover"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 16,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 11,
+              "width": 24,
+              "x": 0,
+              "y": 33
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "city",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "satellite"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-6h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Madrid's heat island comes out at night",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The square kilometres of the frame",
+          "multi": false,
+          "name": "cells",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cells",
+              "refId": "cells",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the 3,600 square kilometres of a 60 km frame\n-- around Puerta del Sol (datasets/madrid-heat): each with its share of every\n-- land cover (ESA WorldCover 2021), its July 2026 surface temperature in °C\n-- (Landsat by day at 12:55, averaged to the square; MODIS by day at 11:33 and\n-- at night at 22:39), each against the countryside (the median of the squares\n-- under 5 % built-up), its distance to Puerta del Sol, and its outline.\nSELECT px, py, longitude, latitude, dist_km, rural, built, trees, cropland, scrub_grass, bare, water,\n       landsat, day, night, landsat_vs, day_vs, night_vs, geometry::VARCHAR AS geometry\nFROM read_parquet('http://feeds/datasets/madrid-heat/cells.parquet')",
+                  "refId": "cells"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "By day, by land cover",
+          "multi": false,
+          "name": "landcover",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "landcover",
+              "refId": "landcover",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: Landsat's 30 m pixels by land cover (ESA\n-- WorldCover 2021), by day at 12:55 in July 2026, in °C against the\n-- countryside: how many, and their 10th to 90th percentiles.\nSELECT class, pixels, p10, p25, p50, p75, p90 FROM read_parquet('http://feeds/datasets/madrid-heat/landcover.parquet')",
+                  "refId": "landcover"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Each square kilometre, by day and by night",
+          "multi": false,
+          "name": "long",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "long",
+              "refId": "long",
+              "source": {
+                "sql": "-- In your browser, once: the squares within 30 km of Puerta del Sol, one row\n-- per square and pass, with the kilometre and the tenth of built-up it falls\n-- in (the middle of the bin) and its °C against the countryside.\nSELECT k.series, floor(c.dist_km) + 0.5 AS km, least(floor(c.built * 10), 9) * 10 + 5 AS built,\n       CASE k.n WHEN 1 THEN c.landsat_vs WHEN 2 THEN c.day_vs ELSE c.night_vs END AS vs\nFROM $cells AS c,\n     (VALUES (1, 'By day, 12:55 (Landsat, 30 m)'), (2, 'By day, 11:33 (MODIS, 1 km)'), (3, 'By night, 22:39 (MODIS, 1 km)')) AS k(n, series)\nWHERE c.dist_km < 30",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The city against its countryside",
+          "multi": false,
+          "name": "city",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "city",
+              "refId": "city",
+              "source": {
+                "sql": "-- In your browser, once: the city (the squares at least half built-up)\n-- against the countryside, the median °C by day and by night.\nSELECT median(landsat_vs) FILTER (WHERE built >= 0.5) AS day,\n       median(day_vs) FILTER (WHERE built >= 0.5) AS day_modis,\n       median(night_vs) FILTER (WHERE built >= 0.5) AS night,\n       count(*) FILTER (WHERE built >= 0.5) AS squares\nFROM $cells",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The maps' colour key",
+          "multi": false,
+          "name": "key",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "key",
+              "refId": "key",
+              "source": {
+                "sql": "-- In your browser: the maps' scale, -6 to +6 °C in tenths.\nSELECT range / 10.0 AS v FROM range(-60, 60)",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

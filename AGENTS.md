@@ -28,7 +28,9 @@ New dashboards are made here, not in Pacha.
   the gateway.
 - **A dataset:** `datasets/<name>/build.sh`, as in Pacha; the files it writes are git-ignored
   and served at `http://feeds/datasets/<name>/<file>.parquet` (and `.glb` to browsers), after
-  Pacha's own datasets of the same name, so pick a name Pacha does not use.
+  Pacha's own datasets of the same name, so pick a name Pacha does not use. A `.tif` (a COG
+  for Pacha's tile server, `/titiler`) is served on the feeds server only, by
+  `gateway/datasets-tif.conf.template`: a map reads `http://feeds/datasets/<name>/<file>.tif`.
 - **Its card on the home page:** Pacha's home lists this folder's dashboards with the Gallery
   (and those tagged `plus` with Plus). Its picture is `screenshots/<uid>.jpg`, a 16:9 crop of
   the map about 700 × 394 (Pacha's `scripts/screenshots.mjs` takes one; move it here). Without
