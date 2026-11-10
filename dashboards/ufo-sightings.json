@@ -1,0 +1,1285 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "ufo-sightings"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Where and when people report UFOs to the National UFO Reporting Center, 1906 to 2014: a map, the years, the hour, the day of the week and the day of the year, brushed together. July 4th is the top day of the year. Built by Grafana Assistant from a prompt, its figures checked with SQL.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "Sightings in view",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  ufoFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: ufo, filterBy: $ufoFilters }\n    text: { count: }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 2,
+          "links": [],
+          "subtitle": "Brush a range of years",
+          "title": "Sightings by year",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  ufoFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: ufo, filterBy: $ufoFilters }\n    x: { bin: year, step: 1 }\n    y: { count: }\n    fill: '#73BF69'\n    inset: 0.5\n  - select: intervalX\n    as: $ufoFilters\nxTickFormat: d\nyGrid: true\nxLabel: year →\nyLabel: null\nmarginLeft: 44\nmarginBottom: 32\n",
+                "variables": "- param: ufoFilters\n  column: year\n  from: yr_lo\n  to: yr_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 3,
+          "links": [],
+          "subtitle": "1 = January 1st",
+          "title": "Day of year",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  ufoFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: ufo, filterBy: $ufoFilters }\n    x: { bin: doy, step: 1 }\n    y: { count: }\n    fill: '#FF9830'\n    inset: 0\n  - select: intervalX\n    as: $ufoFilters\nxTickFormat: d\nyGrid: true\nxLabel: day of year →\nyLabel: null\nmarginLeft: 44\nmarginBottom: 32\n",
+                "variables": "- param: ufoFilters\n  column: doy\n  from: d_lo\n  to: d_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "Headline",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## UFOs love fireworks: July 4th is the top day of the year\n\nA typical day of the year has about 190 reports (the median is 193). July 4th has 1,208, more than six times as many, and 84 % of them come between 8 pm and midnight, when the fireworks go up.\n\nThe other spikes fall on the 1st and the 15th of a month, such as June 1st (1,140): many reports seem to carry a rounded date. Brush the day-of-year chart to see any of them on the map.\n\n**Also in the data:** most sightings happen at night, peaking in the 9 pm hour (11,445 reports); Saturday is the busiest day of the week; and reports grew from a few hundred a year before 1990 to over 7,000 a year in 2012 and 2013.\n\n*Figures counted in the dataset with SQL.*",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "subtitle": "Local time of the sighting, 0–23",
+          "title": "Hour of day",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  ufoFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: ufo, filterBy: $ufoFilters }\n    x: { bin: hour, step: 1 }\n    y: { count: }\n    fill: '#8AB8FF'\n    inset: 0.5\n  - select: intervalX\n    as: $ufoFilters\nxTickFormat: d\nyGrid: true\nxLabel: hour of day →\nyLabel: null\nmarginLeft: 44\nmarginBottom: 32\n",
+                "variables": "- param: ufoFilters\n  column: hour\n  from: h_lo\n  to: h_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT id, time, latitude, longitude, year, hour, doy, dow, shape, city, state FROM $ufo"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "Where people see UFOs",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "ufoArea",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 38.53948996412929,
+                      "longitude": -90.1081242796099,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 2.984149135433459
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "road": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "window",
+                          "inverted": false,
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "count",
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "1-year",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "UTC",
+                          "type": "range",
+                          "value": [
+                            -2042556800000,
+                            1399574700000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "time"
+                                },
+                                {
+                                  "name": "shape"
+                                },
+                                {
+                                  "name": "city"
+                                },
+                                {
+                                  "name": "state"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "id"
+                              },
+                              {
+                                "name": "time"
+                              },
+                              {
+                                "name": "year"
+                              },
+                              {
+                                "name": "hour"
+                              },
+                              {
+                                "name": "doy"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [
+                            {
+                              "id": "s9p0qna",
+                              "layerIds": [
+                                "hexbin"
+                              ],
+                              "stops": {
+                                "appear": 0,
+                                "fade": 4.7,
+                                "full": 1.8,
+                                "gone": 7.8
+                              }
+                            },
+                            {
+                              "id": "18qieuj",
+                              "layerIds": [
+                                "points"
+                              ],
+                              "stops": {
+                                "appear": 5.8,
+                                "fade": 24,
+                                "full": 12.8,
+                                "gone": 24
+                              }
+                            }
+                          ],
+                          "enabled": true
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "subtractive",
+                      "layerOrder": [
+                        "points",
+                        "hexbin"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              138,
+                              184,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Sightings",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 21.2,
+                              "radiusRange": [
+                                1,
+                                8
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "points",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Hexbin: sightings per cell",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorAggregation": "count",
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#00939C",
+                                  "#8BC6C9",
+                                  "#E6FAFA",
+                                  "#EB9373",
+                                  "#C22E00"
+                                ],
+                                "name": "Uber Viz Diverging",
+                                "type": "diverging"
+                              },
+                              "coverage": 0.95,
+                              "elevationPercentile": [
+                                0,
+                                100
+                              ],
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "enableElevationZoomFactor": true,
+                              "fixedHeight": false,
+                              "opacity": 0.59,
+                              "percentile": [
+                                0,
+                                100
+                              ],
+                              "resolution": 8,
+                              "sizeAggregation": "count",
+                              "sizeRange": [
+                                0,
+                                500
+                              ],
+                              "worldUnitSize": 50
+                            }
+                          },
+                          "id": "hexbin",
+                          "type": "hexagon",
+                          "visualChannels": {
+                            "colorScale": "jenks",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicColumns": "longitude, latitude",
+                "mosaicSelection": "ufoFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "Timeline",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 120,
+                "filters": "ufoFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "sightings",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "time",
+                "timeline": "time"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "subtitle": "Click a day to filter",
+          "title": "Day of week",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  ufoFilters: { select: crossfilter }\nplot:\n  - mark: barY\n    data: { from: ufo, filterBy: $ufoFilters }\n    x: dow\n    y: { count: }\n    fill: '#B877D9'\n    inset: 1\n  - select: toggleX\n    as: $ufoFilters\nxDomain: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]\nyGrid: true\nxLabel: null\nyLabel: null\nmarginLeft: 44\nmarginBottom: 28\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**The data.** The reports to the [National UFO Reporting Center](https://nuforc.org) (NUFORC), geocoded and with their times standardized by [planetsig](https://github.com/planetsig/ufo-reports) in 2014: 80,331 reports from 1906 to May 2014, mostly from the United States. A report is what someone said they saw, where and when they said it, not a verified event. The places are geocoded from the town named, the times are local as reported, and some dates were rounded by the people reporting them (the spikes on the 1st and the 15th of a month).\n\n**How it was made.** Grafana Assistant built this dashboard from one prompt for #30DayMapChallenge 2026, day 10 (Prompting only): the dataset's SQL, the Chaski filters, the Kepler Plus map and the Mosaic charts. A review then checked its figures with SQL and fixed three things: the time range (it opened on the last 30 days, which emptied the charts), the day of year (counted on a fixed calendar, so July 4th is always day 186) and the headline's figures. The CSV is converted once to Parquet by `datasets/ufo-sightings/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards); the dataset reads it on the server and cleans it.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 16,
+              "width": 16,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 4,
+              "width": 8,
+              "x": 16,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 12,
+              "width": 8,
+              "x": 16,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 9,
+              "width": 12,
+              "x": 0,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 9,
+              "width": 12,
+              "x": 12,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              },
+              "height": 9,
+              "width": 12,
+              "x": 0,
+              "y": 30
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 9,
+              "width": 12,
+              "x": 12,
+              "y": 30
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              },
+              "height": 7,
+              "width": 24,
+              "x": 0,
+              "y": 39
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "AutoGridLayout",
+        "spec": {
+          "columnWidthMode": "standard",
+          "items": [],
+          "maxColumnCount": 3,
+          "rowHeightMode": "standard"
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "1906-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "2014-12-31T23:59:59.000Z"
+    },
+    "title": "UFO sightings — NUFORC reports",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "ufo",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "ufo",
+              "refId": "ufo",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- NUFORC reports, geocoded: datasets/ufo-sightings/build.sh keeps planetsig's CSV column for column, as text.\n-- Cast safely here, because a few rows are malformed.\n-- Day of year is counted on a leap-year calendar, so a date is always the same day (July 4th is 186).\n-- Datetime is M/D/YYYY HH:MM; a few say 24:00, which falls back to midnight of that date.\nWITH raw AS (\n  SELECT * FROM 'http://feeds/datasets/ufo-sightings/nuforc.parquet'\n),\nt AS (\n  SELECT *, coalesce(try_strptime(datetime, '%m/%d/%Y %H:%M'), try_strptime(split_part(datetime, ' ', 1), '%m/%d/%Y')) AS time,\n         try_cast(latitude AS DOUBLE) AS lat, try_cast(longitude AS DOUBLE) AS lng\n  FROM raw\n)\nSELECT row_number() OVER () AS id, time, lat AS latitude, lng AS longitude,\n       year(time)::INTEGER AS year, (floor(year(time) / 10) * 10)::INTEGER AS decade,\n       hour(time)::INTEGER AS hour, dayofyear(make_date(2000, month(time), day(time)))::INTEGER AS doy,\n       strftime(time, '%a') AS dow, dayofweek(time)::INTEGER AS dow_num,\n       coalesce(nullif(shape, ''), 'unknown') AS shape, city, upper(state) AS state, upper(country) AS country,\n       try_cast(duration_s AS DOUBLE) AS duration_s\nFROM t\nWHERE time IS NOT NULL AND lat BETWEEN -90 AND 90 AND lng BETWEEN -180 AND 180 AND year(time) \u003e= 1900",
+                  "refId": "ufo"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "tFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "tTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "yr_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "yr_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "d_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "d_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "ufoArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "ufo#7516b149",
+            "value": "ufo#7516b149"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "ufoFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$ufo",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$tFrom",
+                  "label": "Date of sighting",
+                  "name": "time",
+                  "to": "$tTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "year",
+                  "from": "$yr_lo",
+                  "label": "Year",
+                  "name": "year",
+                  "to": "$yr_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "hour",
+                  "from": "$h_lo",
+                  "label": "Hour of day",
+                  "name": "hour",
+                  "to": "$h_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "doy",
+                  "from": "$d_lo",
+                  "label": "Day of year",
+                  "name": "doy",
+                  "to": "$d_hi",
+                  "type": "range"
+                },
+                {
+                  "label": "Drawn area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$ufoArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "ufoFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
