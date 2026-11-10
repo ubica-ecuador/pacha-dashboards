@@ -1,0 +1,2151 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "new-york-by-ear"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "What 56 acoustic sensors in New York heard from 2016 to 2019, as volunteers tagged 18,510 ten-second recordings (SONYC-UST v2, NYU): engines, jackhammers, saws, sirens, music, voices and dogs, by hour, day, month and city block, with a time brush that plays the seasons on the map. Music comes with summer, dogs with winter, jackhammers keep office hours, voices belong to the evening, engines take the night, sirens never sleep.",
+    "editable": true,
+    "elements": {
+      "card-hours": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The same recordings, ten seconds each.",
+          "id": 2,
+          "links": [],
+          "title": "Hours of listening",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  soundFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: recordings, filterBy: $soundFilters }\n    text: { sql: \"format('{:.0f} h', count(*) * 10 / 3600.0)\" }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "card-recordings": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Ten-second recordings under every filter and in the area drawn, each heard by three volunteers.",
+          "id": 1,
+          "links": [],
+          "title": "Recordings heard",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  soundFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: recordings, filterBy: $soundFilters }\n    text: { sql: \"format('{:,}', count(*))\" }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### What SONYC's sensors heard\n\n[SONYC](https://wp.nyu.edu/sonyc) (Sounds of New York City, NYU) placed acoustic sensors on buildings to study noise pollution with the city's Department of Environmental Protection. Volunteers on [Zooniverse](https://www.zooniverse.org) listened to ten-second recordings and tagged what they heard in a taxonomy of 23 sounds in 8 classes, chosen with the Department; three volunteers heard each recording.\n\n| | |\n| --- | --- |\n| **Source** | [SONYC-UST v2](https://zenodo.org/record/3966543) (Cartwright, Cramer, Méndez, Wang, Wu, Lostanlen, Fuentes, Dove, Mydlarz, Salamon, Nov and Bello, 2020), CC BY 4.0 |\n| **Recordings** | 18,510 of ten seconds from 56 sensors, 2016 to 2019: 43 sensors in Manhattan (95 % of the recordings, most around Washington Square), 12 in Brooklyn, 1 in Queens |\n| **Where and when** | Each sensor is placed at the centre of its city block and each recording at its hour, for privacy. SONYC gives the year, the week of the year, the day of the week and the hour; the date is rebuilt from them (ISO weeks), so a recording near New Year may sit a few days off |\n| **Over time** | The network grew: 7 sensors in May 2016, more than 30 every month from March 2017. Most recordings are from 2017 and 2018; from April 2019 a month holds 65 to 96, so its shares jump more |\n| **A sound is heard** | When most of a recording's volunteers tagged it. The SONYC team verified a subset of 1,380; this dashboard uses the volunteers' tags throughout |\n| **Built by** | `datasets/nyc-sounds/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards): DuckDB reads the annotations and writes two Parquet files, one row per recording and one per recording and sound |\n\n**Not a census of the city's sound.** SONYC chose these recordings among years of audio for resembling recordings known to hold sounds of interest, and kept at most one recording with a voice per sensor and hour. The shares here are of the recordings the volunteers heard: they compare hours, days and places with each other, not the city's sound as a whole.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The months the brush is drawn over: recordings each month under every other filter (hours, days, years,\n-- borough, drawn area), and every recording in grey behind. Not filtered by its own window (-time).\nWITH x AS (SELECT \"time\", $__crossfilter($soundFilters, -time) AS keep FROM $recordings)\nSELECT date_trunc('month', \"time\") AS time, count(*)::DOUBLE AS \"Every recording\",\n       (count(*) FILTER (WHERE keep))::DOUBLE AS \"Recordings\"\nFROM x\nGROUP BY 1\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The window every view takes: drag it, resize it by its handles or draw a new one, step it month by month, or press play to run the seasons. Bars: recordings a month under the other filters, every recording in grey behind them.",
+          "id": 10,
+          "links": [],
+          "title": "Months: brush or play",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794F2",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "sum",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Every recording"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.context",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "#111827",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1M",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.6
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": true,
+                "mosaicColumn": "time",
+                "mosaicSelection": "soundFilters",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "always",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 1200,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1200,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t_lo",
+                  "to": "t_hi"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-filters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every filter narrows the cards, the charts and the map; the time brush, the hour brush and the area drawn on the map add theirs.",
+          "id": 7,
+          "links": [],
+          "title": "Filters",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 24,
+                "filters": "soundFilters",
+                "layout": "auto",
+                "maxValues": 9,
+                "noun": "recordings",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-headline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 3,
+          "links": [],
+          "title": "What the volunteers heard",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### The city's sound keeps a timetable, and a calendar\n\n- **Music comes with summer:** in 7 % of the recordings from July to September, 3 % from January to March. On the block north of Washington Square, 24 % from June to August, 4 % in winter. Press play on the time brush at the bottom.\n- **Dogs, the other way round:** 6 % of the recordings in winter, 2 % in summer.\n- **Jackhammers and drills keep office hours:** 8 % from 7 am to 6 pm, 1 to 2 % in the evening and at night.\n- **Voices belong to the evening:** 45 % from 6 to 11 pm, 17 % from 11 pm to 7 am. **At night, engines take over:** 34 %, against 24 % by day.\n- **Sirens, horns and alarms never sleep:** 14 to 19 % at every hour.\n\n*Shares of the recordings the volunteers heard, which SONYC chose for holding sounds of interest: see About the data. Pick another sound for the map and the months.*",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-heatmap": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Each sound, hour by hour: the share of the recordings in which most volunteers heard it, in %, and how\n-- many recordings the hour holds, under every filter. ord is SONYC's order of the classes.\nSELECT sound, any_value(ord) AS ord, \"hour\"::BIGINT AS hour, round(100 * avg(present), 1) AS share, count(*)::DOUBLE AS n\nFROM $sounds\nWHERE $__crossfilter($soundFilters)\nGROUP BY sound, \"hour\"\nORDER BY ord, hour"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "For each sound, the share of the recordings in the hour in which most volunteers heard it, under every filter, in the map's bands. Click a sound to put it on the map and the months.",
+          "id": 4,
+          "links": [],
+          "title": "What the sensors heard, hour by hour: click a sound to map it",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Every sound hour by hour: the share of the recordings in the hour in which most volunteers\n// heard it, under every filter, in the map's bands and colours, so this chart is also the map's\n// legend. Click a sound (a cell of its row, or its name) to put it on the map and the months: its\n// row is outlined. A click never clears the pick, so there is always a sound on the map.\n// @constants begin\nconst VAR = 'mapSound';\nconst PICKED = context.grafana.replaceVariables('${mapSound}');\nconst BREAKS = [2, 5, 10, 20, 35];\nconst COLORS = ['#4C0035', '#880030', '#B72F15', '#D6610A', '#EF9100', '#FFC300'];\nconst UNIT = '%';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst text = theme.colors.text.primary;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst soundCol = col('sound');\nconst ordCol = col('ord').map(Number);\nconst hourCol = col('hour').map(Number);\nconst shareCol = col('share').map((v) =\u003e (v == null ? null : Number(v)));\nconst nCol = col('n').map(Number);\n\n// The sounds in SONYC's order, top to bottom (the axis is inverted).\nconst order = new Map();\nsoundCol.forEach((s, i) =\u003e order.set(s, ordCol[i]));\nconst sounds = Array.from(order.keys()).sort((a, b) =\u003e order.get(a) - order.get(b));\nconst row = new Map(sounds.map((s, i) =\u003e [s, i]));\nconst hours = Array.from({ length: 24 }, (_, h) =\u003e String(h));\n\nconst cells = soundCol.map((s, i) =\u003e ({\n  value: [hourCol[i], row.get(s), shareCol[i]],\n  n: nCol[i],\n  itemStyle: s === PICKED ? { borderColor: text, borderWidth: 1.5 } : { borderColor: 'transparent', borderWidth: 0 },\n}));\n\nconst pick = (sound) =\u003e {\n  if (sound \u0026\u0026 sound !== context.grafana.replaceVariables('${' + VAR + '}')) {\n    location.partial({ ['var-' + VAR]: sound }, true);\n  }\n};\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  if (event.componentType === 'yAxis') {\n    pick(event.value);\n  } else if (Array.isArray(event.value)) {\n    pick(sounds[event.value[1]]);\n  }\n});\n\nconst fmt = (v) =\u003e (v \u003c 10 ? v.toFixed(1) : v.toFixed(0));\nconst pieces = COLORS.map((color, k) =\u003e {\n  const lo = k === 0 ? null : BREAKS[k - 1];\n  const hi = k === BREAKS.length ? null : BREAKS[k];\n  const label = lo == null ? `under ${hi} ${UNIT}` : hi == null ? `${lo} ${UNIT} or more` : `${lo}–${hi} ${UNIT}`;\n  return { ...(lo == null ? {} : { gte: lo }), ...(hi == null ? {} : { lt: hi }), color, label };\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 34, bottom: 30, containLabel: true },\n  tooltip: {\n    formatter: (p) =\u003e {\n      const [h, r, v] = p.value;\n      const n = p.data.n;\n      return `\u003cb\u003e${sounds[r]}\u003c/b\u003e, ${h}:00 to ${h + 1}:00\u003cbr/\u003e${v == null ? 'no recordings' : `${fmt(v)} ${UNIT} of ${n.toLocaleString('en-US')} recordings`}`;\n    },\n  },\n  visualMap: {\n    type: 'piecewise',\n    dimension: 2,\n    pieces,\n    orient: 'horizontal',\n    left: 'center',\n    top: 0,\n    itemWidth: 14,\n    itemHeight: 10,\n    itemGap: 12,\n    selectedMode: false,\n    textStyle: { color: muted, fontSize: 11 },\n  },\n  xAxis: {\n    type: 'category',\n    data: hours,\n    name: 'hour of day (New York) →',\n    nameLocation: 'middle',\n    nameGap: 22,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted, fontSize: 10 },\n    axisTick: { show: false },\n    axisLine: { show: false },\n    splitArea: { show: false },\n  },\n  yAxis: {\n    type: 'category',\n    data: sounds,\n    inverse: true,\n    triggerEvent: true,\n    axisTick: { show: false },\n    axisLine: { show: false },\n    axisLabel: {\n      fontSize: 11,\n      color: muted,\n      formatter: (value) =\u003e (value === PICKED ? `{picked|▸ ${value}}` : value),\n      rich: { picked: { color: text, fontWeight: 'bold', fontSize: 11 } },\n    },\n  },\n  series: [\n    {\n      type: 'heatmap',\n      data: cells,\n      cursor: 'pointer',\n      itemStyle: { borderColor: 'transparent' },\n      emphasis: { itemStyle: { borderColor: text, borderWidth: 1 } },\n    },\n  ],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-hours": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How many recordings each hour holds: brush a span of hours to filter everything else, the map included.",
+          "id": 5,
+          "links": [],
+          "title": "Recordings by hour",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  soundFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: recordings, filterBy: $soundFilters }\n    x: { bin: hour, step: 1 }\n    y: { count: }\n    fill: '#5794F2'\n    inset: 0.5\n  - select: intervalX\n    as: $soundFilters\nxDomain: [0, 24]\nxLabel: hour of day (New York) →\nyLabel: recordings\nyGrid: true\nmarginLeft: 50\n",
+                "variables": "- param: soundFilters\n  column: hour\n  from: h_lo\n  to: h_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Re-run at every filter but the drawn area, the time brush's window included: each city block with a\n-- sensor (sensors on one block count together), its recordings and the share of them in which most\n-- volunteers heard the sound picked above the map, in %. The Surface interpolates it between blocks.\n-- A block with two sensors sits at their mean, rounded: the same place in both queries, every run.\nSELECT borough || ' block ' || block::BIGINT AS place, round(avg(latitude), 5) AS latitude, round(avg(longitude), 5) AS longitude,\n       count(*)::DOUBLE AS recordings, round(100.0 * avg(present), 1) AS share\nFROM $sounds\nWHERE sound = $mapSound AND $__crossfilter($soundFilters, -area)\nGROUP BY borough, block"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Each busy block's seasons for the Sparkline cards: the share of its recordings with the sound picked\n-- above, quarter by quarter, 2016 to 2019. Every filter but the drawn area and the time brush's window:\n-- the cards keep the whole series, and the crosshair of the chart of the months walks along them.\n-- Only blocks with 200 recordings or more, and their quarters with 10 or more (fewer draw a jagged line).\n-- A card is keyed by its block's place (the pinned ones too): the mean of its sensors, rounded.\nWITH f AS (SELECT * FROM $sounds WHERE sound = $mapSound AND $__crossfilter($soundFilters, -area, -time)),\nbusy AS (SELECT borough, block, round(avg(latitude), 5) AS latitude, round(avg(longitude), 5) AS longitude\n         FROM f GROUP BY borough, block HAVING count(*) \u003e= 200)\nSELECT f.borough || ' block ' || f.block::BIGINT AS place, any_value(busy.latitude) AS latitude, any_value(busy.longitude) AS longitude,\n       date_trunc('quarter', f.\"time\") AS time, round(100.0 * avg(f.present), 1) AS share\nFROM f JOIN busy USING (borough, block)\nGROUP BY f.borough, f.block, date_trunc('quarter', f.\"time\")\nHAVING count(*) \u003e= 10\nORDER BY place, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The Surface's blocks: the same shares, for the 20 blocks between Houston Street and Union Square, where\n-- nine recordings in ten were made. Alone, they give the surface a fine grid; with the sensors in Brooklyn,\n-- Queens and uptown, its cells would be 50 m wide. Those stand as dots and cards. The surface is inverse\n-- distance weighting (power 2, the 12 closest blocks), cut 400 m from the closest block.\nSELECT borough || ' block ' || block::BIGINT AS place, round(avg(latitude), 5) AS latitude, round(avg(longitude), 5) AS longitude,\n       count(*)::DOUBLE AS recordings, round(100.0 * avg(present), 1) AS share\nFROM $sounds\nWHERE sound = $mapSound AND $__crossfilter($soundFilters, -area)\n  AND latitude BETWEEN 40.715 AND 40.745 AND longitude BETWEEN -74.01 AND -73.98\nGROUP BY borough, block\n-- A block with fewer than 30 recordings under the filters keeps its dot but no say in the surface:\n-- its share is mostly chance, and every block weighs the same in the interpolation.\nHAVING count(*) \u003e= 30"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the recordings with the sound picked above, in the months the time brush holds and under the other filters, interpolated between the sensors' blocks around Washington Square (within 400 m of one; blocks with fewer than 30 recordings are left out of it), in fixed bands: under 2, 2 to 5, 5 to 10, 10 to 20, 20 to 35, 35 % or more, the same for every sound and window. The cards: each busy block quarter by quarter, 2016 to 2019; hover the chart of the months to follow one month on all of them. Draw an area to filter the charts.",
+          "id": 8,
+          "links": [],
+          "title": "Where and when: ${mapSound}, block by block",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "soundArea",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "gazetteer": "public/gazetteer/countries.json",
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -59.33555703802534,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.72832738780962,
+                      "longitude": -73.99212745892078,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 49.39698492462311,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 14.892338913894024
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "building": false,
+                        "label": true,
+                        "poi": true,
+                        "road": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "time"
+                                },
+                                {
+                                  "name": "shape"
+                                },
+                                {
+                                  "name": "city"
+                                },
+                                {
+                                  "name": "state"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "place"
+                              },
+                              {
+                                "name": "share"
+                              },
+                              {
+                                "name": "recordings"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "place"
+                              },
+                              {
+                                "name": "time"
+                              },
+                              {
+                                "name": "share"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "place"
+                              },
+                              {
+                                "name": "share"
+                              },
+                              {
+                                "name": "recordings"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [
+                            {
+                              "id": "s9p0qna",
+                              "layerIds": [
+                                "hexbin"
+                              ],
+                              "stops": {
+                                "appear": 0,
+                                "fade": 4.7,
+                                "full": 1.8,
+                                "gone": 7.8
+                              }
+                            },
+                            {
+                              "id": "18qieuj",
+                              "layerIds": [
+                                "points"
+                              ],
+                              "stops": {
+                                "appear": 5.8,
+                                "fade": 24,
+                                "full": 12.8,
+                                "gone": 24
+                              }
+                            }
+                          ],
+                          "enabled": true
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "subtractive",
+                      "layerOrder": [
+                        "days",
+                        "blocks",
+                        "surface"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The seasons of each busy block",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "place",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    5,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    10,
+                                    "#F5AC00"
+                                  ],
+                                  [
+                                    20,
+                                    "#FFC300"
+                                  ],
+                                  [
+                                    35,
+                                    "#FFD95A"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFEB99"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#F5AC00",
+                                  "#FFC300",
+                                  "#FFD95A",
+                                  "#FFEB99"
+                                ],
+                                "name": "Share, light",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 0.8,
+                              "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 1,
+                              "sparkCards": "hover",
+                              "sparkChangeColours": "risingBad",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 6,
+                              "sparkDots": false,
+                              "sparkDotsOnTop": true,
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": "0",
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [
+                                "-73.99151,40.73642",
+                                "-73.99728,40.72105",
+                                "-73.99682,40.72609",
+                                "-73.99479,40.73501",
+                                "-73.99907,40.73043",
+                                "-73.99176,40.72792"
+                              ],
+                              "sparkPublishCrosshair": true,
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkTimeField": "time",
+                              "sparkTooltip": false,
+                              "sparkUnit": "%",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "days",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "share",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Blocks with a sensor",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 0.9,
+                              "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                3,
+                                12
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                20,
+                                20,
+                                20
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "blocks",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "share",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": {
+                              "name": "recordings",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "% of the recordings, between the blocks",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 0.55,
+                              "outline": false,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "surfaceAltitude": 0,
+                              "surfaceBands": true,
+                              "surfaceBreaks": "",
+                              "surfaceDrape": true,
+                              "surfaceExtent": "rectangle",
+                              "surfaceFade": true,
+                              "surfaceIsolineWidth": 1,
+                              "surfaceIsolines": false,
+                              "surfaceLabelSize": 11,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 20,
+                              "surfaceMaxDistance": 400,
+                              "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "auto",
+                              "surfacePower": 2,
+                              "surfaceRadius": 500,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "high",
+                              "surfaceUnderBuildings": false,
+                              "surfaceVehicle": ":auto",
+                              "thickness": 2
+                            }
+                          },
+                          "id": "surface",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "share",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-months": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Month by month across the city: the share of the recordings with the sound picked above the map,\n-- in %, under every filter but the time brush's window (All months) and inside it (In the window).\n-- Months with fewer than 40 recordings under the filters are left out: their share is mostly chance.\nSELECT date_trunc('month', \"time\") AS time,\n       round(100 * avg(present), 1) AS \"All months\",\n       round(100 * avg(present) FILTER (WHERE $__crossfilter($soundFilters)), 1) AS \"In the window\"\nFROM $sounds\nWHERE sound = $mapSound AND $__crossfilter($soundFilters, -time)\nGROUP BY 1\nHAVING count(*) \u003e= 40\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the recordings with the sound picked above the map, each month, under every filter but the time brush (grey), and in the window the time brush holds (orange). Months with fewer than 40 recordings under the filters are left out. Hover it: the cards on the map follow.",
+          "id": 11,
+          "links": [],
+          "title": "${mapSound}, month by month, across the city",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "axisSoftMax": 10,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 3456000000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 4,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "always",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "All months"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8E8E8E",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "In the window"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#EF9100",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.pointSize",
+                        "value": 6
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 12
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-years": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each sound's share of the recordings, year by year: the mix moves little from one year to the next.",
+          "id": 6,
+          "links": [],
+          "title": "Every year, the same city",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  soundFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: years\n  - name: years\n    plot:\n      - mark: dot\n        data: { from: sounds, filterBy: $soundFilters }\n        x: { sql: \"100 * avg(present)\" }\n        y: sound\n        fill: year\n        r: 6\n    yDomain: ['Engines', 'Jackhammers, drills', 'Other impacts', 'Powered saws', 'Sirens, horns, alarms', 'Music', 'Voices', 'Dogs']\n    colorDomain: ['2016', '2017', '2018', '2019']\n    colorRange: ['#8AB8FF', '#73BF69', '#FADE2A', '#FF9830']\n    xLabel: \"% of the recordings with the sound →\"\n    yLabel: null\n    xGrid: true\n    marginLeft: 160\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 17,
+              "width": 11,
+              "x": 5,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-recordings"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-hours"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-filters"
+              },
+              "height": 43,
+              "width": 5,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-headline"
+              },
+              "height": 14,
+              "width": 8,
+              "x": 16,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-months"
+              },
+              "height": 9,
+              "width": 19,
+              "x": 5,
+              "y": 17
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-heatmap"
+              },
+              "height": 11,
+              "width": 19,
+              "x": 5,
+              "y": 26
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-hours"
+              },
+              "height": 9,
+              "width": 10,
+              "x": 5,
+              "y": 37
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-years"
+              },
+              "height": 9,
+              "width": 9,
+              "x": 15,
+              "y": 37
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 11,
+              "width": 24,
+              "x": 0,
+              "y": 46
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "business-charts",
+      "chaski",
+      "city",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2016-05-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "2020-01-01T00:00:00.000Z"
+    },
+    "title": "New York by ear: what 56 noise sensors heard",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Four weeks of 311 requests in the browser, read by the server through the gateway when the dashboard opens.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Recordings",
+          "multi": false,
+          "name": "recordings",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "recordings",
+              "refId": "recordings",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the recordings SONYC's sensors made in New York, 2016 to 2019,\n-- one row each, with the eight sound classes its volunteers heard (1 when most of them tagged it).\n-- time is the hour it was recorded. The year as text: a category for the filters and the charts, not a\n-- number to sum. datasets/nyc-sounds/build.sh writes the file from SONYC-UST v2 (NYU, CC BY 4.0).\nSELECT id, sensor_id, borough, block, latitude, longitude, \"time\", \"year\"::VARCHAR AS \"year\", week, day_num, \"day\", weekend, \"hour\", verified,\n       engines, jackhammers, impacts, saws, alerts, music, voices, dogs\nFROM 'http://feeds/datasets/nyc-sounds/recordings.parquet'",
+                  "refId": "recordings"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Four weeks of 311 requests in the browser, read by the server through the gateway when the dashboard opens.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Sounds",
+          "multi": false,
+          "name": "sounds",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sounds",
+              "refId": "sounds",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the same recordings, one row per recording and sound class,\n-- present 1 or 0. Shares of a class are avg(present).\nSELECT id, sound, ord, present, sensor_id, borough, block, latitude, longitude, \"time\", \"year\"::VARCHAR AS \"year\", day_num, \"day\", weekend, \"hour\"\nFROM 'http://feeds/datasets/nyc-sounds/sounds.parquet'",
+                  "refId": "sounds"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Day of the week",
+          "multi": true,
+          "name": "day",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "day",
+              "sql": "SELECT \"day\" AS value FROM $recordings GROUP BY \"day\", day_num ORDER BY day_num"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Year",
+          "multi": true,
+          "name": "year",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "year",
+              "sql": "SELECT DISTINCT \"year\" AS value FROM $recordings ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Borough",
+          "multi": true,
+          "name": "borough",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "borough",
+              "sql": "SELECT DISTINCT borough AS value FROM $recordings ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "Music",
+            "value": "Music"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Sound on the map",
+          "multi": false,
+          "name": "mapSound",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "mapSound",
+              "sql": "SELECT sound AS value FROM $sounds GROUP BY sound, ord ORDER BY ord"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "t_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "t_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "soundArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "What the filters keep",
+          "multi": false,
+          "name": "soundFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$recordings",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t_lo",
+                  "label": "Months",
+                  "name": "time",
+                  "to": "$t_hi",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "hour",
+                  "from": "$h_lo",
+                  "label": "Hour of day (New York)",
+                  "name": "hour",
+                  "to": "$h_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "day",
+                  "label": "Day of the week",
+                  "name": "day",
+                  "type": "in",
+                  "variable": "$day"
+                },
+                {
+                  "column": "year",
+                  "label": "Year",
+                  "name": "year",
+                  "type": "in",
+                  "variable": "$year"
+                },
+                {
+                  "column": "borough",
+                  "label": "Borough",
+                  "name": "borough",
+                  "type": "in",
+                  "variable": "$borough"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$soundArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "soundFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
