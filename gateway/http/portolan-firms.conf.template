@@ -1,0 +1,22 @@
+# Portolan's FIRMS catalog on Source Cooperative (see portolan-firms.conf.template):
+# 4 MB slices of its GeoParquet, kept a month without visitors and 2 GB at most,
+# as the disk is shared; and each file's ETag, trusted for five minutes.
+proxy_cache_path /var/cache/nginx/portolan levels=1:2 keys_zone=portolan:10m
+                 max_size=2g inactive=30d use_temp_path=off;
+proxy_cache_path /var/cache/nginx/portolan_etag levels=1:2 keys_zone=portolan_etag:1m
+                 max_size=10m inactive=1d use_temp_path=off;
+
+# The file a /portolan/firms/ request names, for its ETag subrequest too
+# (a subrequest keeps the main request's $request_uri).
+map $request_uri $portolan_firms_file {
+    "~^/portolan/firms/(?<file>[^?]+)" $file;
+    default "";
+}
+
+# A HEAD through the slices comes back without Accept-Ranges, and DuckDB then
+# downloads the whole file (a year of points is 2 GB): say it for HEAD only, as
+# nginx's range filter already says it on a GET.
+map $request_method $portolan_firms_accept_ranges {
+    HEAD    bytes;
+    default "";
+}
