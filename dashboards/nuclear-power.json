@@ -1,0 +1,2284 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "nuclear-power"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Every nuclear power reactor in the world, from Obninsk in 1954 to the 435 in service at the end of 2023, entering service and shutting down year by year with a time brush that plays them (GeoNuclearData, from the IAEA's PRIS), and the electricity they made country by country, 1965 to 2025 (Our World in Data). The boom of the 1970s and 1980s, China since 2000, Japan after Fukushima, Germany's exit.",
+    "editable": true,
+    "elements": {
+      "card-gw": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Their net capacity, in GW.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT coalesce(sum(capacity_mw), 0) / 1000 AS \"GW in service\" FROM $reactors, w\nWHERE started \u003c w.hi AND (shut_down IS NULL OR shut_down \u003e= w.hi) AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Their net capacity, in GW.",
+          "id": 2,
+          "links": [],
+          "title": "Gigawatts in service",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FF9830",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "card-new": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Reactors that entered commercial operation during the window.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT count(*)::DOUBLE AS \"Entered service\" FROM $reactors, w\nWHERE started \u003e= w.lo AND started \u003c w.hi AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Reactors that entered commercial operation during the window (pale yellow on the map).",
+          "id": 3,
+          "links": [],
+          "title": "Entered service in the window",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFE7A3",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "card-service": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Reactors in service at the end of the time brush's window.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT count(*)::DOUBLE AS \"Reactors in service\" FROM $reactors, w\nWHERE started \u003c w.hi AND (shut_down IS NULL OR shut_down \u003e= w.hi) AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Reactors in commercial operation and not shut down for good at the end of the window, in the country picked or the world.",
+          "id": 1,
+          "links": [],
+          "title": "Reactors in service",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FF9830",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "card-shut": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Reactors shut down for good during the window.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT count(*)::DOUBLE AS \"Shut down\" FROM $reactors, w\nWHERE shut_down \u003e= w.lo AND shut_down \u003c w.hi AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Reactors shut down for good during the window (red on the map).",
+          "id": 4,
+          "links": [],
+          "title": "Shut down in the window",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F2495C",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Reactors and the electricity they made\n\n| | |\n| --- | --- |\n| **Reactors** | [GeoNuclearData](https://github.com/cristianst85/GeoNuclearData) (Cristian Stoica, ODbL 1.0), which follows the IAEA's [Power Reactor Information System](https://pris.iaea.org) (PRIS) and the World Nuclear Association, at its update of 2 March 2024: 804 reactors, 759 with a place |\n| **In service** | From a reactor's commercial operation to its permanent shutdown. A reactor idle but not shut down for good stays in service, as most of Japan's did after Fukushima (21 were listed as in suspended operation in 2024): the chart of the electricity they made shows the difference |\n| **Left out** | Nine reactors that ran have no date of commercial operation in the list, Palisades among them; they stay off the timeline. Under construction is as of March 2024 |\n| **Places** | Approximate: a plant's units share one point |\n| **Capacity** | Design net capacity, in MWe |\n| **Electricity** | [Our World in Data](https://github.com/owid/energy-data) (CC BY 4.0), based on the Energy Institute's Statistical Review of World Energy and Ember: nuclear electricity by country, 1965 to 2025, and its share of each country's electricity. The rest of the world is the World's total less the countries drawn |\n| **Built by** | `datasets/nuclear-power/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards): DuckDB reads both sources and writes two Parquet files |",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The years the brush is drawn over: GW entering commercial operation each year in the country picked (or\n-- every country), every country in grey behind, and the GW in service on each January 1st (a line).\nWITH years AS (SELECT unnest(generate_series(TIMESTAMP '1954-01-01', TIMESTAMP '2023-01-01', INTERVAL 1 YEAR)) AS \"time\"),\nr AS (SELECT started, shut_down, capacity_mw, (($country = '' OR country = $country)) AS keep FROM $reactors WHERE started IS NOT NULL)\nSELECT y.\"time\",\n       coalesce(sum(r.capacity_mw) FILTER (WHERE date_trunc('year', r.started) = y.\"time\"), 0) / 1000 AS \"Every country\",\n       coalesce(sum(r.capacity_mw) FILTER (WHERE r.keep AND date_trunc('year', r.started) = y.\"time\"), 0) / 1000 AS \"GW entering service\",\n       coalesce(sum(r.capacity_mw) FILTER (WHERE r.keep AND r.started \u003c y.\"time\" AND (r.shut_down IS NULL OR r.shut_down \u003e= y.\"time\")), 0) / 1000 AS \"GW in service\"\nFROM years AS y, r\nGROUP BY y.\"time\"\nORDER BY y.\"time\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The window every view takes: drag it, resize it by its handles or draw a new one, step it year by year, or press play to run the years. Bars: GW entering service each year (in grey, every country, once one is picked); line: GW in service on January 1st.",
+          "id": 10,
+          "links": [],
+          "title": "Years: brush or play",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFE7A3",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "sum",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Every country"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.context",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "GW in service"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "line"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "#111827",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1y",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.6
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": true,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "always",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 900,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1000,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t_lo",
+                  "to": "t_hi"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-countries": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- GW in service at the end of the window, by country: already in service when it opened, and entered\n-- during it. Every country: this is where one is picked.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT country,\n       round(coalesce(sum(capacity_mw) FILTER (WHERE started \u003c w.lo), 0) / 1000, 2) AS gw_before,\n       round(coalesce(sum(capacity_mw) FILTER (WHERE started \u003e= w.lo), 0) / 1000, 2) AS gw_new\nFROM $reactors, w\nWHERE started \u003c w.hi AND (shut_down IS NULL OR shut_down \u003e= w.hi)\nGROUP BY country\nORDER BY gw_before + gw_new DESC\nLIMIT 12"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The 12 countries with the most nuclear capacity in service at the end of the time brush's window, in GW: already in service when it opened (orange) and entered during it (pale yellow). Click a country to follow it on the map, the cards and the time brush; click it again to let go.",
+          "id": 6,
+          "links": [],
+          "title": "Who has the power: GW in service at the window's end",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The countries with the most nuclear power in service at the end of the time brush's window, in GW:\n// what was already in service when the window opened (orange, as on the map) and what entered\n// service during it (pale yellow). Click a country to follow it everywhere; click it again to let go.\n// Frame A: country, gw_before, gw_new.\n\n// @constants begin\nconst VAR = 'country';\nconst BEFORE = '#FF9830';\nconst NEW = '#FFE7A3';\n// @constants end\n\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\n\n// The chart redraws when the picked country changes: ${country}.\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst countries = col('country').map(String);\nconst before = col('gw_before').map(Number);\nconst added = col('gw_new').map(Number);\nconst faded = (i) =\u003e picked !== '' \u0026\u0026 countries[i] !== picked;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const name = countries[event.dataIndex];\n  context.grafana.locationService.partial({ ['var-' + VAR]: name === picked ? '' : name }, true);\n});\n\nconst bar = (name, values, color) =\u003e ({\n  name,\n  type: 'bar',\n  stack: 'gw',\n  barMaxWidth: 16,\n  itemStyle: { color },\n  data: values.map((v, i) =\u003e ({ value: v, itemStyle: { color, opacity: faded(i) ? 0.3 : 1 } })),\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 24, top: 28, bottom: 8, containLabel: true },\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 14, itemHeight: 10 },\n  tooltip: {\n    trigger: 'axis',\n    axisPointer: { type: 'shadow' },\n    valueFormatter: (v) =\u003e (Number(v) || 0).toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' GW',\n  },\n  xAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: '{value} GW' },\n    splitLine: { lineStyle: { color: theme.colors.border.weak } },\n  },\n  yAxis: {\n    type: 'category',\n    inverse: true,\n    data: countries,\n    axisLabel: {\n      interval: 0,\n      color: (value) =\u003e (picked !== '' \u0026\u0026 value !== picked ? muted : theme.colors.text.primary),\n      formatter: (value) =\u003e (value === picked ? '{picked|' + value + '}' : value),\n      rich: { picked: { fontWeight: 'bold', color: theme.colors.text.primary } },\n    },\n    axisTick: { show: false },\n  },\n  series: [bar('In service before the window', before, BEFORE), bar('Entered service in the window', added, NEW)],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-generation": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Nuclear electricity, year by year, in TWh: the seven countries that made the most in any year, the one\n-- picked in the ranking if it is not among them, and the rest of the world (the World's total less theirs).\n-- Every group has a value every year, so the areas stack.\nWITH top AS (SELECT country, max(twh) AS peak FROM $generation WHERE country \u003c\u003e 'World' GROUP BY country ORDER BY peak DESC LIMIT 7),\nnamed AS (SELECT country, peak FROM top\n          UNION SELECT country, max(twh) FROM $generation WHERE country = $country AND country NOT IN (SELECT country FROM top) GROUP BY country),\nranked AS (SELECT country, row_number() OVER (ORDER BY peak DESC) AS ord FROM named),\nworld AS (SELECT \"time\", twh FROM $generation WHERE country = 'World'),\ngrid AS (SELECT world.\"time\", ranked.country, ranked.ord FROM world, ranked),\ncountries AS (SELECT grid.\"time\", grid.country AS grp, coalesce(g.twh, 0) AS twh, grid.ord\n              FROM grid LEFT JOIN $generation AS g ON g.country = grid.country AND g.\"time\" = grid.\"time\")\nSELECT \"time\", grp, twh, ord FROM countries\nUNION ALL\nSELECT world.\"time\", 'Rest of the world', greatest(world.twh - coalesce(sum(c.twh), 0), 0), 99\nFROM world LEFT JOIN countries AS c ON c.\"time\" = world.\"time\"\nGROUP BY world.\"time\", world.twh\nORDER BY \"time\", ord"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The share of electricity from nuclear power, in %: the World's, or the picked country's.\nSELECT \"time\", share FROM $generation\nWHERE country = CASE WHEN $country = '' THEN 'World' ELSE $country END AND share IS NOT NULL\nORDER BY \"time\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Nuclear electricity each year, in TWh, for the seven countries that made the most and the rest of the world, with the share of the world's electricity from nuclear power (dashed, right axis); a country picked in the ranking shows its own. The time brush's window is shaded. Our World in Data, from the Energy Institute and Ember.",
+          "id": 7,
+          "links": [],
+          "title": "The electricity they made, 1965 to 2025",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Nuclear electricity, year by year, 1965 to 2025: the countries that made the most, stacked, and the\n// rest of the world (the World's total less theirs), in TWh; the share of the World's electricity\n// from nuclear power as a dashed line on the right axis. The time brush's window is shaded, and the\n// three accidents and Germany's last day are marked. A country picked in the ranking stands out, and\n// the dashed line becomes its own share.\n// Frame A: time, grp, twh, ord. Frame B: time, share.\n\n// @constants begin\nconst COLORS = {\n  'United States': '#5794F2',\n  France: '#B877D9',\n  China: '#F2CC0C',\n  Japan: '#F2495C',\n  Russia: '#73BF69',\n  'South Korea': '#8AB8FF',\n  Germany: '#4AC1C9',\n  'Rest of the world': '#6E7079',\n};\nconst PICKED_COLOR = '#FF9830';\nconst EVENTS = [\n  ['1979-03-28', 'Three Mile Island'],\n  ['1986-04-26', 'Chernobyl'],\n  ['2011-03-11', 'Fukushima'],\n  ['2023-04-15', \"Germany's last three\"],\n];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst muted = theme.colors.text.secondary;\nconst grid = theme.colors.border.weak;\nconst series = context.panel.data.series;\nconst frameA = series.find((f) =\u003e f.refId === 'A');\nconst frameB = series.find((f) =\u003e f.refId === 'B');\nconst col = (frame, name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\n\nconst picked = context.grafana.replaceVariables('${country}');\nconst lo = Date.parse(context.grafana.replaceVariables('${t_lo}'));\nconst hi = Date.parse(context.grafana.replaceVariables('${t_hi}'));\n\nconst times = col(frameA, 'time').map(Number);\nconst groups = col(frameA, 'grp').map(String);\nconst twh = col(frameA, 'twh').map((v) =\u003e (v === null ? null : Number(v)));\nconst ords = col(frameA, 'ord').map(Number);\nconst order = [...new Map(groups.map((g, i) =\u003e [g, ords[i]])).entries()].sort((a, b) =\u003e a[1] - b[1]).map(([g]) =\u003e g);\nconst byGroup = new Map(order.map((g) =\u003e [g, []]));\ngroups.forEach((g, i) =\u003e byGroup.get(g).push([times[i], twh[i]]));\n\nconst colorOf = (g) =\u003e COLORS[g] ?? PICKED_COLOR;\nconst dim = (g) =\u003e picked !== '' \u0026\u0026 g !== picked \u0026\u0026 g !== 'Rest of the world';\n\nconst stacks = order.map((g, i) =\u003e ({\n  name: g,\n  type: 'line',\n  stack: 'twh',\n  symbol: 'none',\n  lineStyle: { width: 0 },\n  areaStyle: { opacity: dim(g) ? 0.25 : 0.85 },\n  itemStyle: { color: colorOf(g) },\n  emphasis: { focus: 'series' },\n  data: byGroup.get(g),\n  ...(i === 0\n    ? {\n        markArea:\n          Number.isFinite(lo) \u0026\u0026 Number.isFinite(hi)\n            ? { silent: true, itemStyle: { color: 'rgba(255, 152, 48, 0.14)' }, data: [[{ xAxis: lo }, { xAxis: hi }]] }\n            : undefined,\n        markLine: {\n          silent: true,\n          symbol: 'none',\n          lineStyle: { color: muted, type: 'dotted', width: 1 },\n          label: { color: muted, fontSize: 11, formatter: (p) =\u003e p.name, position: 'insideEndTop' },\n          data: EVENTS.map(([day, name]) =\u003e ({ name, xAxis: Date.parse(day + 'T00:00:00Z') })),\n        },\n      }\n    : {}),\n}));\n\nconst shareTimes = col(frameB, 'time').map(Number);\nconst share = col(frameB, 'share').map((v) =\u003e (v === null ? null : Number(v)));\nconst shareLine = {\n  name: 'Share of electricity from nuclear, ' + (picked === '' ? 'World' : picked) + ' (%)',\n  type: 'line',\n  yAxisIndex: 1,\n  symbol: 'none',\n  lineStyle: { width: 2, type: 'dashed', color: theme.colors.text.primary },\n  itemStyle: { color: theme.colors.text.primary },\n  data: shareTimes.map((t, i) =\u003e [t, share[i]]),\n};\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 8, top: 40, bottom: 8, containLabel: true },\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 14, itemHeight: 10, type: 'scroll' },\n  tooltip: {\n    trigger: 'axis',\n    valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : Math.round(v).toLocaleString('en-US')),\n  },\n  xAxis: {\n    type: 'time',\n    min: Date.UTC(1965, 0, 1),\n    max: Date.UTC(2025, 11, 31),\n    axisLabel: { color: muted },\n    axisLine: { lineStyle: { color: grid } },\n    splitLine: { show: false },\n  },\n  yAxis: [\n    {\n      type: 'value',\n      name: 'TWh a year',\n      nameTextStyle: { color: muted, align: 'left' },\n      axisLabel: { color: muted },\n      splitLine: { lineStyle: { color: grid } },\n    },\n    {\n      type: 'value',\n      name: '% of electricity',\n      max: picked === '' ? 20 : 100,\n      nameTextStyle: { color: muted, align: 'right' },\n      axisLabel: { color: muted, formatter: '{value} %' },\n      splitLine: { show: false },\n    },\n  ],\n  series: [...stacks, shareLine],\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-headline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "Seventy years of nuclear power",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "- **1954:** Obninsk, near Moscow, is the first nuclear plant to feed a grid: 5 MW.\n- **The boom:** 159 reactors entered service in the 1970s and 228 in the 1980s, 41 in 1985 alone. The 1990s brought 53.\n- **Since 2000:** 120 more, 52 of them in China.\n- **Fukushima, March 2011:** Japan's reactors made 292 TWh in 2010 and none in 2014; 94 in 2025. Most were idled, not shut down for good, so on the map they stay lit.\n- **Germany** shut 8 reactors in August 2011 and its last three on 15 April 2023.\n- **Today:** a record 2,812 TWh in 2025, yet nuclear's share of the world's electricity has halved since its 1996 peak, from 17.4 % to 8.9 %.\n\n*Press play at the bottom to run the years: pale yellow, a reactor entering service; red, one shutting down; grey, shut earlier; blue rings, under construction in 2024. Click a country in the ranking to follow it.*",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- In service when the window opened and still at its end.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT name, country, reactor_type AS type, capacity_mw AS mwe,\n       CASE WHEN shut_down IS NOT NULL THEN strftime(started, '%b %Y') || ' – ' || strftime(shut_down, '%b %Y')\n            WHEN status = 'Suspended Operation' THEN 'since ' || strftime(started, '%b %Y') || ', idle in March 2024'\n            ELSE 'since ' || strftime(started, '%b %Y') END AS service,\n       latitude, longitude\nFROM $reactors, w\nWHERE started \u003c w.lo AND (shut_down IS NULL OR shut_down \u003e= w.hi) AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Entered commercial operation during the window and still in service at its end.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT name, country, reactor_type AS type, capacity_mw AS mwe,\n       CASE WHEN shut_down IS NOT NULL THEN strftime(started, '%b %Y') || ' – ' || strftime(shut_down, '%b %Y')\n            WHEN status = 'Suspended Operation' THEN 'since ' || strftime(started, '%b %Y') || ', idle in March 2024'\n            ELSE 'since ' || strftime(started, '%b %Y') END AS service,\n       latitude, longitude\nFROM $reactors, w\nWHERE started \u003e= w.lo AND started \u003c w.hi AND (shut_down IS NULL OR shut_down \u003e= w.hi) AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Shut down for good during the window.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT name, country, reactor_type AS type, capacity_mw AS mwe,\n       CASE WHEN shut_down IS NOT NULL THEN strftime(started, '%b %Y') || ' – ' || strftime(shut_down, '%b %Y')\n            WHEN status = 'Suspended Operation' THEN 'since ' || strftime(started, '%b %Y') || ', idle in March 2024'\n            ELSE 'since ' || strftime(started, '%b %Y') END AS service,\n       latitude, longitude\nFROM $reactors, w\nWHERE shut_down \u003e= w.lo AND shut_down \u003c w.hi AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Shut down for good before the window.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT name, country, reactor_type AS type, capacity_mw AS mwe,\n       CASE WHEN shut_down IS NOT NULL THEN strftime(started, '%b %Y') || ' – ' || strftime(shut_down, '%b %Y')\n            WHEN status = 'Suspended Operation' THEN 'since ' || strftime(started, '%b %Y') || ', idle in March 2024'\n            ELSE 'since ' || strftime(started, '%b %Y') END AS service,\n       latitude, longitude\nFROM $reactors, w\nWHERE shut_down \u003c w.lo AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Under construction in March 2024, once the window reaches 2024.\nWITH w AS (SELECT coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '1954-01-01') AS lo,\n                  coalesce(try_cast($t_hi AS TIMESTAMP), TIMESTAMP '2024-01-01') AS hi)\nSELECT name, country, reactor_type AS type, capacity_mw AS mwe, 'Under construction in March 2024' AS service, latitude, longitude\nFROM $reactors, w\nWHERE status = 'Under Construction' AND w.hi \u003e= TIMESTAMP '2024-01-01' AND ($country = '' OR country = $country)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each nuclear power reactor at its plant, sized by its net capacity: orange, in service when the window opened and still at its end; pale yellow, entered service during the window; red, shut down for good during it; grey, shut down before it; blue rings, under construction in March 2024 (shown once the window reaches 2024). A country picked in the ranking keeps only its reactors. Hover a reactor for its name and years.",
+          "id": 8,
+          "links": [],
+          "title": "Every reactor, in the window the time brush holds",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "gazetteer": "public/gazetteer/countries.json",
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 30,
+                      "longitude": 12,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 1.35
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "mwe"
+                              },
+                              {
+                                "name": "service"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "mwe"
+                              },
+                              {
+                                "name": "service"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "mwe"
+                              },
+                              {
+                                "name": "service"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "mwe"
+                              },
+                              {
+                                "name": "service"
+                              }
+                            ],
+                            "grafana-E": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "mwe"
+                              },
+                              {
+                                "name": "service"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "subtractive",
+                      "layerOrder": [
+                        "new",
+                        "shut",
+                        "service",
+                        "building",
+                        "closed"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              231,
+                              163
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Entered service in the window",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": true,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": true,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                2,
+                                12
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "new",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "mwe",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              73,
+                              92
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Shut down in the window",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": true,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": true,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                2,
+                                12
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "shut",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "mwe",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "In service",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": true,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                2,
+                                12
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "service",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "mwe",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              87,
+                              148,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Under construction in 2024",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": false,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": true,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                2,
+                                12
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                87,
+                                148,
+                                242
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "building",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "mwe",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              112,
+                              121
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Shut down before the window",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0.55,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                1.5,
+                                8
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "closed",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "mwe",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-service"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 4,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-gw"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-new"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 14,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-shut"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 19,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 21,
+              "width": 16,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-headline"
+              },
+              "height": 12,
+              "width": 8,
+              "x": 16,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-countries"
+              },
+              "height": 9,
+              "width": 8,
+              "x": 16,
+              "y": 15
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-generation"
+              },
+              "height": 11,
+              "width": 24,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 35
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "business-charts",
+      "chaski",
+      "duckdb",
+      "energy",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "1954-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "2024-01-01T00:00:00.000Z"
+    },
+    "title": "Nuclear power, reactor by reactor, 1954 to 2023",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Every nuclear power reactor with its place, dates and net capacity, read by the server when the dashboard opens.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Reactors",
+          "multi": false,
+          "name": "reactors",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "reactors",
+              "refId": "reactors",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every nuclear power reactor GeoNuclearData lists with a place, one row\n-- each: started is its commercial operation, shut_down its permanent shutdown, status where it stood in\n-- March 2024. datasets/nuclear-power/build.sh writes the file (GeoNuclearData, ODbL; IAEA PRIS and WNA).\nSELECT id, name, country, status, reactor_type, model, capacity_mw, started, shut_down, latitude, longitude\nFROM 'http://feeds/datasets/nuclear-power/reactors.parquet'",
+                  "refId": "reactors"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Nuclear electricity by country and year, read by the server when the dashboard opens.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Generation",
+          "multi": false,
+          "name": "generation",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "generation",
+              "refId": "generation",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: nuclear electricity by country and year, 1965 to 2025, in TWh and as a\n-- share of the country's electricity (Our World in Data, CC BY 4.0, from the Energy Institute and Ember).\nSELECT country, \"time\", \"year\", twh, share\nFROM 'http://feeds/datasets/nuclear-power/generation.parquet'",
+                  "refId": "generation"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2023-01-01T00:00:00.000Z",
+            "value": "2023-01-01T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "t_lo",
+          "query": "2023-01-01T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2024-01-01T00:00:00.000Z",
+            "value": "2024-01-01T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "t_hi",
+          "query": "2024-01-01T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "country",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
