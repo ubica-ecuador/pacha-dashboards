@@ -110,7 +110,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -194,7 +194,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -278,7 +278,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -362,7 +362,7 @@
                 "wideLayout": true
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       },
@@ -984,15 +984,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 30,
-                      "longitude": 12,
+                      "latitude": 24.850505233983224,
+                      "longitude": 16.305688152500526,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 85,
                       "pitch": 0,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 1.35
+                      "zoom": 1.8652917211247309
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -1008,11 +1008,12 @@
                         15.035172933000911
                       ],
                       "topLayerGroups": {
-                        "label": true
+                        "label": true,
+                        "poi": true
                       },
                       "visibleLayerGroups": {
                         "border": true,
-                        "building": false,
+                        "building": true,
                         "label": true,
                         "land": true,
                         "road": false,
@@ -1190,9 +1191,9 @@
                       "layerBlending": "subtractive",
                       "layerOrder": [
                         "new",
+                        "building",
                         "shut",
                         "service",
-                        "building",
                         "closed"
                       ],
                       "layers": [
@@ -1294,304 +1295,10 @@
                               },
                               "filled": true,
                               "fixedRadius": false,
-                              "glowEnabled": true,
+                              "glowEnabled": false,
                               "glowExtent": 2,
                               "glowStrength": 0.6,
                               "opacity": 1,
-                              "outline": false,
-                              "pulseDurationMs": 1400,
-                              "pulseEnabled": true,
-                              "pulseExpansion": 2.2,
-                              "pulseMode": "pulse",
-                              "pulseSpeed": 1,
-                              "pulseTimeField": "",
-                              "pulseTrigger": "continuous",
-                              "radius": 6,
-                              "radiusRange": [
-                                2,
-                                12
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Global Warming",
-                                "type": "sequential"
-                              },
-                              "thickness": 1
-                            }
-                          },
-                          "id": "new",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": null,
-                            "colorScale": "quantile",
-                            "sizeField": {
-                              "name": "mwe",
-                              "type": "real"
-                            },
-                            "sizeScale": "sqrt",
-                            "strokeColorField": null,
-                            "strokeColorScale": "quantile"
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              242,
-                              73,
-                              92
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-C",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Shut down in the window",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    2,
-                                    "#4C0035"
-                                  ],
-                                  [
-                                    5,
-                                    "#880030"
-                                  ],
-                                  [
-                                    10,
-                                    "#B72F15"
-                                  ],
-                                  [
-                                    20,
-                                    "#D6610A"
-                                  ],
-                                  [
-                                    35,
-                                    "#EF9100"
-                                  ],
-                                  [
-                                    null,
-                                    "#FFC300"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Share of the recordings, %",
-                                "type": "custom"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "glowEnabled": true,
-                              "glowExtent": 2,
-                              "glowStrength": 0.6,
-                              "opacity": 1,
-                              "outline": false,
-                              "pulseDurationMs": 1400,
-                              "pulseEnabled": true,
-                              "pulseExpansion": 2.2,
-                              "pulseMode": "pulse",
-                              "pulseSpeed": 1,
-                              "pulseTimeField": "",
-                              "pulseTrigger": "continuous",
-                              "radius": 6,
-                              "radiusRange": [
-                                2,
-                                12
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColorRange": {
-                                "category": "Uber",
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Global Warming",
-                                "type": "sequential"
-                              },
-                              "thickness": 1
-                            }
-                          },
-                          "id": "shut",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": null,
-                            "colorScale": "quantile",
-                            "sizeField": {
-                              "name": "mwe",
-                              "type": "real"
-                            },
-                            "sizeScale": "sqrt",
-                            "strokeColorField": null,
-                            "strokeColorScale": "quantile"
-                          }
-                        },
-                        {
-                          "config": {
-                            "color": [
-                              255,
-                              152,
-                              48
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-A",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "In service",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    2,
-                                    "#4C0035"
-                                  ],
-                                  [
-                                    5,
-                                    "#880030"
-                                  ],
-                                  [
-                                    10,
-                                    "#B72F15"
-                                  ],
-                                  [
-                                    20,
-                                    "#D6610A"
-                                  ],
-                                  [
-                                    35,
-                                    "#EF9100"
-                                  ],
-                                  [
-                                    null,
-                                    "#FFC300"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#4C0035",
-                                  "#880030",
-                                  "#B72F15",
-                                  "#D6610A",
-                                  "#EF9100",
-                                  "#FFC300"
-                                ],
-                                "name": "Share of the recordings, %",
-                                "type": "custom"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "glowEnabled": true,
-                              "glowExtent": 2,
-                              "glowStrength": 0.6,
-                              "opacity": 0.9,
                               "outline": false,
                               "pulseDurationMs": 1400,
                               "pulseEnabled": false,
@@ -1623,17 +1330,15 @@
                               "thickness": 1
                             }
                           },
-                          "id": "service",
+                          "id": "new",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantile",
                             "sizeField": {
                               "name": "mwe",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "sizeScale": "sqrt",
-                            "strokeColorField": null,
                             "strokeColorScale": "quantile"
                           }
                         },
@@ -1778,14 +1483,306 @@
                           "id": "building",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantile",
                             "sizeField": {
                               "name": "mwe",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "sizeScale": "sqrt",
-                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              73,
+                              92
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Shut down in the window",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Share of the recordings, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                2,
+                                12
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "shut",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "mwe",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "In service",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 6,
+                              "radiusRange": [
+                                4.5,
+                                27.3
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "service",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mwe",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantile",
+                            "sizeField": {
+                              "name": "mwe",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt",
                             "strokeColorScale": "quantile"
                           }
                         },
@@ -1925,14 +1922,12 @@
                           "id": "closed",
                           "type": "point",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantile",
                             "sizeField": {
                               "name": "mwe",
-                              "type": "real"
+                              "type": "integer"
                             },
                             "sizeScale": "sqrt",
-                            "strokeColorField": null,
                             "strokeColorScale": "quantile"
                           }
                         }
