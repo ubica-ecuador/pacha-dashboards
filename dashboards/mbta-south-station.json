@@ -1,0 +1,1499 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "mbta-south-station"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Boston's South Station floor by floor, from the Red Line 3 floors under the street to the bus terminal, with its Commuter Rail trains and Red Line trains where MBTA places them, the Silver Line buses in their tunnel and each elevator and escalator working or out of service, live.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Platforms, concourses, rooms and the Silver Line busway, from OpenStreetMap.\nSELECT kind, name, ref, level, floor_name, geometry FROM 'http://feeds/datasets/mbta-south-station/areas.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- South Station's floors (datasets/mbta-south-station): each floor's outline from what stands\n-- on it, from MBTA's GTFS (levels, pathways) and OpenStreetMap (platforms, tracks, rooms).\nSELECT level, floor_name, geometry FROM 'http://feeds/datasets/mbta-south-station/floors.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MBTA's service alerts (GTFS Realtime, enhanced JSON) through the gateway's 15 s cache: the\n-- elevators and escalators an alert in force now names by facility id are out of service.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/Alerts_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\na AS (SELECT unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nlive AS (\n  SELECT e-\u003e\u003e'$.id' AS id, e-\u003e\u003e'$.alert.header_text.translation[0].text' AS header\n  FROM a, unnest(json_extract(e, '$.alert.active_period[*]')) AS u(ap)\n  GROUP BY ALL\n  HAVING bool_or(coalesce((ap-\u003e\u003e'start')::BIGINT, 0) \u003c= epoch(now())\n                 AND coalesce((ap-\u003e\u003e'end')::BIGINT, 9999999999) \u003e epoch(now()))\n),\nout AS (\n  SELECT ie-\u003e\u003e'$.facility_id' AS facility, any_value(l.header) AS alert\n  FROM a JOIN live l ON l.id = (a.e-\u003e\u003e'$.id'), unnest(json_extract(a.e, '$.alert.informed_entity[*]')) AS u(ie)\n  WHERE (ie-\u003e\u003e'$.facility_id') IS NOT NULL\n  GROUP BY ALL\n)\n-- Every elevator and escalator of the station on each floor it reaches, working or not. Its id\n-- is `lift`: a column named facility would be read by Floors as a building.\nSELECT f.facility AS lift, f.kind, f.name, f.floors, f.level, f.floor_name, f.latitude, f.longitude,\n       CASE WHEN o.facility IS NULL THEN 'Working' ELSE 'Out of service' END AS status,\n       (o.facility IS NOT NULL)::INTEGER AS out_of_service,\n       CASE WHEN o.facility IS NULL THEN '' ELSE f.kind || ' ' || f.facility || ' out' END AS sign,\n       coalesce(o.alert, '') AS alert\nFROM 'http://feeds/datasets/mbta-south-station/lifts.parquet' f LEFT JOIN out o USING (facility)\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The platforms and entrances, from MBTA's GTFS.\nSELECT kind, name, stop, level, floor_name, latitude, longitude FROM 'http://feeds/datasets/mbta-south-station/points.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MBTA's vehicle positions (GTFS Realtime, enhanced JSON) through the gateway's 15 s cache,\n-- one GET parsed in memory: the Red Line trains, Commuter Rail trains and Silver Line buses\n-- around South Station.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/VehiclePositions_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\nvp AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nv AS (\n  SELECT * FROM (\n    SELECT hts,\n           e-\u003e\u003e'$.vehicle.vehicle.id' AS vehicle_ref,\n           e-\u003e\u003e'$.vehicle.vehicle.label' AS label,\n           e-\u003e\u003e'$.vehicle.trip.route_id' AS route,\n           (e-\u003e\u003e'$.vehicle.trip.direction_id')::INTEGER AS dir,\n           coalesce(e-\u003e\u003e'$.vehicle.stop_id', '') AS stop,\n           coalesce(e-\u003e\u003e'$.vehicle.current_status', '') AS current_status,\n           (e-\u003e\u003e'$.vehicle.position.latitude')::DOUBLE AS latitude,\n           (e-\u003e\u003e'$.vehicle.position.longitude')::DOUBLE AS longitude,\n           coalesce(json_array_length(e-\u003e'$.vehicle.multi_carriage_details'), 0)::INTEGER AS carriages,\n           (e-\u003e\u003e'$.vehicle.timestamp')::BIGINT AS ts\n    FROM vp)\n  WHERE latitude BETWEEN 42.343 AND 42.358 AND longitude BETWEEN -71.064 AND -71.047\n    AND (route = 'Red' OR route LIKE 'CR-%' OR route IN ('741', '742', '743', '746'))\n)\n,\n-- Each train matched to the nearest metre of its track: a Red Line train to the track of its\n-- direction (1 northbound, beside the Alewife platform 70080), a Commuter Rail train stopped\n-- at or coming into a numbered track to that track, else to the nearest. It is drawn back from\n-- its position along the track by its length (a train heading north or inbound has its tail\n-- south of it); one stopped at a Commuter Rail track stands with its front 5 m short of the\n-- bumpers, the way trains pull up at a terminus. Only within 25 m of a track the map holds.\np AS (\n  SELECT v.*, ST_X(m) AS vx, ST_Y(m) AS vy\n  FROM (SELECT *, ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', 'EPSG:26986', always_xy := true) AS m\n        FROM v WHERE route = 'Red' OR route LIKE 'CR-%') v\n),\nnear AS (\n  SELECT p.vehicle_ref,\n         arg_min(s.track, (s.x_m - p.vx) ^ 2 + (s.y_m - p.vy) ^ 2) AS track,\n         arg_min(s.x, (s.x_m - p.vx) ^ 2 + (s.y_m - p.vy) ^ 2) AS x,\n         sqrt(min((s.x_m - p.vx) ^ 2 + (s.y_m - p.vy) ^ 2)) AS off_m\n  FROM p\n  JOIN (SELECT track, mode, stop, x, x_m, y_m FROM 'http://feeds/datasets/mbta-south-station/slices.parquet') s\n    ON (p.route = 'Red' AND s.stop = CASE WHEN p.dir = 1 THEN '70080' ELSE '70079' END)\n    OR (p.route LIKE 'CR-%' AND s.mode = 'Commuter Rail'\n        AND (NOT regexp_matches(p.stop, '^NEC-2287-\\d\\d$') OR s.track = 'CR-' || right(p.stop, 2)))\n  GROUP BY p.vehicle_ref\n),\ntrains AS (\n  SELECT p.*, n.track,\n         CASE WHEN p.route = 'Red' THEN greatest(p.carriages, 6) ELSE 7 END AS cars,\n         CASE WHEN p.route = 'Red' THEN 21.2 ELSE 25.9 END AS car_m,\n         CASE WHEN p.route LIKE 'CR-%' AND p.current_status = 'STOPPED_AT' AND p.stop LIKE 'NEC-2287-__'\n              THEN k.length_m - 5 ELSE n.x END AS x,\n         -- +1: the train lies behind x (it heads towards larger x: north, inbound, or pulled up)\n         CASE WHEN p.route LIKE 'CR-%' AND p.current_status = 'STOPPED_AT' AND p.stop LIKE 'NEC-2287-__' THEN 1\n              WHEN p.dir = 1 THEN 1 ELSE -1 END AS heads\n  FROM p JOIN near n USING (vehicle_ref)\n  JOIN 'http://feeds/datasets/mbta-south-station/tracks.parquet' k ON k.track = n.track\n  WHERE n.off_m \u003c 25\n)\nSELECT CASE WHEN t.route = 'Red' THEN 'Red Line' ELSE 'Commuter Rail' END AS line,\n       replace(t.route, 'CR-', '') || CASE WHEN t.route LIKE 'CR-%' THEN ' Line' ELSE '' END AS route,\n       t.label AS train,\n       CASE t.current_status WHEN 'STOPPED_AT' THEN 'Stopped' WHEN 'INCOMING_AT' THEN 'Arriving' ELSE 'Moving' END AS status,\n       CASE WHEN t.track LIKE 'CR-%' THEN 'Track ' || ltrim(right(t.track, 2), '0') ELSE 'Red Line' END AS track,\n       floor(abs(t.x - s.x) / t.car_m)::INTEGER + 1 AS car,\n       s.level, CASE WHEN t.route = 'Red' THEN 3.7 ELSE 4.6 END AS height_m, s.geometry\nFROM trains t\nJOIN 'http://feeds/datasets/mbta-south-station/slices.parquet' s\n  ON s.track = t.track\n AND (t.heads * (t.x - s.x)) BETWEEN 0 AND t.cars * t.car_m\n AND fmod(abs(t.x - s.x), t.car_m) \u003c t.car_m - 1\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MBTA's vehicle positions (GTFS Realtime, enhanced JSON) through the gateway's 15 s cache,\n-- one GET parsed in memory: the Red Line trains, Commuter Rail trains and Silver Line buses\n-- around South Station.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/VehiclePositions_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\nvp AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nv AS (\n  SELECT * FROM (\n    SELECT hts,\n           e-\u003e\u003e'$.vehicle.vehicle.id' AS vehicle_ref,\n           e-\u003e\u003e'$.vehicle.vehicle.label' AS label,\n           e-\u003e\u003e'$.vehicle.trip.route_id' AS route,\n           (e-\u003e\u003e'$.vehicle.trip.direction_id')::INTEGER AS dir,\n           coalesce(e-\u003e\u003e'$.vehicle.stop_id', '') AS stop,\n           coalesce(e-\u003e\u003e'$.vehicle.current_status', '') AS current_status,\n           (e-\u003e\u003e'$.vehicle.position.latitude')::DOUBLE AS latitude,\n           (e-\u003e\u003e'$.vehicle.position.longitude')::DOUBLE AS longitude,\n           coalesce(json_array_length(e-\u003e'$.vehicle.multi_carriage_details'), 0)::INTEGER AS carriages,\n           (e-\u003e\u003e'$.vehicle.timestamp')::BIGINT AS ts\n    FROM vp)\n  WHERE latitude BETWEEN 42.343 AND 42.358 AND longitude BETWEEN -71.064 AND -71.047\n    AND (route = 'Red' OR route LIKE 'CR-%' OR route IN ('741', '742', '743', '746'))\n)\n-- The Silver Line buses in the station's tunnel (SL1, SL2, SL3, SLW), on the Silver Line floor.\nSELECT CASE route WHEN '741' THEN 'SL1' WHEN '742' THEN 'SL2' WHEN '743' THEN 'SL3' ELSE 'SLW' END AS bus_route,\n       label AS bus, CASE current_status WHEN 'STOPPED_AT' THEN 'Stopped' ELSE 'Moving' END AS status,\n       -2 AS level, latitude, longitude\nFROM v WHERE route IN ('741', '742', '743', '746')\n  AND latitude BETWEEN 42.3495 AND 42.3540 AND longitude BETWEEN -71.0580 AND -71.0525\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "F"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MBTA's service alerts (GTFS Realtime, enhanced JSON) through the gateway's 15 s cache: the\n-- elevators and escalators an alert in force now names by facility id are out of service.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/Alerts_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\na AS (SELECT unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nlive AS (\n  SELECT e-\u003e\u003e'$.id' AS id, e-\u003e\u003e'$.alert.header_text.translation[0].text' AS header\n  FROM a, unnest(json_extract(e, '$.alert.active_period[*]')) AS u(ap)\n  GROUP BY ALL\n  HAVING bool_or(coalesce((ap-\u003e\u003e'start')::BIGINT, 0) \u003c= epoch(now())\n                 AND coalesce((ap-\u003e\u003e'end')::BIGINT, 9999999999) \u003e epoch(now()))\n),\nout AS (\n  SELECT ie-\u003e\u003e'$.facility_id' AS facility, any_value(l.header) AS alert\n  FROM a JOIN live l ON l.id = (a.e-\u003e\u003e'$.id'), unnest(json_extract(a.e, '$.alert.informed_entity[*]')) AS u(ie)\n  WHERE (ie-\u003e\u003e'$.facility_id') IS NOT NULL\n  GROUP BY ALL\n)\n-- A card over each elevator or escalator out of service, on each floor it reaches: its number\n-- big, what it joins and why it is out.\nSELECT f.facility::INTEGER AS lift_no,\n       f.kind || ' out · ' || regexp_replace(regexp_replace(f.name, '^South Station (Elevator|Escalator) \\d+ \\(', ''), '\\)$', '') AS sign,\n       f.level, f.latitude, f.longitude\nFROM 'http://feeds/datasets/mbta-south-station/lifts.parquet' f JOIN out o USING (facility)\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "G"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The tracks' beds: Commuter Rail 1 to 13 under the train shed, the Red Line's two.\nSELECT track, mode, level, geometry FROM 'http://feeds/datasets/mbta-south-station/tracks.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "T"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Pick a floor on the lift panel (All: every floor). Trains are drawn from MBTA's positions, matched to their track; elevators and escalators are green when working, red when an MBTA alert in force says they are out of service.",
+          "id": 1,
+          "links": [],
+          "title": "South Station, floor by floor, live",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-positron",
+                "floors": {
+                  "badge": {
+                    "agg": "sum",
+                    "alert": 3,
+                    "field": "out_of_service",
+                    "label": "elevators and escalators out",
+                    "warn": 1
+                  },
+                  "buildingSettings": {
+                    "": {
+                      "label": "South Station"
+                    }
+                  },
+                  "defaultFloor": "",
+                  "enabled": true,
+                  "field": "level",
+                  "floorSettings": {
+                    "-1": {
+                      "label": "Lobby"
+                    },
+                    "-2": {
+                      "label": "Silver Line"
+                    },
+                    "-3": {
+                      "label": "Red Line"
+                    },
+                    "0": {
+                      "label": "Street, tracks"
+                    },
+                    "1": {
+                      "label": "Mezzanine"
+                    },
+                    "2": {
+                      "label": "Bus Terminal"
+                    }
+                  },
+                  "ghostOpacity": 0.12,
+                  "groundFloor": "picked",
+                  "minZoom": 15,
+                  "nameField": "floor_name",
+                  "others": "ghost",
+                  "selectField": "lift",
+                  "selectVariable": "lift",
+                  "spacing": 14,
+                  "variable": "floor"
+                },
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 20,
+                      "dragRotate": true,
+                      "latitude": 42.351,
+                      "longitude": -71.0555,
+                      "pitch": 55,
+                      "zoom": 16.6
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-positron",
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": false,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "floor_name"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "status"
+                              },
+                              {
+                                "name": "alert"
+                              },
+                              {
+                                "name": "floors"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "stop"
+                              }
+                            ],
+                            "grafana-E": [
+                              {
+                                "name": "route"
+                              },
+                              {
+                                "name": "train"
+                              },
+                              {
+                                "name": "status"
+                              },
+                              {
+                                "name": "track"
+                              },
+                              {
+                                "name": "car"
+                              }
+                            ],
+                            "grafana-F": [
+                              {
+                                "name": "bus_route"
+                              },
+                              {
+                                "name": "bus"
+                              },
+                              {
+                                "name": "status"
+                              }
+                            ],
+                            "grafana-G": [
+                              {
+                                "name": "sign"
+                              }
+                            ],
+                            "grafana-T": [
+                              {
+                                "name": "track"
+                              },
+                              {
+                                "name": "mode"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": null,
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              224,
+                              49,
+                              49
+                            ],
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-G",
+                            "isVisible": true,
+                            "label": "Out of service",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "sign",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 18,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    null,
+                                    "#e03131"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#e03131"
+                                ],
+                                "name": "Out",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkOverlap": "none",
+                              "sparkSize": "L",
+                              "sparkTooltip": false,
+                              "sparkUnit": ""
+                            }
+                          },
+                          "id": "out",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "lift_no",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              33,
+                              37,
+                              41
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Elevators and escalators",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  33,
+                                  37,
+                                  41
+                                ],
+                                "field": {
+                                  "name": "sign",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -12
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "outlineWidth": 2,
+                                "size": 12,
+                                "weight": 600
+                              }
+                            ],
+                            "visConfig": {
+                              "billboard": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Working",
+                                    "#2f9e44"
+                                  ],
+                                  [
+                                    "Out of service",
+                                    "#e03131"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2f9e44",
+                                  "#e03131"
+                                ],
+                                "name": "Elevators and escalators",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 1.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "lifts",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "status",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              124,
+                              135,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-F",
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Silver Line buses",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  33,
+                                  37,
+                                  41
+                                ],
+                                "field": {
+                                  "name": "bus_route",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -12
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "outlineWidth": 2,
+                                "size": 12,
+                                "weight": 600
+                              }
+                            ],
+                            "visConfig": {
+                              "billboard": true,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 2.5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "buses",
+                          "type": "point",
+                          "visualChannels": {
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              33,
+                              37,
+                              41
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Platforms and entrances",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  33,
+                                  37,
+                                  41
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -12
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "outlineWidth": 2,
+                                "size": 10,
+                                "weight": 600
+                              }
+                            ],
+                            "visConfig": {
+                              "billboard": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Platform",
+                                    "#495057"
+                                  ],
+                                  [
+                                    "Entrance",
+                                    "#1971c2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#495057",
+                                  "#1971c2"
+                                ],
+                                "name": "Platforms and entrances",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 0.8,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "points",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              218,
+                              41,
+                              28
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-E",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Trains",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Red Line",
+                                    "#DA291C"
+                                  ],
+                                  [
+                                    "Commuter Rail",
+                                    "#80276C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#DA291C",
+                                  "#80276C"
+                                ],
+                                "name": "Lines",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 1,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": false,
+                              "filled": true,
+                              "fixedHeight": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 1,
+                              "stroked": false,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "trains",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "line",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "heightField": {
+                              "name": "height_m",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              116,
+                              124
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-T",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Tracks",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "stroked": false
+                            }
+                          },
+                          "id": "tracks",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Platforms and rooms",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Platform",
+                                    "#f1e7d0"
+                                  ],
+                                  [
+                                    "Concourse",
+                                    "#ffffff"
+                                  ],
+                                  [
+                                    "Room",
+                                    "#e3e1f0"
+                                  ],
+                                  [
+                                    "Busway",
+                                    "#d5d8db"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#f1e7d0",
+                                  "#ffffff",
+                                  "#e3e1f0",
+                                  "#d5d8db"
+                                ],
+                                "name": "Areas",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "opacity": 1,
+                              "strokeColor": [
+                                190,
+                                194,
+                                200
+                              ],
+                              "stroked": true,
+                              "thickness": 0.05
+                            }
+                          },
+                          "id": "areas",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              241,
+                              241,
+                              238
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Floors",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "strokeColor": [
+                                150,
+                                156,
+                                164
+                              ],
+                              "stroked": true,
+                              "thickness": 0.1
+                            }
+                          },
+                          "id": "floors",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": [
+                  {
+                    "field": "level",
+                    "keepOnDeselect": true,
+                    "source": "click",
+                    "variable": "floor"
+                  }
+                ]
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MBTA's service alerts (GTFS Realtime, enhanced JSON) through the gateway's 15 s cache: the\n-- elevators and escalators an alert in force now names by facility id are out of service.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/Alerts_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\na AS (SELECT unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nlive AS (\n  SELECT e-\u003e\u003e'$.id' AS id, e-\u003e\u003e'$.alert.header_text.translation[0].text' AS header\n  FROM a, unnest(json_extract(e, '$.alert.active_period[*]')) AS u(ap)\n  GROUP BY ALL\n  HAVING bool_or(coalesce((ap-\u003e\u003e'start')::BIGINT, 0) \u003c= epoch(now())\n                 AND coalesce((ap-\u003e\u003e'end')::BIGINT, 9999999999) \u003e epoch(now()))\n),\nout AS (\n  SELECT ie-\u003e\u003e'$.facility_id' AS facility, any_value(l.header) AS alert\n  FROM a JOIN live l ON l.id = (a.e-\u003e\u003e'$.id'), unnest(json_extract(a.e, '$.alert.informed_entity[*]')) AS u(ie)\n  WHERE (ie-\u003e\u003e'$.facility_id') IS NOT NULL\n  GROUP BY ALL\n)\n-- One row per elevator and escalator, those out of service first.\nSELECT f.facility AS \"Id\", f.kind AS \"Kind\", regexp_replace(f.name, '^South Station (Elevator|Escalator) \\d+ ', '') AS \"Between\",\n       CASE WHEN o.facility IS NULL THEN 'Working' ELSE 'Out of service' END AS \"Status\",\n       coalesce(o.alert, '') AS \"Alert\"\nFROM (SELECT DISTINCT facility, kind, name FROM 'http://feeds/datasets/mbta-south-station/lifts.parquet') f\nLEFT JOIN out o USING (facility)\nORDER BY o.facility IS NULL, f.kind, f.facility\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every elevator and escalator of South Station, those an MBTA alert in force says are out of service first. An id flies the map to it.",
+          "id": 3,
+          "links": [],
+          "title": "Elevators and escalators",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Id"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Show it on the map",
+                            "url": "/d/mbta-south-station?var-lift=${__data.fields.Id}\u0026refresh=15s"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 85
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Status"
+                    },
+                    "properties": [
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Out of service": {
+                                "color": "#e03131",
+                                "index": 1
+                              },
+                              "Working": {
+                                "color": "#2f9e44",
+                                "index": 0
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 115
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Alert"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MBTA's vehicle positions (GTFS Realtime, enhanced JSON) through the gateway's 15 s cache,\n-- one GET parsed in memory: the Red Line trains, Commuter Rail trains and Silver Line buses\n-- around South Station.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/VehiclePositions_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\nvp AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nv AS (\n  SELECT * FROM (\n    SELECT hts,\n           e-\u003e\u003e'$.vehicle.vehicle.id' AS vehicle_ref,\n           e-\u003e\u003e'$.vehicle.vehicle.label' AS label,\n           e-\u003e\u003e'$.vehicle.trip.route_id' AS route,\n           (e-\u003e\u003e'$.vehicle.trip.direction_id')::INTEGER AS dir,\n           coalesce(e-\u003e\u003e'$.vehicle.stop_id', '') AS stop,\n           coalesce(e-\u003e\u003e'$.vehicle.current_status', '') AS current_status,\n           (e-\u003e\u003e'$.vehicle.position.latitude')::DOUBLE AS latitude,\n           (e-\u003e\u003e'$.vehicle.position.longitude')::DOUBLE AS longitude,\n           coalesce(json_array_length(e-\u003e'$.vehicle.multi_carriage_details'), 0)::INTEGER AS carriages,\n           (e-\u003e\u003e'$.vehicle.timestamp')::BIGINT AS ts\n    FROM vp)\n  WHERE latitude BETWEEN 42.343 AND 42.358 AND longitude BETWEEN -71.064 AND -71.047\n    AND (route = 'Red' OR route LIKE 'CR-%' OR route IN ('741', '742', '743', '746'))\n)\n, a AS (SELECT 1)\nSELECT (epoch(now()) - max(hts))::BIGINT AS \"Feed age\",\n       count(*) FILTER (WHERE route = 'Red')::BIGINT AS \"Red Line trains near\",\n       count(*) FILTER (WHERE route LIKE 'CR-%')::BIGINT AS \"Commuter Rail trains near\"\nFROM v\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Feed age: seconds since the vehicle feed's own timestamp (up to 15 s of the gateway's cache and the time since the last refresh). Green under a minute.",
+          "id": 4,
+          "links": [],
+          "title": "Is the feed live?",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Feed age"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "green",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 60
+                            },
+                            {
+                              "color": "red",
+                              "value": 300
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n\n**The station.** South Station's levels, the nodes and pathways inside it and its elevators and escalators from [MBTA's GTFS](https://www.mbta.com/developers/gtfs) (levels.txt, pathways.txt, facilities.txt); its platforms, tracks, concourse and rooms from [OpenStreetMap](https://www.openstreetmap.org/copyright) (© OpenStreetMap contributors, ODbL). Built once per instance by `datasets/mbta-south-station/build.sh`; the floors are stacked for reading, not at their real heights.\n\n**Live.** [MBTA's GTFS Realtime](https://www.mbta.com/developers/gtfs-realtime) feeds through the gateway's 15 s cache: vehicle positions (each Red Line and Commuter Rail train matched to the nearest metre of its track and drawn back along it, the Red Line by its cars, Commuter Rail as seven coaches; the Silver Line buses as points) and service alerts (an elevator or escalator named by an alert in force is out of service). Positions are MBTA's; where a train is drawn along its track is this map's reading of them.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MBTA's vehicle positions (GTFS Realtime, enhanced JSON) through the gateway's 15 s cache,\n-- one GET parsed in memory: the Red Line trains, Commuter Rail trains and Silver Line buses\n-- around South Station.\nWITH feed AS MATERIALIZED (SELECT (http_get('http://feeds/mbta/realtime/VehiclePositions_enhanced.json')-\u003e\u003e'body')::JSON AS doc),\nvp AS (SELECT (doc-\u003e\u003e'$.header.timestamp')::BIGINT AS hts, unnest(json_extract(doc, '$.entity[*]')) AS e FROM feed),\nv AS (\n  SELECT * FROM (\n    SELECT hts,\n           e-\u003e\u003e'$.vehicle.vehicle.id' AS vehicle_ref,\n           e-\u003e\u003e'$.vehicle.vehicle.label' AS label,\n           e-\u003e\u003e'$.vehicle.trip.route_id' AS route,\n           (e-\u003e\u003e'$.vehicle.trip.direction_id')::INTEGER AS dir,\n           coalesce(e-\u003e\u003e'$.vehicle.stop_id', '') AS stop,\n           coalesce(e-\u003e\u003e'$.vehicle.current_status', '') AS current_status,\n           (e-\u003e\u003e'$.vehicle.position.latitude')::DOUBLE AS latitude,\n           (e-\u003e\u003e'$.vehicle.position.longitude')::DOUBLE AS longitude,\n           coalesce(json_array_length(e-\u003e'$.vehicle.multi_carriage_details'), 0)::INTEGER AS carriages,\n           (e-\u003e\u003e'$.vehicle.timestamp')::BIGINT AS ts\n    FROM vp)\n  WHERE latitude BETWEEN 42.343 AND 42.358 AND longitude BETWEEN -71.064 AND -71.047\n    AND (route = 'Red' OR route LIKE 'CR-%' OR route IN ('741', '742', '743', '746'))\n)\n-- The trains and buses around the station now, the latest first.\nSELECT CASE WHEN route = 'Red' THEN 'Red Line' WHEN route LIKE 'CR-%' THEN replace(route, 'CR-', '') || ' Line'\n            WHEN route = '741' THEN 'SL1' WHEN route = '742' THEN 'SL2' WHEN route = '743' THEN 'SL3' ELSE 'SLW' END AS \"Route\",\n       label AS \"Vehicle\",\n       CASE current_status WHEN 'STOPPED_AT' THEN 'Stopped at' WHEN 'INCOMING_AT' THEN 'Arriving at' ELSE 'Heading to' END\n         || ' ' || CASE WHEN stop LIKE 'NEC-2287-__' THEN 'Track ' || ltrim(right(stop, 2), '0')\n                        WHEN stop IN ('70079', '70080', 'NEC-2287', '74611', '74617', '84611') THEN 'South Station'\n                        ELSE 'stop ' || stop END AS \"Where\",\n       epoch_ms(ts * 1000) AS \"Updated\"\nFROM v\nWHERE stop LIKE 'NEC-2287%' OR stop IN ('70079', '70080', '74611', '74617', '84611')\nORDER BY ts DESC\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The Red Line and Commuter Rail trains and Silver Line buses on their way to, or at, South Station now.",
+          "id": 6,
+          "links": [],
+          "title": "Trains and buses at or coming in",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Updated"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeFromNow"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Vehicle"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 22,
+              "width": 16,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 4,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 16,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 8,
+              "width": 8,
+              "x": 16,
+              "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 22
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "buildings",
+      "duckdb",
+      "kepler",
+      "live",
+      "plus",
+      "transit"
+    ],
+    "timeSettings": {
+      "autoRefresh": "15s",
+      "autoRefreshIntervals": [
+        "15s",
+        "30s",
+        "1m",
+        "5m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-15m",
+      "hideTimepicker": false,
+      "timezone": "America/New_York",
+      "to": "now"
+    },
+    "title": "South Station, Boston: trains, elevators and escalators live",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Floor",
+          "name": "floor",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Elevator or escalator",
+          "name": "lift",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
