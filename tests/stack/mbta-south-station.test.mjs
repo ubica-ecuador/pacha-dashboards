@@ -69,12 +69,15 @@ test('live: every elevator and escalator has a status, trains lie on their track
   assert.ok(!('facility' in lifts[0]), 'no facility column on the map');
   for (const l of lifts) assert.ok(['Working', 'Out of service'].includes(l.status), JSON.stringify(l));
   const slices = await duckdb(STACK_URL, mapSql('E'));
-  // Trains come and go: when some are drawn, each is whole cars on one track and floor.
+  // Trains come and go: when some are drawn, each is on one track and floor, no longer than its
+  // cars; one coming in or going out may be cut where the drawn track ends, one stopped is whole.
   const trains = new Map();
-  for (const s of slices) trains.set(s.train, [...(trains.get(s.train) ?? []), s]);
+  // A vehicle's number is unique within a mode only (a Red Line 1823 and a Commuter Rail 1823).
+  for (const s of slices) trains.set(`${s.line} ${s.train}`, [...(trains.get(`${s.line} ${s.train}`) ?? []), s]);
   for (const [train, rows] of trains) {
     assert.equal(new Set(rows.map((r) => r.track)).size, 1, `${train} on one track`);
-    assert.ok(rows.length > 30 && rows.length <= 7 * 26, `${train}: ${rows.length} m of train`);
+    assert.ok(rows.length >= 1 && rows.length <= 7 * 26, `${train}: ${rows.length} m of train`);
+    if (rows[0].status === 'Stopped') assert.ok(rows.length > 100, `${train} stopped: ${rows.length} m of train`);
     assert.ok(rows.every((r) => r.level === (r.line === 'Red Line' ? -3 : 0)), `${train} on its floor`);
   }
 });
