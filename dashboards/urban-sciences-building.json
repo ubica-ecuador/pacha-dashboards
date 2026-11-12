@@ -1,0 +1,2074 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "urban-sciences-building"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Newcastle University's Urban Sciences Building live, floor by floor: every room drawn from the building's own model and coloured by the CO2 its sensor measures now, as the Urban Observatory's open stream sends it. Pick a floor on the map; the charts follow the worst room per floor and any room clicked.",
+    "editable": true,
+    "elements": {
+      "card-moment": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n)\n-- The newest reading recorded: the stream sends a value within minutes on a working day.\nSELECT max(ts) AS latest FROM s\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the newest reading was recorded. The building sends a value when it changes, within minutes on a working day; much older means the stream or the recorder has stopped.",
+          "id": 2,
+          "links": [],
+          "title": "Latest reading",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-over": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n)\n-- Rooms whose air is past 1,000 ppm of CO2 now, the usual line for \"open a window\".\nSELECT count(*) FILTER (WHERE l.co2 > 1000)::DOUBLE AS rooms\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u JOIN latest l USING (room_key)\nWHERE ($floor = '' OR u.level = try_cast($floor AS INTEGER))\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Rooms on the floor picked whose CO2 is over 1,000 ppm now.",
+          "id": 4,
+          "links": [],
+          "title": "Stuffy rooms",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "orange",
+                        "value": 1
+                      },
+                      {
+                        "color": "red",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-people": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n)\n-- The most CO2 in any room on the floor picked, now.\nSELECT round(max(l.co2)) AS ppm\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u JOIN latest l USING (room_key)\nWHERE ($floor = '' OR u.level = try_cast($floor AS INTEGER))\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The most CO2 in any room on the floor picked, now.",
+          "id": 3,
+          "links": [],
+          "title": "Highest CO2",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "#e9c46a",
+                        "value": 800
+                      },
+                      {
+                        "color": "orange",
+                        "value": 1000
+                      },
+                      {
+                        "color": "red",
+                        "value": 1400
+                      }
+                    ]
+                  },
+                  "unit": "ppm"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-room": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n),\n-- The room the charts follow: the one clicked on the map or in the table, or else the one\n-- with the most CO2 on the floors picked, now.\nfocus AS (\n  SELECT u.room_key FROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u JOIN latest l USING (room_key)\n  WHERE l.co2 IS NOT NULL AND (u.room_key = $room OR ($room = '' AND ($floor = '' OR u.level = try_cast($floor AS INTEGER))))\n  ORDER BY u.room_key = $room DESC, l.co2 DESC LIMIT 1\n)\nSELECT u.label || ', ' || lower(CASE u.floor WHEN 'G' THEN 'Ground' ELSE 'Floor ' || u.floor END) || ' (' || round(u.area_m2) || ' m²)' AS room\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u JOIN focus USING (room_key)\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The room clicked on the map or in the table; until then, the one with the most CO2 on the floor picked on the map at that moment.",
+          "id": 6,
+          "links": [],
+          "title": "The charts follow",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## About the data\n\n**The building** is Newcastle University's Urban Sciences Building (2017, seven floors), home of the Urban Observatory and\none of the most instrumented buildings in the UK: its building management system publishes some 2,500 sensors, archived\nsince November 2017.\n\n**The rooms** come from the building's own model, the one the Observatory's 3D viewer (3d.usb.urbanobservatory.ac.uk)\nloads: the floor finishes of each storey (carpet, lino, timber) are the rooms; an open-plan room is split among its zones\n(1.024 Zone 1 to 17) by the nearest sensor; and each room or zone is joined to its sensors in the API by its room number.\nThe internal walls come from the same model. The plan is placed on the map by fitting the ground floor to the building's footprint in OpenStreetMap.\n\n**The readings** are live: the building management system pushes each sensor's value when it changes, over the\nUrban Observatory's open stream (wss://api.usb.urbanobservatory.ac.uk/stream, CC BY 4.0), and Pacha's recorder keeps\nwhat it says about the rooms' air (CO2, temperature, humidity, light, occupancy) for a week. A value holds until the next\none, so the map shows each room's latest reading (under a dial, the room's temperature and humidity when it measures\nthem), and the charts carry it forward. Only the ground floor and floors 1\nand 2 send readings today (about 40 rooms with CO2); floors 3 to 6 stopped in 2025, and few rooms report occupancy.\nThe recording starts when the recorder does: there is no history before it.\n\nData: Urban Observatory, Newcastle University, CC BY 4.0. Plan built by `datasets/urban-sciences-building/build.sh`; readings by the feed `recorder/feeds/urban-sciences-building.sql`.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-floors": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- A step of five minutes, or more over a long range: some 300 steps.\nSET VARIABLE step = to_seconds(greatest(300, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 300000));\n-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\nslots AS (\n  SELECT unnest(generate_series(time_bucket(getvariable('step'), getvariable('t0')), getvariable('t1'), getvariable('step'))) AS t\n),\ngrid AS (SELECT g.*, slots.t FROM (SELECT DISTINCT point, room_key, level, kind FROM s WHERE kind IN ('co2')) g, slots),\nv AS (SELECT g.room_key, g.level, g.kind, g.point, g.t, s.value FROM grid g ASOF JOIN s ON s.point = g.point AND g.t >= s.ts)\n-- For each floor, the CO2 of its room with the most at every step.\nSELECT t AS time,\n       max(value) FILTER (WHERE level = 0) AS \"Ground\",\n       max(value) FILTER (WHERE level = 1) AS \"Floor 1\",\n       max(value) FILTER (WHERE level = 2) AS \"Floor 2\",\n       max(value) FILTER (WHERE level = 3) AS \"Floor 3\",\n       max(value) FILTER (WHERE level = 4) AS \"Floor 4\",\n       max(value) FILTER (WHERE level = 5) AS \"Floor 5\",\n       max(value) FILTER (WHERE level = 6) AS \"Floor 6\"\nFROM v WHERE t >= getvariable('t0')\nGROUP BY t ORDER BY t\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "For each floor, the CO2 of its room with the most, over the time range. Only the ground floor and floors 1 and 2 send readings.",
+          "id": 5,
+          "links": [],
+          "title": "Worst room per floor",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "axisSoftMax": 1100,
+                    "axisSoftMin": 400,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 2,
+                    "pointSize": 4,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "transparent",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 1000
+                      }
+                    ]
+                  },
+                  "unit": "ppm"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ground"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#c6dbef",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Floor 1"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#9ecae1",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Floor 2"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#6baed6",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Floor 3"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#4292c6",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Floor 4"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#2171b5",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Floor 5"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#08519c",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Floor 6"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#08306b",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n),\nsensors AS (SELECT entity_id, bool_or(kind = 'co2') AS co2 FROM read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') GROUP BY 1)\n-- Every room the Urban Observatory has sensors for, on every floor (the map's floor picker\n-- narrows them), with its CO2, temperature, humidity and occupancy now. level is the floor\n-- (0 the ground floor), as the picker reads it.\nSELECT u.room_key, u.label AS room, u.level, CASE u.floor WHEN 'G' THEN 'Ground' ELSE 'Floor ' || u.floor END AS floor_name,\n       round(l.co2) AS co2_ppm, round(l.temp, 1) AS temp_c, round(l.rh) AS rh_pct,\n       CASE WHEN l.occupancy IS NULL THEN NULL WHEN l.occupancy >= 0.5 THEN 'yes' ELSE 'no' END AS occupied,\n       CASE WHEN l.co2 < 800 THEN 'Good, under 800 ppm'\n            WHEN l.co2 < 1000 THEN 'Fair, 800 to 1,000'\n            WHEN l.co2 < 1400 THEN 'Poor, 1,000 to 1,400'\n            WHEN l.co2 IS NOT NULL THEN 'Very poor, over 1,400'\n            WHEN c.co2 THEN 'CO2 sensor, no reading'\n            ELSE 'No CO2 sensor' END AS air,\n       round(u.area_m2) AS area_m2,\n       ST_AsGeoJSON(ST_GeomFromText(u.wkt))::VARCHAR AS geometry\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u LEFT JOIN latest l USING (room_key) LEFT JOIN sensors c USING (entity_id)\nWHERE u.entity_id IS NOT NULL\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The rest of each floor: corridors, stairs, plant and the rooms the API does not list.\nSELECT coalesce(u.label, 'Corridor, stairs or plant') AS room, u.level, CASE u.floor WHEN 'G' THEN 'Ground' ELSE 'Floor ' || u.floor END AS floor_name, ST_AsGeoJSON(ST_GeomFromText(u.wkt))::VARCHAR AS geometry\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u\nWHERE u.entity_id IS NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each floor's outline, the slab its rooms stand on.\nSELECT u.level, CASE u.floor WHEN 'G' THEN 'Ground' ELSE 'Floor ' || u.floor END AS floor_name, ST_AsGeoJSON(ST_GeomFromText(u.wkt))::VARCHAR AS geometry\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/floors.parquet') u"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The internal walls of each floor, from the building's model, drawn 1.2 m high.\nSELECT u.level, CASE u.floor WHEN 'G' THEN 'Ground' ELSE 'Floor ' || u.floor END AS floor_name, 1.2 AS height_m, ST_AsGeoJSON(ST_GeomFromText(u.wkt))::VARCHAR AS geometry\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/walls.parquet') u"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n)\n-- The names of the rooms with no CO2 reading now (those with one carry their name under\n-- their dial), on a second line their temperature and humidity when they have them (a\n-- label takes no offset: one text of two lines). The zones of an open-plan room are named\n-- by their number.\nSELECT concat_ws(chr(10), CASE WHEN u.room LIKE '% Zone %' THEN 'Z' || split_part(u.room, ' Zone ', 2) ELSE u.room END,\n                 nullif(concat_ws(' · ', printf('%.1f °C', l.temp), printf('%d %%', round(l.rh)::INTEGER)), '')) AS label,\n       u.level,\n       ST_Y(ST_PointOnSurface(ST_GeomFromText(u.wkt))) AS latitude,\n       ST_X(ST_PointOnSurface(ST_GeomFromText(u.wkt))) AS longitude\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u LEFT JOIN latest l USING (room_key)\nWHERE u.entity_id IS NOT NULL AND u.room IS NOT NULL AND l.co2 IS NULL\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n)\n-- A dial per room with a CO2 reading now, at a point inside the room, its name under it and\n-- under that its temperature and humidity, when it has them. A dial centres its label's\n-- lines under its ring and takes no offset: a blank first line keeps the name there.\n-- No room key here: the selection halo rings every row holding the room picked, and a dial's ring is drawn at\n-- ground height (free panel 1.7.0); the room's own outline marks it. A dial shows its card on hover; a click on\n-- the room around it picks the room.\nSELECT CASE WHEN concat_ws(' · ', printf('%.1f °C', l.temp), printf('%d %%', round(l.rh)::INTEGER)) = '' THEN CASE WHEN u.room LIKE '% Zone %' THEN 'Z' || split_part(u.room, ' Zone ', 2) ELSE u.room END\n            ELSE chr(10) || CASE WHEN u.room LIKE '% Zone %' THEN 'Z' || split_part(u.room, ' Zone ', 2) ELSE u.room END\n                 || chr(10) || concat_ws(' · ', printf('%.1f °C', l.temp), printf('%d %%', round(l.rh)::INTEGER)) END AS label,\n       u.label AS room, u.level, round(l.co2) AS co2_ppm, round(l.temp, 1) AS temp_c, round(l.rh) AS rh_pct,\n       ST_Y(ST_PointOnSurface(ST_GeomFromText(u.wkt))) AS latitude,\n       ST_X(ST_PointOnSurface(ST_GeomFromText(u.wkt))) AS longitude\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u JOIN latest l USING (room_key)\nWHERE l.co2 IS NOT NULL\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "F"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The building's floors, stacked: pick one on the map's floor picker (it shows the worst room's CO2 per floor) and the others fade. Rooms are coloured by their CO2 in the quarter hour picked, with a dial per room that has a reading; corridors, stairs and plant in white, walls from the building's model. Click a room for the charts below.",
+          "id": 1,
+          "links": [],
+          "title": "Every room, floor by floor",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "openfreemap-positron",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "badge": {
+                    "agg": "max",
+                    "alert": 1400,
+                    "field": "co2_ppm",
+                    "label": "ppm CO2 in the worst room",
+                    "warn": 1000
+                  },
+                  "defaultFloor": "1",
+                  "enabled": true,
+                  "field": "level",
+                  "ghostOpacity": 0.12,
+                  "nameField": "floor_name",
+                  "others": "ghost",
+                  "selectField": "room_key",
+                  "selectVariable": "room",
+                  "spacing": 12,
+                  "variable": "floor"
+                },
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "gazetteer": "public/gazetteer/countries.json",
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 54.97375,
+                      "longitude": -1.62524,
+                      "pitch": 50,
+                      "zoom": 19.2
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        255,
+                        255,
+                        255
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "room"
+                              },
+                              {
+                                "name": "floor_name"
+                              },
+                              {
+                                "name": "co2_ppm"
+                              },
+                              {
+                                "name": "temp_c"
+                              },
+                              {
+                                "name": "rh_pct"
+                              },
+                              {
+                                "name": "occupied"
+                              },
+                              {
+                                "name": "area_m2"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "room"
+                              },
+                              {
+                                "name": "floor_name"
+                              }
+                            ],
+                            "grafana-F": [
+                              {
+                                "name": "room"
+                              },
+                              {
+                                "name": "co2_ppm"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "dials",
+                        "names",
+                        "walls",
+                        "rooms",
+                        "others",
+                        "floors"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-F",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "CO2 dials, temperature and humidity",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  31,
+                                  41,
+                                  55
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  26
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 13,
+                                "weight": 500
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardExtras": [
+                                {
+                                  "field": "temp_c",
+                                  "label": "Temperature",
+                                  "unit": "°C"
+                                },
+                                {
+                                  "field": "rh_pct",
+                                  "label": "Humidity",
+                                  "unit": "%"
+                                }
+                              ],
+                              "cardNameField": "room",
+                              "cardPinned": [],
+                              "cardShow": "hover",
+                              "cardSize": "M",
+                              "cardTimeField": "none",
+                              "cardUnit": "ppm",
+                              "cardValueField": "co2_ppm",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    800,
+                                    "#2a9d8f"
+                                  ],
+                                  [
+                                    1000,
+                                    "#e9c46a"
+                                  ],
+                                  [
+                                    1400,
+                                    "#f4a261"
+                                  ],
+                                  [
+                                    null,
+                                    "#d62828"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2a9d8f",
+                                  "#e9c46a",
+                                  "#f4a261",
+                                  "#d62828"
+                                ],
+                                "name": "CO2",
+                                "type": "custom"
+                              },
+                              "gaugeMax": 1600,
+                              "gaugeMin": 400,
+                              "gaugeTextColor": [
+                                31,
+                                41,
+                                55
+                              ],
+                              "gaugeTextMode": "value",
+                              "gaugeTextSize": 13,
+                              "gaugeThickness": 5,
+                              "gaugeUnit": "",
+                              "gaugeUpright": true,
+                              "radius": 17
+                            }
+                          },
+                          "id": "dials",
+                          "type": "gauge",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "co2_ppm",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              55,
+                              65,
+                              81
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Room names",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  75,
+                                  85,
+                                  99
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 13,
+                                "weight": 500
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "filled": false,
+                              "opacity": 0,
+                              "outline": false,
+                              "radius": 0.1
+                            }
+                          },
+                          "id": "names",
+                          "type": "point",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              150,
+                              157,
+                              168
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              0,
+                              0,
+                              0,
+                              0
+                            ],
+                            "isVisible": true,
+                            "label": "Walls",
+                            "visConfig": {
+                              "allowHover": false,
+                              "elevationScale": 1,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": false,
+                              "filled": true,
+                              "fixedHeight": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 1,
+                              "stroked": false,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "walls",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "heightField": {
+                              "name": "height_m",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              201,
+                              204,
+                              209
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              0,
+                              0,
+                              0,
+                              0
+                            ],
+                            "isVisible": true,
+                            "label": "Rooms by CO2",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Good, under 800 ppm",
+                                    "#bfe3c9"
+                                  ],
+                                  [
+                                    "Fair, 800 to 1,000",
+                                    "#f6e3a6"
+                                  ],
+                                  [
+                                    "Poor, 1,000 to 1,400",
+                                    "#f7c49a"
+                                  ],
+                                  [
+                                    "Very poor, over 1,400",
+                                    "#f2a0a0"
+                                  ],
+                                  [
+                                    "CO2 sensor, no reading",
+                                    "#e4e7eb"
+                                  ],
+                                  [
+                                    "No CO2 sensor",
+                                    "#eef0f2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#bfe3c9",
+                                  "#f6e3a6",
+                                  "#f7c49a",
+                                  "#f2a0a0",
+                                  "#e4e7eb",
+                                  "#eef0f2"
+                                ],
+                                "name": "Indoor air",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 1,
+                              "stroked": false
+                            }
+                          },
+                          "id": "rooms",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "air",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              0,
+                              0,
+                              0,
+                              0
+                            ],
+                            "isVisible": true,
+                            "label": "Corridors, stairs, plant",
+                            "visConfig": {
+                              "allowHover": false,
+                              "filled": true,
+                              "opacity": 1,
+                              "stroked": false
+                            }
+                          },
+                          "id": "others",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              247,
+                              248
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              0,
+                              0,
+                              0,
+                              0
+                            ],
+                            "isVisible": true,
+                            "label": "Floor",
+                            "visConfig": {
+                              "allowHover": false,
+                              "filled": true,
+                              "opacity": 1,
+                              "strokeColor": [
+                                201,
+                                204,
+                                209
+                              ],
+                              "stroked": true,
+                              "thickness": 0.05
+                            }
+                          },
+                          "id": "floors",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "level",
+                    "keepOnDeselect": true,
+                    "source": "click",
+                    "variable": "floor"
+                  },
+                  {
+                    "field": "room_key",
+                    "keepOnDeselect": true,
+                    "source": "click",
+                    "variable": "room"
+                  }
+                ]
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-room": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- A step of five minutes, or more over a long range: some 300 steps.\nSET VARIABLE step = to_seconds(greatest(300, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 300000));\n-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n),\n-- The room the charts follow: the one clicked on the map or in the table, or else the one\n-- with the most CO2 on the floors picked, now.\nfocus AS (\n  SELECT u.room_key FROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u JOIN latest l USING (room_key)\n  WHERE l.co2 IS NOT NULL AND (u.room_key = $room OR ($room = '' AND ($floor = '' OR u.level = try_cast($floor AS INTEGER))))\n  ORDER BY u.room_key = $room DESC, l.co2 DESC LIMIT 1\n),\nslots AS (\n  SELECT unnest(generate_series(time_bucket(getvariable('step'), getvariable('t0')), getvariable('t1'), getvariable('step'))) AS t\n),\ngrid AS (SELECT g.*, slots.t FROM (SELECT DISTINCT point, room_key, level, kind FROM s WHERE kind IN ('co2', 'temp', 'rh', 'occupancy')) g, slots),\nv AS (SELECT g.room_key, g.level, g.kind, g.point, g.t, s.value FROM grid g ASOF JOIN s ON s.point = g.point AND g.t >= s.ts)\n-- That room at every step: of two sensors of a kind, the most CO2 and the mean of the rest.\nSELECT t AS time,\n       max(value) FILTER (WHERE kind = 'co2') AS \"CO2\",\n       avg(value) FILTER (WHERE kind = 'temp') AS \"Temperature\",\n       avg(value) FILTER (WHERE kind = 'rh') AS \"Humidity\",\n       max(value) FILTER (WHERE kind = 'occupancy') AS \"Occupied\"\nFROM v JOIN focus USING (room_key) WHERE t >= getvariable('t0')\nGROUP BY t ORDER BY t\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "CO2 (left axis), the share of each quarter hour its occupancy sensor saw someone (bars) and its temperature (right axes), along 4 March 2025: the room named above.",
+          "id": 7,
+          "links": [],
+          "title": "That room",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 2,
+                    "pointSize": 4,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "transparent",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 1000
+                      }
+                    ]
+                  },
+                  "unit": "ppm"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "CO2"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#d62828",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.axisSoftMin",
+                        "value": 400
+                      },
+                      {
+                        "id": "custom.axisSoftMax",
+                        "value": 1100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Occupied"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "bars"
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 35
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.axisSoftMin",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.thresholdsStyle",
+                        "value": {
+                          "mode": "off"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8d99ae",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "unit",
+                        "value": "bool_yes_no"
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Humidity"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "humidity"
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "custom.thresholdsStyle",
+                        "value": {
+                          "mode": "off"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#4292c6",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Temperature"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "celsius"
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "custom.axisSoftMin",
+                        "value": 18
+                      },
+                      {
+                        "id": "custom.axisSoftMax",
+                        "value": 26
+                      },
+                      {
+                        "id": "custom.thresholdsStyle",
+                        "value": {
+                          "mode": "off"
+                        }
+                      },
+                      {
+                        "id": "custom.lineStyle",
+                        "value": {
+                          "dash": [
+                            6,
+                            4
+                          ],
+                          "fill": "dash"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#f77f00",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-table": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The readings: what the building's sensors pushed, kept by Pacha's recorder (files: the hours\n-- of the time range and the six before it, since a sensor sends a value only when it changes),\n-- tied to their room by the BMS point (points.parquet).\nSET VARIABLE t0 = to_timestamp(CAST(${__from} AS BIGINT) / 1000);\nSET VARIABLE t1 = to_timestamp(CAST(${__to} AS BIGINT) / 1000);\nWITH s AS (\n  SELECT r.ts, r.point, r.value, p.kind, u.room_key, u.level\n  FROM read_parquet([${files:singlequote}]) r\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/points.parquet') p USING (point)\n  JOIN read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u USING (entity_id)\n  WHERE r.ts <= getvariable('t1')\n),\n-- Each room's latest value of each kind at the end of the range: of two sensors of a kind\n-- (a lecture theatre's front and back), the most CO2 and the mean of the rest.\nper_point AS (SELECT room_key, kind, point, arg_max(value, ts) AS value, max(ts) AS ts FROM s GROUP BY ALL),\nlatest AS (\n  SELECT room_key,\n         max(value) FILTER (WHERE kind = 'co2') AS co2,\n         avg(value) FILTER (WHERE kind = 'temp') AS temp,\n         avg(value) FILTER (WHERE kind = 'rh') AS rh,\n         max(value) FILTER (WHERE kind = 'occupancy') AS occupancy\n  FROM per_point GROUP BY room_key\n)\n-- Every room with a CO2 reading on the floors picked, the most CO2 first. pick is the\n-- room's key, for the link that makes the charts follow it.\nSELECT u.label AS \"Room\", CASE u.floor WHEN 'G' THEN 'Ground' ELSE 'Floor ' || u.floor END AS \"Floor\", round(l.co2) AS \"CO2\", round(l.temp, 1) AS \"Temp\",\n       round(l.rh) AS \"Humidity\", round(u.area_m2) AS \"m²\", u.room_key AS pick\nFROM read_parquet('http://feeds/datasets/urban-sciences-building/rooms.parquet') u JOIN latest l USING (room_key)\nWHERE l.co2 IS NOT NULL AND ($floor = '' OR u.level = try_cast($floor AS INTEGER))\nORDER BY l.co2 DESC\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every room with a CO2 reading on the floor picked on the map (every floor when the map shows them all), at the moment picked, the most CO2 first. Click a room's name to follow it in the charts and fly the map to it.",
+          "id": 8,
+          "links": [],
+          "title": "Rooms by CO2",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "pick"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Room"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Follow ${__data.fields.Room} in the charts",
+                            "url": "/d/${__dashboard.uid}${__url.params:exclude:var-room}&var-room=${__data.fields.pick}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "CO2"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ppm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "#2a9d8f",
+                              "value": 0
+                            },
+                            {
+                              "color": "#e9c46a",
+                              "value": 800
+                            },
+                            {
+                              "color": "#f4a261",
+                              "value": 1000
+                            },
+                            {
+                              "color": "#d62828",
+                              "value": 1400
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Temp"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "celsius"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Floor"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 105
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 85
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Humidity"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "humidity"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 20,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-moment"
+              },
+              "height": 4,
+              "width": 7,
+              "x": 0,
+              "y": 20
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-people"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 7,
+              "y": 20
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-over"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 11,
+              "y": 20
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-room"
+              },
+              "height": 4,
+              "width": 9,
+              "x": 15,
+              "y": 20
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-floors"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-table"
+              },
+              "height": 20,
+              "width": 12,
+              "x": 12,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-room"
+              },
+              "height": 10,
+              "width": 12,
+              "x": 0,
+              "y": 34
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 44
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "air-quality",
+      "buildings",
+      "duckdb",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "Europe/London",
+      "to": "now"
+    },
+    "title": "Urban Sciences Building, room by room",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The recording's files of the time range and the six hours before it (a sensor sends a value only when it changes), from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded files",
+          "multi": true,
+          "name": "files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/urban-sciences-building/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" >= $__timeFrom()::TIMESTAMPTZ - INTERVAL 6 HOUR AND \"from\" <= $__timeTo()\nUNION ALL SELECT 'http://feeds/datasets/urban-sciences-building/stream-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "1",
+            "value": "1"
+          },
+          "hide": "hideVariable",
+          "label": "Floor",
+          "name": "floor",
+          "query": "1",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "room",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

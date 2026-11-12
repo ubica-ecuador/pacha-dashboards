@@ -31,6 +31,11 @@ New dashboards are made here, not in Pacha.
   Pacha's own datasets of the same name, so pick a name Pacha does not use. A `.tif` (a COG
   for Pacha's tile server, `/titiler`) is served on the feeds server only, by
   `gateway/datasets-tif.conf.template`: a map reads `http://feeds/datasets/<name>/<file>.tif`.
+- **A recorded feed:** `recorder/feeds/<feed>.sql`, as in Pacha's `recorder/feeds/` (a poll,
+  `daily`, `listing` or `stream` from a websocket: Pacha's `images/recorder/recorder.py`); kept
+  under `http://feeds/recordings/<feed>/`, its files named by `manifest.json`. Name it apart from
+  Pacha's feeds: a name both use stops the recorder. A feed starts when the recorder does: ask
+  before recreating it (`docker compose up -d --no-deps recorder` from Pacha).
 - **Its card on the home page:** Pacha's home lists this folder's dashboards with the Gallery
   (and those tagged `plus` with Plus). Its picture is `screenshots/<uid>.jpg`, a 16:9 crop of
   the map about 700 × 394 (Pacha's `scripts/screenshots.mjs` takes one; move it here). Without
