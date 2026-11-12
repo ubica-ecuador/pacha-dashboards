@@ -1,17 +1,18 @@
     # Portolan's FIRMS catalog (NASA fire detections since 2000-11) on Source
     # Cooperative, read by the server DuckDB a range at a time: the A5 aggregates
-    # (alltime-r5, r8, r10, one count column a month) and one GeoParquet of points
-    # a year. nginx asks Source Cooperative for whole 4 MB slices, each once, and
-    # answers any range from them, so moving a dashboard's window re-reads this
-    # disk, not the internet. Only these files: no open proxy.
+    # (alltime-r5, r8, r10, one count column a month; each year's aggregate-r8,
+    # one a day) and one GeoParquet of points a year. nginx asks Source
+    # Cooperative for whole 4 MB slices, each once, and answers any range from
+    # them, so moving a dashboard's window re-reads this disk, not the internet.
+    # Only these files: no open proxy.
     #
-    # Portolan replaces alltime-* and the current year's file in place. A slice is
+    # Portolan replaces alltime-* and the current year's files in place. A slice is
     # therefore keyed by the file's ETag (a HEAD, cached five minutes) and asked
     # for with If-Match: a new version gets new keys and never mixes with slices of
     # the old one; in the five minutes after a replacement, a slice not yet cached
     # fails with 412 rather than mixing (DuckDB reports an error, the next query
     # after the ETag expires reads the new file). Past years never change.
-    location ~ "^/portolan/firms/detections/(?:alltime-r(?:5|8|10)\.parquet|year=20[0-9][0-9]/detections\.parquet)$" {
+    location ~ "^/portolan/firms/detections/(?:alltime-r(?:5|8|10)\.parquet|year=20[0-9][0-9]/(?:detections|aggregate-r8)\.parquet)$" {
         set $source_coop data.source.coop;
         auth_request /_portolan_firms_etag;
         auth_request_set $portolan_firms_etag $upstream_http_etag;
