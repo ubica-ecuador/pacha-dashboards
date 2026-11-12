@@ -38,7 +38,7 @@ import duckdb
 import numpy as np
 import shapely
 from shapely import affinity
-from shapely.geometry import MultiPoint, Point, Polygon
+from shapely.geometry import MultiPoint, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 
 work, out = Path(sys.argv[1]), Path(sys.argv[2])
@@ -104,6 +104,14 @@ def to_plan(g):
 
 def to_lonlat(g):
     return shapely.transform(g, lambda c: np.c_[LON0 + c[:, 0] / KX, LAT0 + c[:, 1] / KY])
+
+
+def without_pillars(g, smallest=1.0):
+    """A room without the holes its floor finish leaves around the building's pillars: a hole under `smallest` m² is
+    a column, not a void, and the map's selection would outline each one as a little ring."""
+    parts = [Polygon(p.exterior, [i for i in p.interiors if Polygon(i).area >= smallest])
+             for p in getattr(g, 'geoms', [g]) if p.geom_type == 'Polygon']
+    return parts[0] if len(parts) == 1 else MultiPolygon(parts)
 
 
 def floor_of(y):
@@ -190,7 +198,7 @@ for level, (fl, elev) in enumerate(FLOORS):
             e = entity_for(fl, p['name']) if p else None
             rooms.append({'floor': fl, 'level': level, 'base_m': round(elev - GROUND, 2), 'room': p['name'] if p else None,
                           'kind': kind, 'entity_id': e['entityId'] if e else None, 'area_m2': round(part.area, 1),
-                          'wkt': to_lonlat(to_plan(part)).wkt})
+                          'wkt': to_lonlat(to_plan(without_pillars(part))).wkt})
 
 # Keys: the entity, or the floor and room name; a zone of a room that reports through the room's one entity
 # gets the room's key and its own name.
