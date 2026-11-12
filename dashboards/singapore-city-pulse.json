@@ -1,0 +1,2142 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "singapore-city-pulse"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Singapore live from its open data: every taxi free for hire, the rain at 80-odd gauges, the free lots of about 2,000 public housing car parks and the heat stress, on a map that a time brush moves over the last 7 days. Beside it, a week's measure of whether the free taxis thin out where it rains, and the taxis' day. From data.gov.sg (Singapore Open Data Licence 1.0), cached by the gateway.",
+    "editable": true,
+    "elements": {
+      "card-carparks": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Car lots free in the public housing (HDB) car parks, in the latest count,\n-- leaving out car parks whose count is more than 6 hours old.\nWITH item AS (\n  SELECT unnest(from_json(r-\u003e\u003e'body', '{\"items\":[{\"timestamp\":\"VARCHAR\",\"carpark_data\":[{\"update_datetime\":\"VARCHAR\",\"carpark_info\":[{\"lot_type\":\"VARCHAR\",\"lots_available\":\"VARCHAR\",\"total_lots\":\"VARCHAR\"}]}]}]}').items) AS item\n  FROM (SELECT http_get('http://feeds/datagovsg/carparks/latest') AS r)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\nlots AS (\n  SELECT least(TRY_CAST(i.lots_available AS INTEGER), TRY_CAST(i.total_lots AS INTEGER)) AS free, TRY_CAST(i.total_lots AS INTEGER) AS lots\n  FROM item, unnest(item.carpark_data) AS u(c), unnest(c.carpark_info) AS v(i)\n  WHERE i.lot_type = 'C' AND CAST(c.update_datetime AS TIMESTAMP) \u003e CAST(item.\"timestamp\"::TIMESTAMPTZ AT TIME ZONE 'UTC' AS TIMESTAMP) + INTERVAL 8 HOUR - INTERVAL 6 HOUR\n)\nSELECT sum(free) / sum(lots) AS \"Car lots free\", CAST(sum(free) AS DOUBLE) AS \"Free lots\", CAST(sum(lots) AS DOUBLE) AS \"Lots\" FROM lots"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of car lots free in the public housing (HDB) car parks, about 2,000 of them and 700,000 lots, in the latest count; car parks whose count is more than 6 hours old are left out.",
+          "id": 3,
+          "links": [],
+          "title": "Car lots free",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#B877D9",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Car lots free$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-effect": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The median change of the free taxis within 1.5 km of a gauge, against the\n-- usual there, over the week's hours with 1 mm of rain or more at the gauge in\n-- the 30 minutes before. Only gauge-hours whose usual is at least 5 taxis, from\n-- at least 2 dry hours.\nSELECT median(taxis / usual - 1) AS \"Change\"\nFROM $sgSteps\nWHERE usual \u003e= 5 AND dry_hours \u003e= 2 AND rain_30 \u003e= 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Around gauges with 1 mm of rain or more in the half hour before, over the last 7 days: the median change of the free taxis within 1.5 km against the usual number there at that hour on that kind of day. A week holds few rainy hours: the figure moves from week to week, and the chart beside the map shows its spread.",
+          "id": 5,
+          "links": [],
+          "title": "Taxis in rain",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8AB8FF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-heat": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The highest heat stress (wet-bulb globe temperature) of the latest reading\n-- of the Meteorological Service's stations, and its category.\nWITH rec AS (\n  SELECT j.data.records[1] AS rec\n  FROM (SELECT from_json(r-\u003e\u003e'body', '{\"data\":{\"records\":[{\"datetime\":\"VARCHAR\",\"item\":{\"readings\":[{\"station\":{\"name\":\"VARCHAR\"},\"wbgt\":\"VARCHAR\",\"heatStress\":\"VARCHAR\"}]}}]}}') AS j\n        FROM (SELECT http_get('http://feeds/datagovsg/wbgt') AS r)\n        WHERE (r-\u003e\u003e'status') = '200')\n)\nSELECT TRY_CAST(x.wbgt AS DOUBLE) AS \"WBGT\", x.heatStress AS \"Heat stress\", x.station.name AS \"Station\", count(*) OVER () AS \"Stations\"\nFROM rec, unnest(rec.item.readings) AS u(x)\nORDER BY TRY_CAST(x.wbgt AS DOUBLE) DESC\nLIMIT 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The highest wet-bulb globe temperature (WBGT) of the Meteorological Service's 30-odd stations in the latest reading, every 15 minutes. Its bands are the National Environment Agency's: low under 31 °C (green), moderate from 31 °C (orange), high from 33 °C (red).",
+          "id": 4,
+          "links": [],
+          "title": "Heat stress",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "orange",
+                        "value": 31
+                      },
+                      {
+                        "color": "red",
+                        "value": 33
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^WBGT$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The latest snapshot of the taxis free for hire (LTA, through data.gov.sg):\n-- how many, and when it was taken.\nSELECT j.features[1].properties.taxi_count AS \"Free taxis\",\n       epoch_ms(j.features[1].properties.\"timestamp\"::TIMESTAMPTZ) AS \"Snapshot\"\nFROM (SELECT from_json(r-\u003e\u003e'body', '{\"features\":[{\"properties\":{\"timestamp\":\"VARCHAR\",\"taxi_count\":\"INTEGER\"}}]}') AS j\n      FROM (SELECT http_get('http://feeds/datagovsg/taxis/latest') AS r)\n      WHERE (r-\u003e\u003e'status') = '200')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the latest snapshot of the taxis was taken. The dashboard reloads every 5 minutes.",
+          "id": 6,
+          "links": [],
+          "title": "Updated",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Snapshot$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-rain": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Gauges that measured rain in the 30 minutes up to their latest 5-minute\n-- reading today, of those that reported in that half hour.\nWITH parsed AS (\n  SELECT from_json(r-\u003e\u003e'body', '{\"items\":[{\"timestamp\":\"VARCHAR\",\"readings\":[{\"station_id\":\"VARCHAR\",\"value\":\"DOUBLE\"}]}]}') AS j\n  FROM (SELECT http_get('http://feeds/datagovsg/rainfall/' || strftime(CAST((now() AT TIME ZONE 'UTC') + INTERVAL 8 HOUR AS DATE), '%Y-%m-%d') || '/today') AS r)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\nreadings AS (\n  SELECT it.\"timestamp\"::TIMESTAMPTZ AS t, r.station_id AS station, r.\"value\" AS mm\n  FROM (SELECT unnest(j.items) AS it FROM parsed), unnest(it.readings) AS u(r)\n  WHERE r.\"value\" IS NOT NULL\n),\nrecent AS (\n  SELECT station, sum(mm) AS mm FROM readings WHERE t \u003e (SELECT max(t) FROM readings) - INTERVAL 30 MINUTE GROUP BY station\n)\nSELECT count(*) FILTER (WHERE mm \u003e 0) AS \"Gauges with rain\", count(*) AS \"Gauges reporting\" FROM recent"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The rain gauges that measured rain in the latest half hour, of the 80-odd reporting (Meteorological Service Singapore, every 5 minutes).",
+          "id": 2,
+          "links": [],
+          "title": "Wet gauges",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#3FA0E8",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Gauges with rain$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-taxis": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The latest snapshot of the taxis free for hire (LTA, through data.gov.sg):\n-- how many, and when it was taken.\nSELECT j.features[1].properties.taxi_count AS \"Free taxis\",\n       epoch_ms(j.features[1].properties.\"timestamp\"::TIMESTAMPTZ) AS \"Snapshot\"\nFROM (SELECT from_json(r-\u003e\u003e'body', '{\"features\":[{\"properties\":{\"timestamp\":\"VARCHAR\",\"taxi_count\":\"INTEGER\"}}]}') AS j\n      FROM (SELECT http_get('http://feeds/datagovsg/taxis/latest') AS r)\n      WHERE (r-\u003e\u003e'status') = '200')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every taxi free for hire across Singapore in the latest snapshot (LTA, through data.gov.sg, about every minute).",
+          "id": 1,
+          "links": [],
+          "title": "Free taxis",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FADE2A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Free taxis$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Where it comes from.** Singapore's real-time APIs on [data.gov.sg](https://data.gov.sg), read by the server through Pacha's gateway, which keeps each past snapshot so the source is asked once:\n\n- **Taxis**: every taxi free for hire with its place, about every minute, from the Land Transport Authority ([Taxi Availability](https://data.gov.sg/datasets/d_e25662f1a062dd046453926aa284ba64/view)). A taxi that is hired, off duty or not reporting is not in it.\n- **Rain**: the 5-minute rainfall of the Meteorological Service's gauges, about 85 of them ([Rainfall across Singapore](https://data.gov.sg/datasets/d_6580738cdd7db79374ed3152159fbd69/view)).\n- **Car parks**: the free lots of the public housing (HDB) car parks, about every minute ([Carpark Availability](https://data.gov.sg/datasets/d_ca933a644e55d34fe21f28b8052fac63/view)), placed with HDB's list ([HDB Carpark Information](https://data.gov.sg/datasets/d_23f946fa557947f93a8043bbef41dd09/view)); car lots only.\n- **Heat stress**: the wet-bulb globe temperature at about 30 stations, every 15 minutes ([WBGT](https://data.gov.sg/datasets/d_87884af1f85d702d4f74c6af13b4853d/view)).\n- **Public holidays**: from the Ministry of Manpower ([Singapore Public Holidays](https://data.gov.sg/collections/691/view)).\n\nContains information from Taxi Availability, Rainfall across Singapore, Carpark Availability, HDB Carpark Information, Wet Bulb Globe Temperature and Singapore Public Holidays, accessed live each time this dashboard opens, from data.gov.sg, which is made available under the terms of the [Singapore Open Data Licence version 1.0](https://data.gov.sg/open-data-licence).\n\n**How the figures are made.** The week is the last 7 days, hour by hour (Singapore time is UTC+8). For each gauge and hour: the rain in the hour and in its last half hour, and the free taxis within 1.5 km of the gauge in the snapshot on the hour. The usual number there is the median of the same gauge, the same hour of the day and the same kind of day (weekday, or weekend and public holiday) over the week's hours with no rain at the gauge in the half hour before. The comparison leaves out gauge-hours with a usual under 5 taxis or fewer than 2 dry hours behind it. Free taxis are the ones not hired: fewer can mean more people riding as well as fewer drivers out.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The week hour by hour, a picture to brush over: rain in bars (the mean of\n-- the gauges reporting, mm in the hour) and the free taxis across Singapore\n-- as a line, on a scale of its own. The window it writes (t0, t1) is what the\n-- map shows: the rain in it, the taxis and car parks at its end.\nSELECT time, avg(rain_hour) AS \"Rain\", any_value(island) AS \"Free taxis\"\nFROM $sgSteps\nGROUP BY time\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The week hour by hour: rain in blue bars (the mean of the gauges, mm in the hour), free taxis across Singapore as a yellow line (on its own scale). Drag the window, resize it by its handles or draw a new one, step it hour by hour, or press play: the map shows the rain in the window, and the taxis and car parks at its end.",
+          "id": 8,
+          "links": [],
+          "title": "Hours on the map",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#2B7BC4",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "mean",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 1,
+                  "unit": "lengthmm"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Free taxis"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "line"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "mean"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FADE2A",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "#111827",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.6
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": false,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "always",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1500,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-effect": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The free taxis within 1.5 km of a gauge against the usual there, by the rain\n-- the gauge measured in the 30 minutes before: the median change, its middle\n-- half (25th to 75th percentile) and the gauge-hours behind it. Only those\n-- whose usual is at least 5 taxis, from at least 2 dry hours. Dry hours sit\n-- near zero by construction: they make the usual.\nSELECT rain_class,\n       median(taxis / usual - 1) AS change,\n       quantile_cont(taxis / usual - 1, 0.25) AS q1,\n       quantile_cont(taxis / usual - 1, 0.75) AS q3,\n       CAST(count(*) AS DOUBLE) AS hours\nFROM $sgSteps\nWHERE rain_class IS NOT NULL AND usual \u003e= 5 AND dry_hours \u003e= 2\nGROUP BY rain_class"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every rain gauge, every hour of the last 7 days: the free taxis within 1.5 km against the usual number there (the median at that gauge, that hour of the day and that kind of day, weekday or weekend and public holiday, over the week's dry hours), by the rain the gauge measured in the half hour before. Bars: the median change; lines: the middle half of the hours. Free taxis are those not hired: fewer can mean more people riding, or drivers staying away. One week holds few rainy hours, so the figures move from week to week.",
+          "id": 9,
+          "links": [],
+          "title": "Do the taxis go when it rains?",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Free taxis within 1.5 km of a rain gauge, against the usual number there, by the\n// rain the gauge measured in the 30 minutes before. One bar per class of rain: the\n// median change over the week's gauge-hours in that class, with the middle half\n// of them (the 25th to the 75th percentile) as a line through the bar, so a bar\n// that leans one way while its line spans both sides reads as weak. No clicks.\n\n// @constants begin\nconst CLASSES = ['Dry', 'Under 1 mm', '1 to 5 mm', '5 mm or more'];\n// The map's rain bands: no rain in grey, then darker to lighter blue as more falls.\nconst COLOURS = ['#8e8e8e', '#1f4e80', '#2b7bc4', '#3fa0e8'];\n// @constants end\n\nconst theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst grid = theme.colors.border.weak;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst num = (v) =\u003e (v === null || v === undefined ? null : Number(v));\n\nconst byClass = new Map();\ncol('rain_class').forEach((c, i) =\u003e {\n  byClass.set(String(c), {\n    change: num(col('change')[i]),\n    q1: num(col('q1')[i]),\n    q3: num(col('q3')[i]),\n    hours: num(col('hours')[i]),\n  });\n});\n\n// Top to bottom: dry first. A category axis draws bottom up, so reverse.\nconst rows = CLASSES.map((c, i) =\u003e ({ c, colour: COLOURS[i], ...(byClass.get(c) ?? {}) })).reverse();\nconst pct = (v) =\u003e (v === null || v === undefined || Number.isNaN(v) ? '–' : `${v \u003e 0 ? '+' : ''}${Math.round(v * 100)} %`);\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 8, bottom: 28, containLabel: true },\n  tooltip: {\n    trigger: 'item',\n    formatter: (p) =\u003e {\n      const r = rows[p.dataIndex];\n      if (!r || r.hours === undefined) return `${r?.c ?? ''}: no hours`;\n      return `\u003cb\u003e${r.c}\u003c/b\u003e in the 30 minutes before\u003cbr/\u003e` +\n        `Median change: \u003cb\u003e${pct(r.change)}\u003c/b\u003e\u003cbr/\u003e` +\n        `Middle half of the hours: ${pct(r.q1)} to ${pct(r.q3)}\u003cbr/\u003e` +\n        `${r.hours} gauge-hours`;\n    },\n  },\n  xAxis: {\n    type: 'value',\n    name: 'Free taxis around the gauge, against usual',\n    nameLocation: 'middle',\n    nameGap: 20,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted, formatter: (v) =\u003e pct(v) },\n    splitLine: { lineStyle: { color: grid } },\n  },\n  yAxis: {\n    type: 'category',\n    data: rows.map((r) =\u003e r.c),\n    axisLabel: {\n      color: text,\n      lineHeight: 16,\n      // The class, and under it its median change and the gauge-hours behind it.\n      formatter: (value, index) =\u003e {\n        const r = rows[index];\n        return r.hours ? `${value}\\n{fig|${pct(r.change)} · ${r.hours} h}` : `${value}\\n{fig|no hours}`;\n      },\n      rich: { fig: { color: muted, fontSize: 11 } },\n    },\n    axisLine: { lineStyle: { color: grid } },\n    axisTick: { show: false },\n  },\n  series: [\n    {\n      type: 'bar',\n      barWidth: '55%',\n      data: rows.map((r) =\u003e ({ value: r.change ?? null, itemStyle: { color: r.colour } })),\n      markLine: {\n        silent: true,\n        symbol: 'none',\n        lineStyle: { color: muted, type: 'solid' },\n        label: { show: false },\n        data: [{ xAxis: 0 }],\n      },\n    },\n    {\n      // The middle half of the hours: a line from the 25th to the 75th percentile.\n      type: 'custom',\n      silent: true,\n      renderItem: (params, api) =\u003e {\n        const lo = api.value(0);\n        const hi = api.value(1);\n        if (lo === null || hi === null || Number.isNaN(lo) || Number.isNaN(hi)) return null;\n        const a = api.coord([lo, params.dataIndex]);\n        const b = api.coord([hi, params.dataIndex]);\n        const h = 6;\n        const style = { stroke: text, lineWidth: 1.5, opacity: 0.8 };\n        return {\n          type: 'group',\n          children: [\n            { type: 'line', shape: { x1: a[0], y1: a[1], x2: b[0], y2: b[1] }, style },\n            { type: 'line', shape: { x1: a[0], y1: a[1] - h / 2, x2: a[0], y2: a[1] + h / 2 }, style },\n            { type: 'line', shape: { x1: b[0], y1: b[1] - h / 2, x2: b[0], y2: b[1] + h / 2 }, style },\n          ],\n        };\n      },\n      encode: { x: [0, 1], y: 2 },\n      data: rows.map((r, i) =\u003e [r.q1 ?? null, r.q3 ?? null, i]),\n      z: 3,\n    },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Rain at every gauge in the time brush's window (t0 to t1, or to now when the\n-- window reaches the latest hour), summed from the 5-minute readings: each day\n-- of the window is one GET through the gateway's cache (today's readings so\n-- far change every 5 minutes, past days never). A gauge with no reading in the\n-- window has no value (NULL), not zero.\nWITH win AS (\n  SELECT w0, w1, CAST(w0 + INTERVAL 8 HOUR AS DATE) AS d0, CAST(w1 + INTERVAL 8 HOUR AS DATE) AS d1,\n         CAST((now() AT TIME ZONE 'UTC') + INTERVAL 8 HOUR AS DATE) AS today\n  FROM (\n    SELECT greatest(coalesce(CAST(try_cast($t0 AS TIMESTAMPTZ) AT TIME ZONE 'UTC' AS TIMESTAMP), w1 - INTERVAL 3 HOUR), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (\n      SELECT CASE WHEN t1 IS NULL OR t1 \u003e= date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE)\n                  THEN (now() AT TIME ZONE 'UTC') ELSE t1 END AS w1\n      FROM (SELECT CAST(try_cast($t1 AS TIMESTAMPTZ) AT TIME ZONE 'UTC' AS TIMESTAMP) AS t1)\n    )\n  )\n),\ndays AS (\n  SELECT 'http://feeds/datagovsg/rainfall/' || strftime(d, '%Y-%m-%d') || CASE WHEN CAST(d AS DATE) = today THEN '/today' ELSE '' END AS url\n  FROM win, unnest(generate_series(d0, d1, INTERVAL 1 DAY)) AS g(d)\n),\nparsed AS (\n  SELECT from_json(r-\u003e\u003e'body', '{\"metadata\":{\"stations\":[{\"id\":\"VARCHAR\",\"name\":\"VARCHAR\",\"location\":{\"latitude\":\"DOUBLE\",\"longitude\":\"DOUBLE\"}}]},\"items\":[{\"timestamp\":\"VARCHAR\",\"readings\":[{\"station_id\":\"VARCHAR\",\"value\":\"DOUBLE\"}]}]}') AS j\n  FROM (SELECT http_get(url) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ngauges AS (\n  SELECT s.id AS station, any_value(s.name) AS name,\n         any_value(s.location.latitude) AS latitude, any_value(s.location.longitude) AS longitude\n  FROM (SELECT unnest(j.metadata.stations) AS s FROM parsed)\n  GROUP BY s.id\n),\nreadings AS (\n  SELECT r.station_id AS station, r.\"value\" AS mm\n  FROM (SELECT unnest(j.items) AS it FROM parsed), unnest(it.readings) AS u(r), win\n  WHERE CAST(it.\"timestamp\"::TIMESTAMPTZ AT TIME ZONE 'UTC' AS TIMESTAMP) \u003e w0\n    AND CAST(it.\"timestamp\"::TIMESTAMPTZ AT TIME ZONE 'UTC' AS TIMESTAMP) \u003c= w1\n    AND r.\"value\" IS NOT NULL\n)\nSELECT g.station, g.name, g.latitude, g.longitude, round(sum(r.mm), 1) AS rain_mm\nFROM gauges g LEFT JOIN readings r USING (station)\nGROUP BY ALL\nORDER BY rain_mm DESC NULLS LAST, g.name"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every taxi free for hire at the time brush's end: the latest snapshot when\n-- the window reaches the latest hour, otherwise the one on the half hour at or\n-- before it. One GET through the gateway's cache.\nWITH pick AS (\n  SELECT CASE WHEN t1 IS NULL OR t1 \u003e= date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE) THEN 'latest'\n              ELSE strftime(time_bucket(INTERVAL 30 MINUTE, t1) + INTERVAL 8 HOUR, '%Y-%m-%dT%H:%M:%S') END AS snap\n  FROM (SELECT CAST(try_cast($t1 AS TIMESTAMPTZ) AT TIME ZONE 'UTC' AS TIMESTAMP) AS t1)\n),\nparsed AS (\n  SELECT from_json(r-\u003e\u003e'body', '{\"features\":[{\"geometry\":{\"coordinates\":[[\"DOUBLE\"]]}}]}') AS j\n  FROM (SELECT http_get('http://feeds/datagovsg/taxis/' || snap) AS r FROM pick)\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT p[2] AS latitude, p[1] AS longitude\nFROM parsed, unnest(j.features) AS f(feature), unnest(feature.geometry.coordinates) AS c(p)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The public housing (HDB) car parks at the time brush's end, as for the\n-- taxis: car lots only (not motorcycles or heavy vehicles), with their places\n-- from HDB's list (SVY21, EPSG:3414). A car park whose count is more than 6\n-- hours older than the snapshot is left out.\nWITH pick AS (\n  SELECT CASE WHEN t1 IS NULL OR t1 \u003e= date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE) THEN 'latest'\n              ELSE strftime(time_bucket(INTERVAL 30 MINUTE, t1) + INTERVAL 8 HOUR, '%Y-%m-%dT%H:%M:%S') END AS snap\n  FROM (SELECT CAST(try_cast($t1 AS TIMESTAMPTZ) AT TIME ZONE 'UTC' AS TIMESTAMP) AS t1)\n),\nsnapshot AS (\n  SELECT unnest(from_json(r-\u003e\u003e'body', '{\"items\":[{\"timestamp\":\"VARCHAR\",\"carpark_data\":[{\"carpark_number\":\"VARCHAR\",\"update_datetime\":\"VARCHAR\",\"carpark_info\":[{\"lot_type\":\"VARCHAR\",\"lots_available\":\"VARCHAR\",\"total_lots\":\"VARCHAR\"}]}]}]}').items) AS item\n  FROM (SELECT http_get('http://feeds/datagovsg/carparks/' || snap) AS r FROM pick)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT c.carpark_number AS carpark,\n         CAST(item.\"timestamp\"::TIMESTAMPTZ AT TIME ZONE 'UTC' AS TIMESTAMP) AS snap_time,\n         CAST(c.update_datetime AS TIMESTAMP) - INTERVAL 8 HOUR AS updated,\n         TRY_CAST(i.lots_available AS INTEGER) AS free, TRY_CAST(i.total_lots AS INTEGER) AS lots\n  FROM snapshot, unnest(item.carpark_data) AS u(c), unnest(c.carpark_info) AS v(i)\n  WHERE i.lot_type = 'C'\n),\nplaces AS (\n  SELECT p.car_park_no AS carpark, p.address, p.car_park_type AS kind,\n         ST_Transform(ST_Point(TRY_CAST(p.x_coord AS DOUBLE), TRY_CAST(p.y_coord AS DOUBLE)), 'EPSG:3414', 'EPSG:4326', always_xy := true) AS g\n  FROM (SELECT unnest(from_json(r-\u003e\u003e'body', '{\"result\":{\"records\":[{\"car_park_no\":\"VARCHAR\",\"address\":\"VARCHAR\",\"x_coord\":\"VARCHAR\",\"y_coord\":\"VARCHAR\",\"car_park_type\":\"VARCHAR\"}]}}').result.records) AS p\n        FROM (SELECT http_get('http://feeds/datagovsg/carparks/info') AS r)\n        WHERE (r-\u003e\u003e'status') = '200')\n)\nSELECT c.carpark, array_to_string(list_transform(string_split(lower(p.address), ' '), w -\u003e upper(w[1]) || w[2:]), ' ') AS address, array_to_string(list_transform(string_split(lower(p.kind), ' '), w -\u003e upper(w[1]) || w[2:]), ' ') AS kind,\n       ST_Y(p.g) AS latitude, ST_X(p.g) AS longitude,\n       least(c.free, c.lots) AS free_lots, c.lots,\n       round(100.0 * least(c.free, c.lots) / c.lots) AS free_pct\nFROM counts c JOIN places p USING (carpark)\nWHERE c.lots \u003e 0 AND c.updated \u003e c.snap_time - INTERVAL 6 HOUR\nORDER BY free_pct"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Singapore at the time brush's window. Rain: what each of the Meteorological Service's 80-odd gauges measured in the window (white rings), and a surface interpolated between them (inverse distance weighting, up to 5 km from a gauge and over the area they span), lighter where more fell, from 0.2 mm. Yellow dots: every taxi free for hire at the window's end (LTA). Small dots: the public housing (HDB) car parks at the window's end, red under 10 % of their car lots free, orange under 30 %. When the window reaches the latest hour the map shows the latest snapshots (about a minute old) and the rain up to now; earlier, the snapshots on the half hour at or before the window's end. Hover a gauge or a car park for its figures.",
+          "id": 7,
+          "links": [],
+          "title": "Rain, free taxis and car parks in the window",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "gazetteer": "public/gazetteer/countries.json",
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 1.352,
+                      "longitude": 103.82,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 10.4
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "rain_mm"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "address"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "free_lots"
+                              },
+                              {
+                                "name": "lots"
+                              },
+                              {
+                                "name": "free_pct"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "taxis",
+                        "gauges",
+                        "carparks",
+                        "rain"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              222,
+                              42
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Free taxis at the window's end",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    null,
+                                    "#FADE2A"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FADE2A"
+                                ],
+                                "name": "Taxi",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 3,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "taxis",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Rain gauges",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    null,
+                                    "#FFFFFF"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FFFFFF"
+                                ],
+                                "name": "Gauge",
+                                "type": "custom"
+                              },
+                              "filled": false,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0.9,
+                              "outline": true,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "gauges",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              116,
+                              128
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "HDB car parks, car lots free (%)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    10,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    30,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#6e7480"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF9830",
+                                  "#6e7480"
+                                ],
+                                "name": "Car lots free, %",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0.6,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 2.5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "carparks",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "free_pct",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              66,
+                              146,
+                              198
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Rain in the window (mm)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    0.2,
+                                    "#26292e"
+                                  ],
+                                  [
+                                    1,
+                                    "#1f4e80"
+                                  ],
+                                  [
+                                    5,
+                                    "#2b7bc4"
+                                  ],
+                                  [
+                                    10,
+                                    "#3fa0e8"
+                                  ],
+                                  [
+                                    20,
+                                    "#6cc3f7"
+                                  ],
+                                  [
+                                    null,
+                                    "#a6defc"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#26292e",
+                                  "#1f4e80",
+                                  "#2b7bc4",
+                                  "#3fa0e8",
+                                  "#6cc3f7",
+                                  "#a6defc"
+                                ],
+                                "name": "Rain, mm",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.45,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "surfaceBands": true,
+                              "surfaceBreaks": "",
+                              "surfaceExtent": "hull",
+                              "surfaceFade": true,
+                              "surfaceIsolineWidth": 1,
+                              "surfaceIsolines": false,
+                              "surfaceLabelSize": 11,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 1500,
+                              "surfaceMaxDistance": 5000,
+                              "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "auto",
+                              "surfacePower": 2,
+                              "surfaceRadius": 500,
+                              "surfaceReduce": "last",
+                              "surfaceResolution": "high",
+                              "surfaceVehicle": ":auto",
+                              "thickness": 2
+                            }
+                          },
+                          "id": "rain",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "rain_mm",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-profile": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Free taxis across Singapore by hour of Singapore's day: the median over the\n-- week's weekdays, and over its weekends and public holidays.\nSELECT sg_hour, day_kind, median(island) AS taxis\nFROM (SELECT DISTINCT time, sg_hour, day_kind, island FROM $sgSteps)\nGROUP BY sg_hour, day_kind\nORDER BY sg_hour"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Today so far, by Singapore's calendar.\nSELECT sg_hour, island AS taxis\nFROM (SELECT DISTINCT time, sg_hour, island FROM $sgSteps)\nWHERE CAST(time + INTERVAL 8 HOUR AS DATE) = CAST(now()::TIMESTAMP + INTERVAL 8 HOUR AS DATE)\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every taxi free for hire across Singapore, on the hour of Singapore time: the median of the last 7 days' weekdays, the median of their weekends and public holidays, and today so far.",
+          "id": 10,
+          "links": [],
+          "title": "Free taxis through the day",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Free taxis across Singapore through the day, hour by hour of Singapore time: the\n// median of the week's weekdays, the median of its weekends and public holidays,\n// and today so far. No clicks.\n\n// @constants begin\nconst KINDS = [\n  { kind: 'Weekday', name: 'Weekday, median', colour: '#8AB8FF', dash: 'solid' },\n  { kind: 'Weekend or holiday', name: 'Weekend or holiday, median', colour: '#B877D9', dash: 'dashed' },\n];\nconst TODAY = { name: 'Today', colour: '#FADE2A' };\n// @constants end\n\nconst theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst grid = theme.colors.border.weak;\n\nconst frameOf = (refId) =\u003e context.panel.data.series.find((f) =\u003e f.refId === refId);\nconst colOf = (frame, name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst num = (v) =\u003e (v === null || v === undefined ? null : Number(v));\n\nconst hours = Array.from({ length: 24 }, (_, h) =\u003e h);\nconst label = (h) =\u003e `${String(h).padStart(2, '0')}:00`;\n\nconst usual = frameOf('A');\nconst series = KINDS.map((k) =\u003e {\n  const values = new Array(24).fill(null);\n  colOf(usual, 'day_kind').forEach((kind, i) =\u003e {\n    if (String(kind) === k.kind) values[num(colOf(usual, 'sg_hour')[i])] = num(colOf(usual, 'taxis')[i]);\n  });\n  return {\n    name: k.name,\n    type: 'line',\n    data: values,\n    showSymbol: false,\n    lineStyle: { color: k.colour, width: 2, type: k.dash },\n    itemStyle: { color: k.colour },\n  };\n});\n\nconst today = frameOf('B');\nconst todayValues = new Array(24).fill(null);\ncolOf(today, 'sg_hour').forEach((h, i) =\u003e {\n  todayValues[num(h)] = num(colOf(today, 'taxis')[i]);\n});\nseries.push({\n  name: TODAY.name,\n  type: 'line',\n  data: todayValues,\n  showSymbol: true,\n  symbolSize: 5,\n  lineStyle: { color: TODAY.colour, width: 3 },\n  itemStyle: { color: TODAY.colour },\n  z: 5,\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 8, right: 16, top: 34, bottom: 28, containLabel: true },\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 18 },\n  tooltip: {\n    trigger: 'axis',\n    valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : `${Math.round(v).toLocaleString('en')} taxis`),\n  },\n  xAxis: {\n    type: 'category',\n    data: hours.map(label),\n    boundaryGap: false,\n    axisLabel: { color: muted, interval: 2 },\n    axisLine: { lineStyle: { color: grid } },\n    name: 'Singapore time',\n    nameLocation: 'middle',\n    nameGap: 24,\n    nameTextStyle: { color: muted },\n  },\n  yAxis: {\n    type: 'value',\n    axisLabel: { color: muted, formatter: (v) =\u003e v.toLocaleString('en') },\n    splitLine: { lineStyle: { color: grid } },\n  },\n  series,\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-taxis"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-rain"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 4,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-carparks"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-heat"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-effect"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-latest"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 21,
+              "width": 16,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-effect"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 16,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-profile"
+              },
+              "height": 9,
+              "width": 8,
+              "x": 16,
+              "y": 13
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 2,
+              "width": 8,
+              "x": 16,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 24
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "business-charts",
+      "chaski",
+      "duckdb",
+      "kepler",
+      "live",
+      "mobility",
+      "plus",
+      "weather"
+    ],
+    "timeSettings": {
+      "autoRefresh": "5m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-7d",
+      "hideTimepicker": true,
+      "timezone": "Asia/Singapore",
+      "to": "now"
+    },
+    "title": "Singapore live: free taxis, rain and car parks",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Every rain gauge's rainfall each hour of the last 7 days, read by the server when the dashboard opens.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Rain, hour by hour (server)",
+          "multi": false,
+          "name": "sgRain",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sgRain",
+              "refId": "sgRain",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every rain gauge's rainfall hour by hour over the last 7 days,\n-- from data.gov.sg's 5-minute readings (Meteorological Service Singapore),\n-- through the gateway's cache (feeds). Past days come whole and never change;\n-- today's readings so far are fetched with one GET (they change every 5\n-- minutes). Times in UTC; Singapore is UTC+8 all year. A gauge that sent no\n-- reading in an hour has no rain for it (NULL), not zero.\nSET VARIABLE sg_end = (SELECT date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE));\nSET VARIABLE sg_today = (SELECT CAST((now() AT TIME ZONE 'UTC') + INTERVAL 8 HOUR AS DATE));\nSET VARIABLE sg_rain_days = (\n  SELECT list('http://feeds/datagovsg/rainfall/' || strftime(d, '%Y-%m-%d') ORDER BY d)\n  FROM generate_series(CAST(getvariable('sg_end') - INTERVAL 168 HOUR + INTERVAL 8 HOUR AS DATE), getvariable('sg_today') - 1, INTERVAL 1 DAY) AS g(d));\nWITH\ndays AS (\n  SELECT metadata, items FROM read_json(getvariable('sg_rain_days'), columns = {\n    metadata: 'STRUCT(stations STRUCT(id VARCHAR, \"name\" VARCHAR, location STRUCT(latitude DOUBLE, longitude DOUBLE))[])',\n    items: 'STRUCT(\"timestamp\" VARCHAR, readings STRUCT(station_id VARCHAR, \"value\" DOUBLE)[])[]'})\n  UNION ALL\n  SELECT j.metadata, j.items\n  FROM (SELECT from_json(r-\u003e\u003e'body', '{\"metadata\":{\"stations\":[{\"id\":\"VARCHAR\",\"name\":\"VARCHAR\",\"location\":{\"latitude\":\"DOUBLE\",\"longitude\":\"DOUBLE\"}}]},\"items\":[{\"timestamp\":\"VARCHAR\",\"readings\":[{\"station_id\":\"VARCHAR\",\"value\":\"DOUBLE\"}]}]}') AS j\n        FROM (SELECT http_get('http://feeds/datagovsg/rainfall/' || strftime(getvariable('sg_today'), '%Y-%m-%d') || '/today') AS r)\n        WHERE (r-\u003e\u003e'status') = '200')\n),\ngauges AS (\n  SELECT s.id AS station, any_value(s.name) AS name,\n         any_value(s.location.latitude) AS latitude, any_value(s.location.longitude) AS longitude\n  FROM (SELECT unnest(metadata.stations) AS s FROM days)\n  GROUP BY s.id\n),\nreadings AS (\n  SELECT CAST(it.\"timestamp\"::TIMESTAMPTZ AT TIME ZONE 'UTC' AS TIMESTAMP) AS t, r.station_id AS station, r.\"value\" AS mm\n  FROM (SELECT unnest(items) AS it FROM days), unnest(it.readings) AS u(r)\n  WHERE r.\"value\" IS NOT NULL\n),\nsteps AS (\n  SELECT unnest(generate_series(getvariable('sg_end') - INTERVAL 167 HOUR, getvariable('sg_end'), INTERVAL 1 HOUR)) AS time\n)\n-- rain_hour: mm in the hour that ends at time; rain_30: in its last 30 minutes.\nSELECT s.time, g.station, g.name, g.latitude, g.longitude,\n       round(sum(r.mm), 1) AS rain_hour,\n       round(sum(r.mm) FILTER (WHERE r.t \u003e s.time - INTERVAL 30 MINUTE), 1) AS rain_30\nFROM steps s\nCROSS JOIN gauges g\nLEFT JOIN readings r ON r.station = g.station AND r.t \u003e s.time - INTERVAL 1 HOUR AND r.t \u003c= s.time\nGROUP BY ALL\nORDER BY s.time, g.station",
+                  "refId": "sgRain"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The free taxis within 1.5 km of each rain gauge each hour of the first 3.5 of the last 7 days.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Free taxis near the gauges, first half of the week (server)",
+          "multi": false,
+          "name": "sgTaxisOld",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sgTaxisOld",
+              "refId": "sgTaxisOld",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the free taxis within 1.5 km of each rain gauge, every hour of\n-- the week's first 3.5 days (the last 3.5 are the dataset sgTaxisNew: a week\n-- of snapshots read cold takes longer than one query may), from data.gov.sg's\n-- snapshots of every taxi available for hire (LTA), through the gateway's\n-- cache (feeds). A snapshot more than 5 minutes older than its hour is left\n-- out. Distances on a local flat projection, under 0.1 % off at this\n-- latitude. day_kind counts Saturdays, Sundays and public holidays (Ministry\n-- of Manpower) apart from the other days.\nSET VARIABLE sg_end = (SELECT date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE));\nSET VARIABLE sg_today = (SELECT CAST((now() AT TIME ZONE 'UTC') + INTERVAL 8 HOUR AS DATE));\nSET VARIABLE sg_taxi_hours = (\n  SELECT list('http://feeds/datagovsg/taxis/' || strftime(t + INTERVAL 8 HOUR, '%Y-%m-%dT%H:%M:%S') ORDER BY t)\n  FROM generate_series(getvariable('sg_end') - INTERVAL 167 HOUR, getvariable('sg_end') - INTERVAL 84 HOUR, INTERVAL 1 HOUR) AS g(t));\nWITH\ngauges AS (\n  SELECT s.id AS station, s.location.latitude AS glat, s.location.longitude AS glon\n  FROM (SELECT unnest(from_json(r-\u003e\u003e'body', '{\"metadata\":{\"stations\":[{\"id\":\"VARCHAR\",\"location\":{\"latitude\":\"DOUBLE\",\"longitude\":\"DOUBLE\"}}]}}').metadata.stations) AS s\n        FROM (SELECT http_get('http://feeds/datagovsg/rainfall/' || strftime(getvariable('sg_today'), '%Y-%m-%d') || '/today') AS r)\n        WHERE (r-\u003e\u003e'status') = '200')\n),\nholidays AS (\n  SELECT DISTINCT CAST(h.\"date\" AS DATE) AS d\n  FROM (SELECT unnest(from_json(r-\u003e\u003e'body', '{\"result\":{\"records\":[{\"date\":\"VARCHAR\"}]}}').result.records) AS h\n        FROM (SELECT http_get('http://feeds/datagovsg/holidays') AS r)\n        WHERE (r-\u003e\u003e'status') = '200')\n),\nsnapshots AS (\n  SELECT time, f.properties.taxi_count AS island, f.geometry.coordinates AS pts\n  FROM (\n    SELECT CAST(regexp_extract(filename, 'taxis/([0-9T:-]+)$', 1) AS TIMESTAMP) - INTERVAL 8 HOUR AS time, unnest(features) AS f\n    FROM read_json(getvariable('sg_taxi_hours'), filename = true, columns = {\n      features: 'STRUCT(geometry STRUCT(coordinates DOUBLE[][]), properties STRUCT(\"timestamp\" VARCHAR, taxi_count INTEGER))[]'})\n  )\n  WHERE CAST(f.properties.\"timestamp\"::TIMESTAMPTZ AT TIME ZONE 'UTC' AS TIMESTAMP) \u003e time - INTERVAL 5 MINUTE\n),\npoints AS (\n  SELECT time, p[1] AS lon, p[2] AS lat FROM snapshots, unnest(pts) AS u(p)\n),\nnear AS (\n  -- 1 degree of latitude 110,574 m; of longitude 111,320 m times cos(1.35 deg).\n  SELECT p.time, g.station, count(*) AS taxis\n  FROM points p JOIN gauges g ON abs(p.lat - g.glat) \u003c 0.0136 AND abs(p.lon - g.glon) \u003c 0.0136\n  WHERE ((p.lon - g.glon) * 111289) ** 2 + ((p.lat - g.glat) * 110574) ** 2 \u003c= 1500 ** 2\n  GROUP BY ALL\n)\nSELECT s.time, g.station, coalesce(n.taxis, 0) AS taxis, s.island,\n       CASE WHEN dayofweek(CAST(s.time + INTERVAL 8 HOUR AS DATE)) IN (0, 6)\n              OR CAST(s.time + INTERVAL 8 HOUR AS DATE) IN (SELECT d FROM holidays)\n            THEN 'Weekend or holiday' ELSE 'Weekday' END AS day_kind\nFROM snapshots s\nCROSS JOIN gauges g\nLEFT JOIN near n ON n.time = s.time AND n.station = g.station\nORDER BY s.time, g.station",
+                  "refId": "sgTaxisOld"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The free taxis within 1.5 km of each rain gauge each hour of the last 3.5 days.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Free taxis near the gauges, last half of the week (server)",
+          "multi": false,
+          "name": "sgTaxisNew",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sgTaxisNew",
+              "refId": "sgTaxisNew",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the free taxis within 1.5 km of each rain gauge, every hour of\n-- the last 3.5 days (the 3.5 days before are the dataset sgTaxisOld: a week\n-- of snapshots read cold takes longer than one query may), from data.gov.sg's\n-- snapshots of every taxi available for hire (LTA), through the gateway's\n-- cache (feeds). A snapshot more than 5 minutes older than its hour is left\n-- out. Distances on a local flat projection, under 0.1 % off at this\n-- latitude. day_kind counts Saturdays, Sundays and public holidays (Ministry\n-- of Manpower) apart from the other days.\nSET VARIABLE sg_end = (SELECT date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE));\nSET VARIABLE sg_today = (SELECT CAST((now() AT TIME ZONE 'UTC') + INTERVAL 8 HOUR AS DATE));\nSET VARIABLE sg_taxi_hours = (\n  SELECT list('http://feeds/datagovsg/taxis/' || strftime(t + INTERVAL 8 HOUR, '%Y-%m-%dT%H:%M:%S') ORDER BY t)\n  FROM generate_series(getvariable('sg_end') - INTERVAL 83 HOUR, getvariable('sg_end'), INTERVAL 1 HOUR) AS g(t));\nWITH\ngauges AS (\n  SELECT s.id AS station, s.location.latitude AS glat, s.location.longitude AS glon\n  FROM (SELECT unnest(from_json(r-\u003e\u003e'body', '{\"metadata\":{\"stations\":[{\"id\":\"VARCHAR\",\"location\":{\"latitude\":\"DOUBLE\",\"longitude\":\"DOUBLE\"}}]}}').metadata.stations) AS s\n        FROM (SELECT http_get('http://feeds/datagovsg/rainfall/' || strftime(getvariable('sg_today'), '%Y-%m-%d') || '/today') AS r)\n        WHERE (r-\u003e\u003e'status') = '200')\n),\nholidays AS (\n  SELECT DISTINCT CAST(h.\"date\" AS DATE) AS d\n  FROM (SELECT unnest(from_json(r-\u003e\u003e'body', '{\"result\":{\"records\":[{\"date\":\"VARCHAR\"}]}}').result.records) AS h\n        FROM (SELECT http_get('http://feeds/datagovsg/holidays') AS r)\n        WHERE (r-\u003e\u003e'status') = '200')\n),\nsnapshots AS (\n  SELECT time, f.properties.taxi_count AS island, f.geometry.coordinates AS pts\n  FROM (\n    SELECT CAST(regexp_extract(filename, 'taxis/([0-9T:-]+)$', 1) AS TIMESTAMP) - INTERVAL 8 HOUR AS time, unnest(features) AS f\n    FROM read_json(getvariable('sg_taxi_hours'), filename = true, columns = {\n      features: 'STRUCT(geometry STRUCT(coordinates DOUBLE[][]), properties STRUCT(\"timestamp\" VARCHAR, taxi_count INTEGER))[]'})\n  )\n  WHERE CAST(f.properties.\"timestamp\"::TIMESTAMPTZ AT TIME ZONE 'UTC' AS TIMESTAMP) \u003e time - INTERVAL 5 MINUTE\n),\npoints AS (\n  SELECT time, p[1] AS lon, p[2] AS lat FROM snapshots, unnest(pts) AS u(p)\n),\nnear AS (\n  -- 1 degree of latitude 110,574 m; of longitude 111,320 m times cos(1.35 deg).\n  SELECT p.time, g.station, count(*) AS taxis\n  FROM points p JOIN gauges g ON abs(p.lat - g.glat) \u003c 0.0136 AND abs(p.lon - g.glon) \u003c 0.0136\n  WHERE ((p.lon - g.glon) * 111289) ** 2 + ((p.lat - g.glat) * 110574) ** 2 \u003c= 1500 ** 2\n  GROUP BY ALL\n)\nSELECT s.time, g.station, coalesce(n.taxis, 0) AS taxis, s.island,\n       CASE WHEN dayofweek(CAST(s.time + INTERVAL 8 HOUR AS DATE)) IN (0, 6)\n              OR CAST(s.time + INTERVAL 8 HOUR AS DATE) IN (SELECT d FROM holidays)\n            THEN 'Weekend or holiday' ELSE 'Weekday' END AS day_kind\nFROM snapshots s\nCROSS JOIN gauges g\nLEFT JOIN near n ON n.time = s.time AND n.station = g.station\nORDER BY s.time, g.station",
+                  "refId": "sgTaxisNew"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Each gauge each hour: rain, free taxis around it and the usual number there, joined in the browser.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Gauges hour by hour",
+          "multi": false,
+          "name": "sgSteps",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sgSteps",
+              "refId": "sgSteps",
+              "source": {
+                "sql": "-- Each gauge, each hour of the week: its rain, the free taxis within 1.5 km,\n-- and the usual number there, the median at the same gauge, the same hour of\n-- Singapore's day and the same kind of day (weekday, or weekend and public\n-- holiday) over the week's hours with no rain at the gauge in the 30 minutes\n-- before (dry_hours of them). rain_class sorts the hours by that half hour's\n-- rain. Built in the browser from the three server datasets.\nWITH taxis AS (\n  SELECT * FROM $sgTaxisOld\n  UNION ALL\n  SELECT * FROM $sgTaxisNew\n),\njoined AS (\n  SELECT t.time, t.station, r.name, r.latitude, r.longitude, r.rain_hour, r.rain_30,\n         t.taxis, t.island, t.day_kind, hour(t.time + INTERVAL 8 HOUR) AS sg_hour\n  FROM taxis t JOIN $sgRain r ON r.time = t.time AND r.station = t.station\n),\nusual AS (\n  SELECT station, sg_hour, day_kind, median(taxis) AS usual, count(*) AS dry_hours\n  FROM joined WHERE rain_30 = 0\n  GROUP BY station, sg_hour, day_kind\n)\nSELECT j.*, u.usual, coalesce(u.dry_hours, 0) AS dry_hours,\n       CASE WHEN j.rain_30 IS NULL THEN NULL\n            WHEN j.rain_30 = 0 THEN 'Dry'\n            WHEN j.rain_30 \u003c 1 THEN 'Under 1 mm'\n            WHEN j.rain_30 \u003c 5 THEN '1 to 5 mm'\n            ELSE '5 mm or more' END AS rain_class\nFROM joined j\nLEFT JOIN usual u ON u.station = j.station AND u.sg_hour = j.sg_hour AND u.day_kind = j.day_kind",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The time brush's window when the dashboard opens: the last three hours, to\n-- the latest hour, in UTC. The brush overwrites it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE) - INTERVAL 3 HOUR, '%Y-%m-%dT%H:00:00.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window from (brush; last three hours by default)",
+          "multi": false,
+          "name": "t0",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The time brush's window when the dashboard opens: the last three hours, to\n-- the latest hour, in UTC. The brush overwrites it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE) - INTERVAL 3 HOUR, '%Y-%m-%dT%H:00:00.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The time brush's window when the dashboard opens: the last three hours, to\n-- the latest hour, in UTC. The brush overwrites it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE), '%Y-%m-%dT%H:00:00.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window to (brush; the latest hour by default)",
+          "multi": false,
+          "name": "t1",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The time brush's window when the dashboard opens: the last three hours, to\n-- the latest hour, in UTC. The brush overwrites it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', (now() AT TIME ZONE 'UTC') - INTERVAL 2 MINUTE), '%Y-%m-%dT%H:00:00.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

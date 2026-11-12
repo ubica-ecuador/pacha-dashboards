@@ -1,0 +1,6 @@
+# data.gov.sg (singapore-city-pulse): Singapore's real-time APIs. A snapshot of
+# a past time never changes and is kept a month (a week of taxis every half hour
+# is about 17 MB, a month of rain days about 25 MB); the latest ones a minute or
+# a few.
+proxy_cache_path /var/cache/nginx/datagovsg levels=1:2 keys_zone=datagovsg:10m
+                 max_size=500m inactive=30d use_temp_path=off;

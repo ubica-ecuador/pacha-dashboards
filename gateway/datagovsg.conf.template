@@ -1,0 +1,140 @@
+    # Singapore's real-time APIs on data.gov.sg (Singapore Open Data Licence
+    # 1.0), behind singapore-city-pulse: the free taxis, the rain gauges, the
+    # public housing (HDB) car parks, the heat stress stations and the public
+    # holidays. No key: the v1 API had no rate limit we could reach (15
+    # parallel requests), the v2 one allows 6 requests in 10 seconds without a
+    # key, so each is fetched once here. The v1 API answers HEAD with 403;
+    # through this cache DuckDB's HEAD is answered by nginx, which asks
+    # upstream with GET.
+    #
+    # Snapshots at a past time, on the hour and the half hour of Singapore time
+    # (the API's own clock): every free taxi, and every car park's free lots.
+    # They never change once the time has passed (the dashboard asks only for
+    # times at least two minutes old), so they are kept a month and DuckDB can
+    # read many at once with HEAD and ranges. A week of them cold takes the API
+    # longer than Grafana waits for a query: nginx finishes and keeps each fetch
+    # even when DuckDB has given up, so the next load finds them.
+    location ~ "^/datagovsg/taxis/(20[0-9][0-9]-[01][0-9]-[0-3][0-9]T[0-2][0-9]:[03]0:00)$" {
+        set $datagovsg api.data.gov.sg;
+        proxy_pass https://$datagovsg/v1/transport/taxi-availability?date_time=$1;
+        proxy_set_header Host $datagovsg;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 30d;
+        proxy_read_timeout 60s;
+        proxy_ignore_client_abort on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    location ~ "^/datagovsg/carparks/(20[0-9][0-9]-[01][0-9]-[0-3][0-9]T[0-2][0-9]:[03]0:00)$" {
+        set $datagovsg api.data.gov.sg;
+        proxy_pass https://$datagovsg/v1/transport/carpark-availability?date_time=$1;
+        proxy_set_header Host $datagovsg;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 30d;
+        proxy_read_timeout 60s;
+        proxy_ignore_client_abort on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # A whole past day of rain, every gauge every 5 minutes (about 800 KB, which
+    # the API takes 8 s or more to build), by its date in Singapore.
+    location ~ "^/datagovsg/rainfall/(20[0-9][0-9]-[01][0-9]-[0-3][0-9])$" {
+        set $datagovsg api.data.gov.sg;
+        proxy_pass https://$datagovsg/v1/environment/rainfall?date=$1;
+        proxy_set_header Host $datagovsg;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 30d;
+        proxy_read_timeout 120s;
+        proxy_ignore_client_abort on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+
+    # What changes: the latest taxis and car parks, today's rain so far, the
+    # list of car parks, the heat stress stations. Kept for about the source's
+    # own step and renewed in the background, a visitor getting the previous
+    # copy meanwhile. Read with http_get (one GET), never with read_json: a
+    # renewal between DuckDB's HEAD and its GET would cut the file.
+    location = /datagovsg/taxis/latest {
+        set $datagovsg api.data.gov.sg;
+        proxy_pass https://$datagovsg/v1/transport/taxi-availability;
+        proxy_set_header Host $datagovsg;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 30s;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    location = /datagovsg/carparks/latest {
+        set $datagovsg api.data.gov.sg;
+        proxy_pass https://$datagovsg/v1/transport/carpark-availability;
+        proxy_set_header Host $datagovsg;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 1m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    location ~ "^/datagovsg/rainfall/(20[0-9][0-9]-[01][0-9]-[0-3][0-9])/today$" {
+        set $datagovsg api.data.gov.sg;
+        proxy_pass https://$datagovsg/v1/environment/rainfall?date=$1;
+        proxy_set_header Host $datagovsg;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 2m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_read_timeout 120s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # The HDB car parks' places (SVY21 coordinates) from the datastore, which
+    # allows 4 requests in 10 seconds without a key; HDB updates it monthly.
+    location = /datagovsg/carparks/info {
+        set $datagovsg_site data.gov.sg;
+        proxy_pass https://$datagovsg_site/api/action/datastore_search?resource_id=d_23f946fa557947f93a8043bbef41dd09&limit=5000;
+        proxy_set_header Host $datagovsg_site;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 7d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_read_timeout 60s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # Heat stress (wet-bulb globe temperature) at about 30 stations, every 15
+    # minutes, from the v2 API.
+    location = /datagovsg/wbgt {
+        set $datagovsg_open api-open.data.gov.sg;
+        proxy_pass https://$datagovsg_open/v2/real-time/api/weather?api=wbgt;
+        proxy_set_header Host $datagovsg_open;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 5m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # Singapore's public holidays since 2020 (Ministry of Manpower), from the
+    # datastore: the dashboard counts them as Sundays.
+    location = /datagovsg/holidays {
+        set $datagovsg_site data.gov.sg;
+        proxy_pass https://$datagovsg_site/api/action/datastore_search?resource_id=d_8ef23381f9417e4d4254ee8b4dcdb176&limit=1000;
+        proxy_set_header Host $datagovsg_site;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache datagovsg;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 7d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
