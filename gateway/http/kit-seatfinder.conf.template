@@ -1,0 +1,4 @@
+# KIT Library's Seatfinder (karlsruhe-library-seats): a day of readings of 16
+# rooms is about 400 KB; four weeks of days, the most the dashboard reads, 12 MB.
+proxy_cache_path /var/cache/nginx/kitseats levels=1:2 keys_zone=kitseats:1m
+                 max_size=100m inactive=30d use_temp_path=off;

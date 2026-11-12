@@ -966,7 +966,7 @@
                         "value": [
                           {
                             "title": "Show it on the map",
-                            "url": "/d/plus-floors-campus?${__url_time_range}\u0026var-room=${__data.fields.code}"
+                            "url": "/d/${__dashboard.uid}?${__url_time_range}\u0026var-room=${__data.fields.code}"
                           }
                         ]
                       }

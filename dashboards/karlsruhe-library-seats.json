@@ -1,0 +1,1585 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "karlsruhe-library-seats"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Free seats in 16 reading rooms and libraries of Karlsruhe (KIT, the Baden State Library, HKA, DHBW), live from the KIT Library's Seatfinder every 5 minutes: each room on its floor of its building, a card per building zoomed out, the week to brush over, and today against the usual day.",
+    "editable": true,
+    "elements": {
+      "card-free": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The rooms at the end of the dashboard's time range, together: free seats, the share\n-- taken, the fullest room, and when the latest count was made.\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\nwin AS (\n  SELECT w0, w1,\n         CAST(timezone('Europe/Berlin', w0) AS DATE) AS d0,\n         CAST(timezone('Europe/Berlin', w1) AS DATE) AS d1,\n         CAST(timezone('Europe/Berlin', now()) AS DATE) AS today\n  FROM (\n    SELECT greatest(to_timestamp(CAST(${__from} AS BIGINT) / 1000), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (SELECT least(to_timestamp(CAST(${__to} AS BIGINT) / 1000), now()) AS w1)\n  )\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today FROM win, unnest(generate_series(d0, least(d1, today), INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n),\nlatest AS (\n  SELECT readings.* FROM readings, win\n  WHERE t \u003c= w1 AND t \u003e w1 - CASE WHEN source = 'estimate' THEN INTERVAL 20 MINUTE ELSE INTERVAL 4 HOUR END\n  QUALIFY row_number() OVER (PARTITION BY code ORDER BY t DESC) = 1\n)\nSELECT sum(l.free)::DOUBLE AS \"Free seats\",\n       100.0 * sum(l.taken) / nullif(sum(l.taken + l.free), 0) AS \"Seats taken\",\n       arg_max(r.label || ', ' || round(100.0 * l.taken / nullif(l.taken + l.free, 0))::INTEGER || ' %',\n               l.taken / nullif(l.taken + l.free, 0)) AS \"Fullest\",\n       epoch_ms(max(l.t)) AS \"Counted\",\n       count(l.code)::DOUBLE AS \"Rooms counted\"\nFROM rooms r JOIN latest l USING (code)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Free seats in the rooms counted at the end of the time range (now, unless the Time Brush has moved it).",
+          "id": 1,
+          "links": [],
+          "title": "Free seats",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#73BF69",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Free seats$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-fullest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The rooms at the end of the dashboard's time range, together: free seats, the share\n-- taken, the fullest room, and when the latest count was made.\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\nwin AS (\n  SELECT w0, w1,\n         CAST(timezone('Europe/Berlin', w0) AS DATE) AS d0,\n         CAST(timezone('Europe/Berlin', w1) AS DATE) AS d1,\n         CAST(timezone('Europe/Berlin', now()) AS DATE) AS today\n  FROM (\n    SELECT greatest(to_timestamp(CAST(${__from} AS BIGINT) / 1000), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (SELECT least(to_timestamp(CAST(${__to} AS BIGINT) / 1000), now()) AS w1)\n  )\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today FROM win, unnest(generate_series(d0, least(d1, today), INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n),\nlatest AS (\n  SELECT readings.* FROM readings, win\n  WHERE t \u003c= w1 AND t \u003e w1 - CASE WHEN source = 'estimate' THEN INTERVAL 20 MINUTE ELSE INTERVAL 4 HOUR END\n  QUALIFY row_number() OVER (PARTITION BY code ORDER BY t DESC) = 1\n)\nSELECT sum(l.free)::DOUBLE AS \"Free seats\",\n       100.0 * sum(l.taken) / nullif(sum(l.taken + l.free), 0) AS \"Seats taken\",\n       arg_max(r.label || ', ' || round(100.0 * l.taken / nullif(l.taken + l.free, 0))::INTEGER || ' %',\n               l.taken / nullif(l.taken + l.free, 0)) AS \"Fullest\",\n       epoch_ms(max(l.t)) AS \"Counted\",\n       count(l.code)::DOUBLE AS \"Rooms counted\"\nFROM rooms r JOIN latest l USING (code)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The room with the largest share of its seats taken.",
+          "id": 3,
+          "links": [],
+          "title": "Fullest room",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Fullest$/",
+                  "values": true
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The rooms at the end of the dashboard's time range, together: free seats, the share\n-- taken, the fullest room, and when the latest count was made.\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\nwin AS (\n  SELECT w0, w1,\n         CAST(timezone('Europe/Berlin', w0) AS DATE) AS d0,\n         CAST(timezone('Europe/Berlin', w1) AS DATE) AS d1,\n         CAST(timezone('Europe/Berlin', now()) AS DATE) AS today\n  FROM (\n    SELECT greatest(to_timestamp(CAST(${__from} AS BIGINT) / 1000), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (SELECT least(to_timestamp(CAST(${__to} AS BIGINT) / 1000), now()) AS w1)\n  )\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today FROM win, unnest(generate_series(d0, least(d1, today), INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n),\nlatest AS (\n  SELECT readings.* FROM readings, win\n  WHERE t \u003c= w1 AND t \u003e w1 - CASE WHEN source = 'estimate' THEN INTERVAL 20 MINUTE ELSE INTERVAL 4 HOUR END\n  QUALIFY row_number() OVER (PARTITION BY code ORDER BY t DESC) = 1\n)\nSELECT sum(l.free)::DOUBLE AS \"Free seats\",\n       100.0 * sum(l.taken) / nullif(sum(l.taken + l.free), 0) AS \"Seats taken\",\n       arg_max(r.label || ', ' || round(100.0 * l.taken / nullif(l.taken + l.free, 0))::INTEGER || ' %',\n               l.taken / nullif(l.taken + l.free, 0)) AS \"Fullest\",\n       epoch_ms(max(l.t)) AS \"Counted\",\n       count(l.code)::DOUBLE AS \"Rooms counted\"\nFROM rooms r JOIN latest l USING (code)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the latest count was made. The Seatfinder estimates every 5 minutes; the dashboard reloads every 5 minutes.",
+          "id": 4,
+          "links": [],
+          "title": "Counted",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Counted$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-taken": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The rooms at the end of the dashboard's time range, together: free seats, the share\n-- taken, the fullest room, and when the latest count was made.\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\nwin AS (\n  SELECT w0, w1,\n         CAST(timezone('Europe/Berlin', w0) AS DATE) AS d0,\n         CAST(timezone('Europe/Berlin', w1) AS DATE) AS d1,\n         CAST(timezone('Europe/Berlin', now()) AS DATE) AS today\n  FROM (\n    SELECT greatest(to_timestamp(CAST(${__from} AS BIGINT) / 1000), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (SELECT least(to_timestamp(CAST(${__to} AS BIGINT) / 1000), now()) AS w1)\n  )\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today FROM win, unnest(generate_series(d0, least(d1, today), INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n),\nlatest AS (\n  SELECT readings.* FROM readings, win\n  WHERE t \u003c= w1 AND t \u003e w1 - CASE WHEN source = 'estimate' THEN INTERVAL 20 MINUTE ELSE INTERVAL 4 HOUR END\n  QUALIFY row_number() OVER (PARTITION BY code ORDER BY t DESC) = 1\n)\nSELECT sum(l.free)::DOUBLE AS \"Free seats\",\n       100.0 * sum(l.taken) / nullif(sum(l.taken + l.free), 0) AS \"Seats taken\",\n       arg_max(r.label || ', ' || round(100.0 * l.taken / nullif(l.taken + l.free, 0))::INTEGER || ' %',\n               l.taken / nullif(l.taken + l.free, 0)) AS \"Fullest\",\n       epoch_ms(max(l.t)) AS \"Counted\",\n       count(l.code)::DOUBLE AS \"Rooms counted\"\nFROM rooms r JOIN latest l USING (code)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of seats taken in those rooms: green under half, yellow from half, orange from 80 %, red from 95 %.",
+          "id": 2,
+          "links": [],
+          "title": "Seats taken",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#73BF69",
+                        "value": 0
+                      },
+                      {
+                        "color": "#FADE2A",
+                        "value": 50
+                      },
+                      {
+                        "color": "#FF9830",
+                        "value": 80
+                      },
+                      {
+                        "color": "#E02F44",
+                        "value": 95
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Seats taken$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Where it comes from.** The KIT Library's [Seatfinder](https://seatfinder.bibliothek.kit.edu/), which shows the free study places of Karlsruhe's libraries: the KIT Library's reading rooms and faculty libraries, the Baden State Library, and the libraries of HKA and DHBW Karlsruhe. Read by the server through Pacha's gateway, which asks the Seatfinder once for each day, whoever is looking.\n\n- **Estimates**: every 5 minutes, the Seatfinder estimates the seats taken in a room from the number of devices on its Wi-Fi access points (and wired ports, where it can), with a model trained on the staff's counts. It knows the number of devices only, never which: no device or person can be found from it.\n- **Staff counts**: where the devices cannot be counted (here the HKA, DHBW and Mathematics libraries), the staff count the seats now and then; a count stays on the map for 4 hours, an estimate for 20 minutes. A room with neither shows *no count now*: mostly, it is closed. The Chemistry library is left out: it has had no count since December 2024.\n- **The buildings**: their outlines and heights from [OpenStreetMap](https://www.openstreetmap.org/copyright) (© OpenStreetMap contributors, ODbL), or 3.5 m a storey where no height is mapped. The rooms themselves are not mapped there, so a room is a ring on its floor of its building, not a shape; the six reading rooms of KIT Library South stand on their wing, the old building (the tower) or the new one. The DHBW library's floor is not given: it stands on the ground floor.\n\n**How to read it.** The map opens inside KIT Library South, on its 2nd floor. The picker on the left lists the floors of the building in view with the free seats on each; zoom out and each building, then each site (KIT Campus South, KIT Campus North, Karlsruhe), becomes a card with its free seats; click a card to go in. A ring is the share of a room's seats taken: green under half, yellow from half, orange from 80 %, red from 95 %. The callout above it is the room's free seats over the Time Brush's window.\n\n**The Time Brush** at the top is the last week hour by hour, its window the dashboard's time range (the last 12 hours when it opens). The map, the cards and the table show the counts at the window's end, the callouts the free seats over it; at the latest hour they are live, and the dashboard reloads every 5 minutes. **Through the day** is today against the usual weekday and weekend of the last four weeks, for the room clicked on the map or picked in the table.\n\nThe Seatfinder's data come with no stated licence; they are shown here as the Seatfinder shows them, with its name and a link.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The last 7 days and today, hour by hour: the seats taken in the rooms the Seatfinder\n-- estimates (the staff counts are too sparse to add up), the mean of each hour. A picture\n-- to brush over: its window is the dashboard's time range, what the map, the cards and the\n-- table show. It reads its own days, whatever the time range.\nWITH days AS (\n  SELECT CAST(d AS DATE) AS d, today\n  FROM (SELECT CAST(timezone('Europe/Berlin', now()) AS DATE) AS today),\n       unnest(generate_series(today - 7, today, INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n)\nSELECT timezone('UTC', h) AS time, sum(taken)::DOUBLE AS \"Seats taken\"\nFROM (SELECT code, time_bucket(INTERVAL 1 HOUR, t) AS h, avg(taken) AS taken FROM readings WHERE source = 'estimate' GROUP BY ALL)\nGROUP BY h\nORDER BY h"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The last 7 days and today hour by hour: the seats taken in the rooms the Seatfinder estimates. Its window is the dashboard's time range: drag it, resize it by its handles or draw a new one, step it hour by hour, or press play. The map, the cards and the table show the counts at its end, the callouts the window; at the latest hour it follows the counts as they come.",
+          "id": 8,
+          "links": [],
+          "title": "Hours on the map",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8AB8FF",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "mean",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "followLatest": true,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "",
+                "loop": false,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "range",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1500,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "",
+                  "to": ""
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-day": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The share of seats taken by hour of Berlin's day, in the room picked on the map or in the\n-- table (every room the Seatfinder estimates when none is): the median of the last four\n-- weeks' weekdays, of their weekends, and today so far.\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today\n  FROM (SELECT CAST(timezone('Europe/Berlin', now()) AS DATE) AS today),\n       unnest(generate_series(today - 28, today, INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n),\npicked AS (SELECT nullif($room, '') AS code),\nhours AS (\n  SELECT date_trunc('hour', timezone('Europe/Berlin', t)) AS h, sum(taken) AS taken, sum(taken + free) AS seats\n  FROM (\n    SELECT code, time_bucket(INTERVAL 1 HOUR, t) AS t, avg(taken) AS taken, avg(free) AS free\n    FROM readings\n    WHERE source = 'estimate' AND (code = (SELECT code FROM picked) OR (SELECT code FROM picked) IS NULL)\n    GROUP BY ALL\n  )\n  GROUP BY 1\n)\nSELECT hour(h) AS hour,\n       CASE WHEN CAST(h AS DATE) = CAST(timezone('Europe/Berlin', now()) AS DATE) THEN 'Today'\n            WHEN dayofweek(h) IN (0, 6) THEN 'Weekend' ELSE 'Weekday' END AS day_kind,\n       median(100.0 * taken / nullif(seats, 0)) AS pct,\n       coalesce((SELECT room FROM rooms WHERE code = (SELECT code FROM picked)), 'Every room with an estimate') AS scope\nFROM hours\nGROUP BY ALL\nORDER BY day_kind, hour"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of seats taken by hour of Berlin's day: the median of the last four weeks' weekdays and weekends, and today so far. For the room picked on the map or in the table, or every room the Seatfinder estimates.",
+          "id": 7,
+          "links": [],
+          "title": "Through the day",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// The share of seats taken through Berlin's day, hour by hour: the median of the last four weeks'\n// weekdays, the median of their weekends, and today so far, for the room picked (or every room the\n// Seatfinder estimates). No clicks.\n\n// @constants begin\nconst KINDS = [\n  { kind: 'Weekday', name: 'Weekdays, median', colour: '#8AB8FF', dash: 'solid' },\n  { kind: 'Weekend', name: 'Weekends, median', colour: '#B877D9', dash: 'dashed' },\n];\nconst TODAY = { kind: 'Today', name: 'Today', colour: '#FADE2A' };\n// @constants end\n\nconst theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst grid = theme.colors.border.weak;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst colOf = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst num = (v) =\u003e (v === null || v === undefined ? null : Number(v));\n\nconst hours = Array.from({ length: 24 }, (_, h) =\u003e h);\nconst label = (h) =\u003e `${String(h).padStart(2, '0')}:00`;\nconst kinds = colOf('day_kind');\nconst hourCol = colOf('hour');\nconst pct = colOf('pct');\nconst scope = colOf('scope')[0] ?? '';\n\nconst valuesOf = (kind) =\u003e {\n  const values = new Array(24).fill(null);\n  kinds.forEach((k, i) =\u003e {\n    if (String(k) === kind) values[num(hourCol[i])] = num(pct[i]);\n  });\n  return values;\n};\n\nconst series = KINDS.map((k) =\u003e ({\n  name: k.name,\n  type: 'line',\n  data: valuesOf(k.kind),\n  showSymbol: false,\n  lineStyle: { color: k.colour, width: 2, type: k.dash },\n  itemStyle: { color: k.colour },\n}));\nseries.push({\n  name: TODAY.name,\n  type: 'line',\n  data: valuesOf(TODAY.kind),\n  showSymbol: true,\n  symbolSize: 5,\n  lineStyle: { color: TODAY.colour, width: 3 },\n  itemStyle: { color: TODAY.colour },\n  z: 5,\n});\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  title: { text: scope, left: 0, top: 0, textStyle: { color: text, fontSize: 12, fontWeight: 'normal' } },\n  grid: { left: 8, right: 16, top: 52, bottom: 28, containLabel: true },\n  legend: { top: 20, left: 0, textStyle: { color: muted }, itemWidth: 18 },\n  tooltip: {\n    trigger: 'axis',\n    valueFormatter: (v) =\u003e (v === null || v === undefined ? '–' : `${Math.round(v)} % taken`),\n  },\n  xAxis: {\n    type: 'category',\n    data: hours.map(label),\n    boundaryGap: false,\n    axisLabel: { color: muted, interval: 2 },\n    axisLine: { lineStyle: { color: grid } },\n    name: 'Berlin time',\n    nameLocation: 'middle',\n    nameGap: 24,\n    nameTextStyle: { color: muted },\n  },\n  yAxis: {\n    type: 'value',\n    min: 0,\n    max: 100,\n    axisLabel: { color: muted, formatter: (v) =\u003e `${v} %` },\n    splitLine: { lineStyle: { color: grid } },\n  },\n  series,\n};\n",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every room at the end of the dashboard's time range, which the Time Brush moves (now, by\n-- default): its latest count from the Seatfinder, an estimate at most 20 minutes old or a\n-- staff count at most 4 hours old. A room with neither shows no count now (closed, mostly).\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\nsites(building, building_name, site) AS (VALUES\n  ('KIT-S', 'KIT Library South', 'KIT Campus South'),\n  ('INF', 'Computer Science building', 'KIT Campus South'),\n  ('MATH', 'Mathematics building', 'KIT Campus South'),\n  ('PHYS', 'Physics building', 'KIT Campus South'),\n  ('ARCH', 'Architecture building', 'KIT Campus South'),\n  ('LAF', 'Learning Centre am Fasanenschlösschen', 'KIT Campus South'),\n  ('KIT-N', 'KIT Library North', 'KIT Campus North'),\n  ('BLB', 'Baden State Library', 'Karlsruhe'),\n  ('WIS', 'Wissenstor', 'Karlsruhe'),\n  ('HKA', 'Steinbeis-Haus (HKA)', 'Karlsruhe'),\n  ('DHBW', 'DHBW Karlsruhe', 'Karlsruhe')\n),\nwin AS (\n  SELECT w0, w1,\n         CAST(timezone('Europe/Berlin', w0) AS DATE) AS d0,\n         CAST(timezone('Europe/Berlin', w1) AS DATE) AS d1,\n         CAST(timezone('Europe/Berlin', now()) AS DATE) AS today\n  FROM (\n    SELECT greatest(to_timestamp(CAST(${__from} AS BIGINT) / 1000), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (SELECT least(to_timestamp(CAST(${__to} AS BIGINT) / 1000), now()) AS w1)\n  )\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today FROM win, unnest(generate_series(d0, least(d1, today), INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n),\nlatest AS (\n  SELECT readings.* FROM readings, win\n  WHERE t \u003c= w1 AND t \u003e w1 - CASE WHEN source = 'estimate' THEN INTERVAL 20 MINUTE ELSE INTERVAL 4 HOUR END\n  QUALIFY row_number() OVER (PARTITION BY code ORDER BY t DESC) = 1\n)\nSELECT r.code, r.room, r.label, r.building, s.building_name, r.site, r.level, r.floors,\n       r.latitude, r.longitude,\n       l.free, l.taken, l.taken + l.free AS seats,\n       round(100.0 * l.taken / nullif(l.taken + l.free, 0)) AS pct_taken,\n       CASE WHEN l.code IS NULL THEN 'No count now'\n            WHEN l.taken \u003e= 0.95 * (l.taken + l.free) THEN 'Full'\n            WHEN l.taken \u003e= 0.8 * (l.taken + l.free) THEN 'Few seats left'\n            WHEN l.taken \u003e= 0.5 * (l.taken + l.free) THEN 'Filling up'\n            ELSE 'Plenty of seats' END AS status,\n       l.source, strftime(timezone('Europe/Berlin', l.t), '%a %H:%M') AS counted_at\nFROM rooms r JOIN sites s USING (building) LEFT JOIN latest l USING (code)\nORDER BY l.free DESC NULLS LAST, r.room"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each building's floors that hold a room, as the building's outline in OpenStreetMap:\n-- the rooms themselves are not mapped, so a room is a gauge on its floor, not a shape.\nWITH footprints(building, wing, osm, height_m, geometry) AS (VALUES\n  ('KIT-S', 'old building', 'way/37799390', 54, '{\"type\":\"Polygon\",\"coordinates\":[[[8.416255,49.011419],[8.416249,49.011419],[8.416255,49.011419],[8.416253,49.011395],[8.416246,49.011395],[8.416253,49.011394],[8.416251,49.01137],[8.416244,49.01137],[8.416251,49.01137],[8.416248,49.011345],[8.416242,49.011346],[8.416248,49.011345],[8.416246,49.011321],[8.416239,49.011321],[8.416246,49.01132],[8.416244,49.011296],[8.416237,49.011296],[8.416244,49.011296],[8.416242,49.011271],[8.416235,49.011272],[8.416241,49.011271],[8.416239,49.011247],[8.416232,49.011247],[8.416239,49.011246],[8.416237,49.011222],[8.41623,49.011223],[8.416237,49.011222],[8.416235,49.011198],[8.416228,49.011198],[8.416235,49.011197],[8.416232,49.011173],[8.416225,49.011173],[8.416232,49.011173],[8.41623,49.011148],[8.416223,49.011148],[8.41623,49.011147],[8.416228,49.011124],[8.416221,49.011123],[8.416522,49.011111],[8.416515,49.011112],[8.416518,49.011136],[8.416524,49.011136],[8.416518,49.011137],[8.41652,49.011161],[8.416527,49.011161],[8.41652,49.011161],[8.416522,49.011186],[8.416529,49.011186],[8.416522,49.011186],[8.416525,49.01121],[8.416531,49.01121],[8.416525,49.011211],[8.416527,49.011235],[8.416534,49.011235],[8.416527,49.011235],[8.416529,49.01126],[8.416536,49.01126],[8.416529,49.01126],[8.416531,49.011284],[8.416538,49.011284],[8.416531,49.011285],[8.416534,49.011309],[8.416541,49.011309],[8.416534,49.01131],[8.416536,49.011333],[8.416543,49.011333],[8.416536,49.011334],[8.416538,49.011358],[8.416545,49.011358],[8.416538,49.011359],[8.41654,49.011383],[8.416548,49.011383],[8.416541,49.011383],[8.416543,49.011407],[8.41655,49.011408],[8.416435,49.011412],[8.416435,49.011417],[8.416435,49.011412],[8.416359,49.011415],[8.416358,49.01142],[8.416357,49.011415],[8.416255,49.011419]]]}'),\n  ('KIT-S', 'new building', 'way/37799391', 19, '{\"type\":\"Polygon\",\"coordinates\":[[[8.416081,49.011112],[8.416066,49.010951],[8.417323,49.0109],[8.417324,49.010917],[8.417338,49.011061],[8.416432,49.011097],[8.416434,49.011115],[8.416408,49.011116],[8.416311,49.01112],[8.416309,49.011102],[8.416081,49.011112]]]}'),\n  ('KIT-N', '', 'way/84667757', 8, '{\"type\":\"Polygon\",\"coordinates\":[[[8.428031,49.094688],[8.428136,49.094669],[8.428187,49.094789],[8.428412,49.094749],[8.428437,49.094808],[8.428622,49.094774],[8.428524,49.094541],[8.428339,49.094575],[8.42829,49.094458],[8.428065,49.094498],[8.428128,49.09465],[8.428022,49.094669],[8.428007,49.094632],[8.427859,49.094659],[8.427897,49.094749],[8.428045,49.094723],[8.428031,49.094688]]]}'),\n  ('DHBW', '', 'way/28423864', 21, '{\"type\":\"Polygon\",\"coordinates\":[[[8.385557,49.026847],[8.385565,49.026885],[8.385506,49.026908],[8.38554,49.027069],[8.3856,49.027079],[8.385612,49.027122],[8.385371,49.027143],[8.385368,49.027103],[8.385139,49.027112],[8.385135,49.027164],[8.385017,49.027174],[8.385047,49.027333],[8.385107,49.027328],[8.385113,49.027354],[8.385886,49.027282],[8.38586,49.027159],[8.385781,49.027166],[8.385764,49.027085],[8.385831,49.027079],[8.385807,49.026969],[8.385766,49.026831],[8.385557,49.026847]]]}'),\n  ('HKA', '', 'way/317123112', 17.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.392111,49.017254],[8.392643,49.017233],[8.392669,49.017521],[8.392386,49.017533],[8.392392,49.017604],[8.392144,49.017614],[8.392132,49.017476],[8.392167,49.017474],[8.392165,49.017449],[8.392145,49.01745],[8.392142,49.017417],[8.392162,49.017416],[8.392159,49.017389],[8.392124,49.017391],[8.392111,49.017254]]]}'),\n  ('INF', '', 'way/155674961', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.419357,49.014484],[8.419609,49.014474],[8.419561,49.013943],[8.420349,49.013912],[8.420346,49.013871],[8.420368,49.01387],[8.420361,49.013795],[8.420339,49.013796],[8.420335,49.013754],[8.420285,49.013756],[8.419294,49.013795],[8.419357,49.014484]]]}'),\n  ('MATH', '', 'way/42321004', 17.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.408996,49.010823],[8.408969,49.010843],[8.409002,49.010862],[8.409182,49.010726],[8.409663,49.011],[8.4092,49.01135],[8.409087,49.011435],[8.408605,49.01116],[8.408978,49.01088],[8.408945,49.010861],[8.408941,49.010864],[8.408915,49.010849],[8.408914,49.01084],[8.408959,49.010807],[8.408967,49.010807],[8.408996,49.010823]]]}'),\n  ('PHYS', '', 'relation/285823', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.410146,49.012399],[8.411107,49.012362],[8.411143,49.01277],[8.411136,49.01277],[8.410182,49.012807],[8.410146,49.012399]],[[8.410578,49.012527],[8.410595,49.012715],[8.410811,49.012707],[8.410806,49.012646],[8.410794,49.012519],[8.410578,49.012527]]]}'),\n  ('ARCH', '', 'relation/285898', 14, '{\"type\":\"Polygon\",\"coordinates\":[[[8.411324,49.010704],[8.411234,49.010749],[8.411247,49.01076],[8.411056,49.010857],[8.410975,49.010787],[8.410566,49.010994],[8.410646,49.011062],[8.410458,49.011157],[8.410444,49.011145],[8.410346,49.011195],[8.410427,49.011264],[8.410443,49.011256],[8.410743,49.011512],[8.410704,49.011531],[8.410771,49.011589],[8.411788,49.011074],[8.41172,49.011017],[8.41169,49.011032],[8.411392,49.010779],[8.411405,49.010772],[8.411324,49.010704]],[[8.410638,49.011238],[8.410905,49.011099],[8.411118,49.011279],[8.411032,49.011325],[8.410983,49.011287],[8.410918,49.011319],[8.410964,49.011358],[8.410849,49.011412],[8.410638,49.011238]],[[8.411039,49.011031],[8.411334,49.010886],[8.411553,49.011065],[8.411452,49.011113],[8.411401,49.011074],[8.411333,49.011106],[8.411382,49.011147],[8.411246,49.01121],[8.411039,49.011031]]]}'),\n  ('LAF', '', 'way/251062513', 17.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.412409,49.01292],[8.412385,49.012625],[8.412018,49.012637],[8.412042,49.012933],[8.412409,49.01292]]]}'),\n  ('BLB', '', 'way/4234637', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.399088,49.007328],[8.398381,49.007549],[8.398608,49.007862],[8.398538,49.007884],[8.398632,49.008014],[8.398704,49.007991],[8.398934,49.008308],[8.399663,49.008081],[8.399608,49.008005],[8.399401,49.00807],[8.398997,49.007513],[8.399181,49.007456],[8.399088,49.007328]]]}'),\n  ('WIS', '', 'way/90183572', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.398514,49.008422],[8.398862,49.008313],[8.398802,49.008232],[8.398454,49.008341],[8.398514,49.008422]]]}')\n),\nlevels(building, level, floor_name) AS (VALUES\n  ('KIT-S', '0', 'Ground floor'),\n  ('KIT-S', '1', '1st floor'),\n  ('KIT-S', '2', '2nd floor'),\n  ('KIT-S', '3', '3rd floor'),\n  ('INF', '0', 'Ground floor'),\n  ('MATH', '-1', 'Basement'),\n  ('MATH', '0', 'Ground floor'),\n  ('PHYS', '2', '2nd floor'),\n  ('ARCH', '1', '1st floor'),\n  ('LAF', '1', '1st floor'),\n  ('LAF', '2', '2nd floor'),\n  ('KIT-N', '0', 'Ground floor'),\n  ('BLB', '0', 'Ground floor'),\n  ('BLB', '1', '1st floor'),\n  ('BLB', '2', '2nd floor'),\n  ('BLB', '3', '3rd floor'),\n  ('WIS', '1', '1st floor'),\n  ('WIS', '2', '2nd floor'),\n  ('HKA', '1', '1st floor'),\n  ('DHBW', '0', 'Ground floor')\n),\nsites(building, building_name, site) AS (VALUES\n  ('KIT-S', 'KIT Library South', 'KIT Campus South'),\n  ('INF', 'Computer Science building', 'KIT Campus South'),\n  ('MATH', 'Mathematics building', 'KIT Campus South'),\n  ('PHYS', 'Physics building', 'KIT Campus South'),\n  ('ARCH', 'Architecture building', 'KIT Campus South'),\n  ('LAF', 'Learning Centre am Fasanenschlösschen', 'KIT Campus South'),\n  ('KIT-N', 'KIT Library North', 'KIT Campus North'),\n  ('BLB', 'Baden State Library', 'Karlsruhe'),\n  ('WIS', 'Wissenstor', 'Karlsruhe'),\n  ('HKA', 'Steinbeis-Haus (HKA)', 'Karlsruhe'),\n  ('DHBW', 'DHBW Karlsruhe', 'Karlsruhe')\n)\nSELECT f.building, s.building_name, s.site, f.wing, l.level, l.floor_name, f.osm, f.geometry\nFROM footprints f JOIN levels l USING (building) JOIN sites s USING (building)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every building as its shell (height from OpenStreetMap, or 3.5 m a storey): zoomed out\n-- all of them, indoors the ones not looked at.\nWITH footprints(building, wing, osm, height_m, geometry) AS (VALUES\n  ('KIT-S', 'old building', 'way/37799390', 54, '{\"type\":\"Polygon\",\"coordinates\":[[[8.416255,49.011419],[8.416249,49.011419],[8.416255,49.011419],[8.416253,49.011395],[8.416246,49.011395],[8.416253,49.011394],[8.416251,49.01137],[8.416244,49.01137],[8.416251,49.01137],[8.416248,49.011345],[8.416242,49.011346],[8.416248,49.011345],[8.416246,49.011321],[8.416239,49.011321],[8.416246,49.01132],[8.416244,49.011296],[8.416237,49.011296],[8.416244,49.011296],[8.416242,49.011271],[8.416235,49.011272],[8.416241,49.011271],[8.416239,49.011247],[8.416232,49.011247],[8.416239,49.011246],[8.416237,49.011222],[8.41623,49.011223],[8.416237,49.011222],[8.416235,49.011198],[8.416228,49.011198],[8.416235,49.011197],[8.416232,49.011173],[8.416225,49.011173],[8.416232,49.011173],[8.41623,49.011148],[8.416223,49.011148],[8.41623,49.011147],[8.416228,49.011124],[8.416221,49.011123],[8.416522,49.011111],[8.416515,49.011112],[8.416518,49.011136],[8.416524,49.011136],[8.416518,49.011137],[8.41652,49.011161],[8.416527,49.011161],[8.41652,49.011161],[8.416522,49.011186],[8.416529,49.011186],[8.416522,49.011186],[8.416525,49.01121],[8.416531,49.01121],[8.416525,49.011211],[8.416527,49.011235],[8.416534,49.011235],[8.416527,49.011235],[8.416529,49.01126],[8.416536,49.01126],[8.416529,49.01126],[8.416531,49.011284],[8.416538,49.011284],[8.416531,49.011285],[8.416534,49.011309],[8.416541,49.011309],[8.416534,49.01131],[8.416536,49.011333],[8.416543,49.011333],[8.416536,49.011334],[8.416538,49.011358],[8.416545,49.011358],[8.416538,49.011359],[8.41654,49.011383],[8.416548,49.011383],[8.416541,49.011383],[8.416543,49.011407],[8.41655,49.011408],[8.416435,49.011412],[8.416435,49.011417],[8.416435,49.011412],[8.416359,49.011415],[8.416358,49.01142],[8.416357,49.011415],[8.416255,49.011419]]]}'),\n  ('KIT-S', 'new building', 'way/37799391', 19, '{\"type\":\"Polygon\",\"coordinates\":[[[8.416081,49.011112],[8.416066,49.010951],[8.417323,49.0109],[8.417324,49.010917],[8.417338,49.011061],[8.416432,49.011097],[8.416434,49.011115],[8.416408,49.011116],[8.416311,49.01112],[8.416309,49.011102],[8.416081,49.011112]]]}'),\n  ('KIT-N', '', 'way/84667757', 8, '{\"type\":\"Polygon\",\"coordinates\":[[[8.428031,49.094688],[8.428136,49.094669],[8.428187,49.094789],[8.428412,49.094749],[8.428437,49.094808],[8.428622,49.094774],[8.428524,49.094541],[8.428339,49.094575],[8.42829,49.094458],[8.428065,49.094498],[8.428128,49.09465],[8.428022,49.094669],[8.428007,49.094632],[8.427859,49.094659],[8.427897,49.094749],[8.428045,49.094723],[8.428031,49.094688]]]}'),\n  ('DHBW', '', 'way/28423864', 21, '{\"type\":\"Polygon\",\"coordinates\":[[[8.385557,49.026847],[8.385565,49.026885],[8.385506,49.026908],[8.38554,49.027069],[8.3856,49.027079],[8.385612,49.027122],[8.385371,49.027143],[8.385368,49.027103],[8.385139,49.027112],[8.385135,49.027164],[8.385017,49.027174],[8.385047,49.027333],[8.385107,49.027328],[8.385113,49.027354],[8.385886,49.027282],[8.38586,49.027159],[8.385781,49.027166],[8.385764,49.027085],[8.385831,49.027079],[8.385807,49.026969],[8.385766,49.026831],[8.385557,49.026847]]]}'),\n  ('HKA', '', 'way/317123112', 17.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.392111,49.017254],[8.392643,49.017233],[8.392669,49.017521],[8.392386,49.017533],[8.392392,49.017604],[8.392144,49.017614],[8.392132,49.017476],[8.392167,49.017474],[8.392165,49.017449],[8.392145,49.01745],[8.392142,49.017417],[8.392162,49.017416],[8.392159,49.017389],[8.392124,49.017391],[8.392111,49.017254]]]}'),\n  ('INF', '', 'way/155674961', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.419357,49.014484],[8.419609,49.014474],[8.419561,49.013943],[8.420349,49.013912],[8.420346,49.013871],[8.420368,49.01387],[8.420361,49.013795],[8.420339,49.013796],[8.420335,49.013754],[8.420285,49.013756],[8.419294,49.013795],[8.419357,49.014484]]]}'),\n  ('MATH', '', 'way/42321004', 17.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.408996,49.010823],[8.408969,49.010843],[8.409002,49.010862],[8.409182,49.010726],[8.409663,49.011],[8.4092,49.01135],[8.409087,49.011435],[8.408605,49.01116],[8.408978,49.01088],[8.408945,49.010861],[8.408941,49.010864],[8.408915,49.010849],[8.408914,49.01084],[8.408959,49.010807],[8.408967,49.010807],[8.408996,49.010823]]]}'),\n  ('PHYS', '', 'relation/285823', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.410146,49.012399],[8.411107,49.012362],[8.411143,49.01277],[8.411136,49.01277],[8.410182,49.012807],[8.410146,49.012399]],[[8.410578,49.012527],[8.410595,49.012715],[8.410811,49.012707],[8.410806,49.012646],[8.410794,49.012519],[8.410578,49.012527]]]}'),\n  ('ARCH', '', 'relation/285898', 14, '{\"type\":\"Polygon\",\"coordinates\":[[[8.411324,49.010704],[8.411234,49.010749],[8.411247,49.01076],[8.411056,49.010857],[8.410975,49.010787],[8.410566,49.010994],[8.410646,49.011062],[8.410458,49.011157],[8.410444,49.011145],[8.410346,49.011195],[8.410427,49.011264],[8.410443,49.011256],[8.410743,49.011512],[8.410704,49.011531],[8.410771,49.011589],[8.411788,49.011074],[8.41172,49.011017],[8.41169,49.011032],[8.411392,49.010779],[8.411405,49.010772],[8.411324,49.010704]],[[8.410638,49.011238],[8.410905,49.011099],[8.411118,49.011279],[8.411032,49.011325],[8.410983,49.011287],[8.410918,49.011319],[8.410964,49.011358],[8.410849,49.011412],[8.410638,49.011238]],[[8.411039,49.011031],[8.411334,49.010886],[8.411553,49.011065],[8.411452,49.011113],[8.411401,49.011074],[8.411333,49.011106],[8.411382,49.011147],[8.411246,49.01121],[8.411039,49.011031]]]}'),\n  ('LAF', '', 'way/251062513', 17.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.412409,49.01292],[8.412385,49.012625],[8.412018,49.012637],[8.412042,49.012933],[8.412409,49.01292]]]}'),\n  ('BLB', '', 'way/4234637', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.399088,49.007328],[8.398381,49.007549],[8.398608,49.007862],[8.398538,49.007884],[8.398632,49.008014],[8.398704,49.007991],[8.398934,49.008308],[8.399663,49.008081],[8.399608,49.008005],[8.399401,49.00807],[8.398997,49.007513],[8.399181,49.007456],[8.399088,49.007328]]]}'),\n  ('WIS', '', 'way/90183572', 10.5, '{\"type\":\"Polygon\",\"coordinates\":[[[8.398514,49.008422],[8.398862,49.008313],[8.398802,49.008232],[8.398454,49.008341],[8.398514,49.008422]]]}')\n),\nsites(building, building_name, site) AS (VALUES\n  ('KIT-S', 'KIT Library South', 'KIT Campus South'),\n  ('INF', 'Computer Science building', 'KIT Campus South'),\n  ('MATH', 'Mathematics building', 'KIT Campus South'),\n  ('PHYS', 'Physics building', 'KIT Campus South'),\n  ('ARCH', 'Architecture building', 'KIT Campus South'),\n  ('LAF', 'Learning Centre am Fasanenschlösschen', 'KIT Campus South'),\n  ('KIT-N', 'KIT Library North', 'KIT Campus North'),\n  ('BLB', 'Baden State Library', 'Karlsruhe'),\n  ('WIS', 'Wissenstor', 'Karlsruhe'),\n  ('HKA', 'Steinbeis-Haus (HKA)', 'Karlsruhe'),\n  ('DHBW', 'DHBW Karlsruhe', 'Karlsruhe')\n)\nSELECT f.building, s.building_name AS name, s.site, f.wing, f.height_m, f.osm, f.geometry\nFROM footprints f JOIN sites s USING (building)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "G"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each room's counts over the dashboard's time range (the last 12 hours by default, the\n-- Time Brush's window): the free seats, a curve on a callout above the room.\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\nwin AS (\n  SELECT w0, w1,\n         CAST(timezone('Europe/Berlin', w0) AS DATE) AS d0,\n         CAST(timezone('Europe/Berlin', w1) AS DATE) AS d1,\n         CAST(timezone('Europe/Berlin', now()) AS DATE) AS today\n  FROM (\n    SELECT greatest(to_timestamp(CAST(${__from} AS BIGINT) / 1000), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (SELECT least(to_timestamp(CAST(${__to} AS BIGINT) / 1000), now()) AS w1)\n  )\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today FROM win, unnest(generate_series(d0, least(d1, today), INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n)\nSELECT r.code, r.label, r.building, r.site, r.level, r.latitude, r.longitude,\n       timezone('UTC', x.t) AS time, x.free AS free_seats\nFROM readings x JOIN rooms r USING (code), win\nWHERE x.t \u003e w0 AND x.t \u003c= w1\nORDER BY r.code, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "H"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each room on its floor of its building, as a ring of the seats taken, with its free seats over the Time Brush's window on a callout above it. The picker on the left goes from floor to floor; zoomed out, a card per building and per site gives its free seats. Click a room, or pick one in the table, to see its day.",
+          "id": 5,
+          "links": [],
+          "title": "Karlsruhe libraries: free seats floor by floor",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-positron",
+                "floors": {
+                  "badge": {
+                    "agg": "sum",
+                    "field": "free",
+                    "label": "free seats"
+                  },
+                  "buildingField": "building",
+                  "buildingSettings": {
+                    "ARCH": {
+                      "defaultFloor": "1",
+                      "label": "Architecture building"
+                    },
+                    "BLB": {
+                      "defaultFloor": "0",
+                      "label": "Baden State Library"
+                    },
+                    "DHBW": {
+                      "defaultFloor": "0",
+                      "label": "DHBW Karlsruhe"
+                    },
+                    "HKA": {
+                      "defaultFloor": "1",
+                      "label": "Steinbeis-Haus (HKA)"
+                    },
+                    "INF": {
+                      "defaultFloor": "0",
+                      "label": "Computer Science building"
+                    },
+                    "KIT-N": {
+                      "defaultFloor": "0",
+                      "label": "KIT Library North"
+                    },
+                    "KIT-S": {
+                      "defaultFloor": "2",
+                      "label": "KIT Library South"
+                    },
+                    "LAF": {
+                      "defaultFloor": "1",
+                      "label": "Learning Centre am Fasanenschlösschen"
+                    },
+                    "MATH": {
+                      "defaultFloor": "0",
+                      "label": "Mathematics building"
+                    },
+                    "PHYS": {
+                      "defaultFloor": "2",
+                      "label": "Physics building"
+                    },
+                    "WIS": {
+                      "defaultFloor": "1",
+                      "label": "Wissenstor"
+                    }
+                  },
+                  "buildingVariable": "building",
+                  "defaultFloor": "2",
+                  "enabled": true,
+                  "field": "level",
+                  "ghostOpacity": 0.2,
+                  "nameField": "floor_name",
+                  "otherBuildings": "hide",
+                  "others": "ghost",
+                  "queryFloors": {
+                    "G": "facade"
+                  },
+                  "selectField": "code",
+                  "selectVariable": "room",
+                  "siteField": "site",
+                  "spacing": 8,
+                  "variable": "floor"
+                },
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -24,
+                      "dragRotate": true,
+                      "latitude": 49.01113,
+                      "longitude": 8.41622,
+                      "pitch": 52,
+                      "zoom": 17.95
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-positron",
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": false,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "room"
+                              },
+                              {
+                                "name": "status"
+                              },
+                              {
+                                "name": "free"
+                              },
+                              {
+                                "name": "seats"
+                              },
+                              {
+                                "name": "pct_taken"
+                              },
+                              {
+                                "name": "source"
+                              },
+                              {
+                                "name": "counted_at"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "building_name"
+                              },
+                              {
+                                "name": "floor_name"
+                              },
+                              {
+                                "name": "wing"
+                              }
+                            ],
+                            "grafana-G": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "wing"
+                              },
+                              {
+                                "name": "height_m"
+                              }
+                            ],
+                            "grafana-H": [
+                              {
+                                "name": "label"
+                              },
+                              {
+                                "name": "free_seats"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-H",
+                            "isVisible": true,
+                            "label": "Free seats over the window",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 3,
+                              "calloutStem": 30,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    0,
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    10,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#73BF69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF9830",
+                                  "#73BF69"
+                                ],
+                                "name": "Free seats",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkOverlap": "some",
+                              "sparkSize": "S",
+                              "sparkTooltip": false,
+                              "sparkUnit": "free"
+                            }
+                          },
+                          "id": "room-callouts",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "free_seats",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Seats taken",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    50,
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    80,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    95,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#E02F44"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73BF69",
+                                  "#FADE2A",
+                                  "#FF9830",
+                                  "#E02F44"
+                                ],
+                                "name": "Seats taken",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "gaugeBackground": true,
+                              "gaugeBackgroundColor": [
+                                24,
+                                38,
+                                77
+                              ],
+                              "gaugeBackgroundOpacity": 0.9,
+                              "gaugeCentreText": true,
+                              "gaugeMax": 100,
+                              "gaugeMin": 0,
+                              "gaugePosition": "center",
+                              "gaugeShape": "ring",
+                              "gaugeTextMode": "percent",
+                              "gaugeTextSize": 14,
+                              "gaugeThickness": 4,
+                              "gaugeUnit": "",
+                              "gaugeUpright": true,
+                              "gaugeZoomScale": false,
+                              "opacity": 0.9,
+                              "radius": 30,
+                              "rowsAsset": "auto",
+                              "rowsPerPlace": "last"
+                            }
+                          },
+                          "id": "room-gauges",
+                          "type": "gauge",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "pct_taken",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              176,
+                              190,
+                              210
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Floors",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "strokeColor": [
+                                96,
+                                110,
+                                132
+                              ],
+                              "stroked": true,
+                              "thickness": 0.05
+                            }
+                          },
+                          "id": "slabs",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              190,
+                              196,
+                              206
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-G",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Facades",
+                            "visConfig": {
+                              "elevationScale": 1,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": false,
+                              "filled": true,
+                              "fixedHeight": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.75,
+                              "strokeColor": [
+                                120,
+                                128,
+                                140
+                              ],
+                              "stroked": true,
+                              "thickness": 0.05,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "facades",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "heightField": {
+                              "name": "height_m",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": [
+                  {
+                    "field": "level",
+                    "keepOnDeselect": true,
+                    "source": "click",
+                    "variable": "floor"
+                  },
+                  {
+                    "field": "code",
+                    "source": "click",
+                    "variable": "room"
+                  }
+                ]
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-rooms": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every room at the end of the dashboard's time range, which the Time Brush moves (now, by\n-- default): its latest count from the Seatfinder, an estimate at most 20 minutes old or a\n-- staff count at most 4 hours old. A room with neither shows no count now (closed, mostly).\nWITH rooms(code, room, label, building, site, level, floors, latitude, longitude) AS (VALUES\n  ('LBS', 'Textbook collection', 'Textbooks', 'KIT-S', 'KIT Campus South', '0;1', 'Ground and 1st floor, old building', 49.01125, 8.41638),\n  ('LSN', 'Science reading room', 'Science', 'KIT-S', 'KIT Campus South', '2', '2nd floor, old building', 49.01125, 8.41638),\n  ('LSM', 'Media centre reading room', 'Media centre', 'KIT-S', 'KIT Campus South', '3', '3rd floor, old building', 49.01125, 8.41638),\n  ('LSW', 'Economics and computer science reading room', 'Economics', 'KIT-S', 'KIT Campus South', '1', '1st floor, new building', 49.011, 8.41676),\n  ('LST', 'Engineering reading room', 'Engineering', 'KIT-S', 'KIT Campus South', '2', '2nd floor, new building', 49.011, 8.41676),\n  ('LSG', 'Humanities reading room', 'Humanities', 'KIT-S', 'KIT Campus South', '3', '3rd floor, new building', 49.011, 8.41676),\n  ('FBI', 'Computer science library', 'Computer science', 'INF', 'KIT Campus South', '0', 'Ground floor', 49.01384, 8.42002),\n  ('FBM', 'Mathematics library', 'Mathematics', 'MATH', 'KIT Campus South', '-1;0', 'Basement and ground floor', 49.01126, 8.40899),\n  ('FBP', 'Physics library', 'Physics', 'PHYS', 'KIT Campus South', '2', '2nd floor', 49.01243, 8.41068),\n  ('FBA', 'Architecture faculty library', 'Architecture', 'ARCH', 'KIT Campus South', '1', '1st floor', 49.01112, 8.41077),\n  ('LAF', 'Learning centre', 'Learning centre', 'LAF', 'KIT Campus South', '1;2', '1st and 2nd floor', 49.01277, 8.41221),\n  ('BIB-N', 'KIT Library North', 'KIT North', 'KIT-N', 'KIT Campus North', '0', 'Ground floor', 49.09473, 8.42831),\n  ('BLB', 'Baden State Library', 'State Library', 'BLB', 'Karlsruhe', '0;1;2;3', 'Ground to 3rd floor', 49.00783, 8.39894),\n  ('WIS', 'Wissenstor, Baden State Library', 'Wissenstor', 'WIS', 'Karlsruhe', '1;2', '1st and 2nd floor', 49.00832, 8.39866),\n  ('FBH', 'HKA library', 'HKA', 'HKA', 'Karlsruhe', '1', '1st floor', 49.017499, 8.392369),\n  ('FBD', 'DHBW library', 'DHBW', 'DHBW', 'Karlsruhe', '0', 'Floor not given', 49.02721, 8.38525)\n),\nsites(building, building_name, site) AS (VALUES\n  ('KIT-S', 'KIT Library South', 'KIT Campus South'),\n  ('INF', 'Computer Science building', 'KIT Campus South'),\n  ('MATH', 'Mathematics building', 'KIT Campus South'),\n  ('PHYS', 'Physics building', 'KIT Campus South'),\n  ('ARCH', 'Architecture building', 'KIT Campus South'),\n  ('LAF', 'Learning Centre am Fasanenschlösschen', 'KIT Campus South'),\n  ('KIT-N', 'KIT Library North', 'KIT Campus North'),\n  ('BLB', 'Baden State Library', 'Karlsruhe'),\n  ('WIS', 'Wissenstor', 'Karlsruhe'),\n  ('HKA', 'Steinbeis-Haus (HKA)', 'Karlsruhe'),\n  ('DHBW', 'DHBW Karlsruhe', 'Karlsruhe')\n),\nwin AS (\n  SELECT w0, w1,\n         CAST(timezone('Europe/Berlin', w0) AS DATE) AS d0,\n         CAST(timezone('Europe/Berlin', w1) AS DATE) AS d1,\n         CAST(timezone('Europe/Berlin', now()) AS DATE) AS today\n  FROM (\n    SELECT greatest(to_timestamp(CAST(${__from} AS BIGINT) / 1000), w1 - INTERVAL 8 DAY) AS w0, w1\n    FROM (SELECT least(to_timestamp(CAST(${__to} AS BIGINT) / 1000), now()) AS w1)\n  )\n),\ndays AS (\n  SELECT CAST(d AS DATE) AS d, today FROM win, unnest(generate_series(d0, least(d1, today), INTERVAL 1 DAY)) AS g(d)\n),\nbodies AS (\n  SELECT r-\u003e\u003e'body' AS body\n  FROM (SELECT http_get('http://feeds/kit-seatfinder/' || CASE WHEN d = today THEN 'today/' ELSE 'day/' END || strftime(d, '%Y-%m-%d')) AS r FROM days)\n  WHERE (r-\u003e\u003e'status') = '200'\n),\ncounts AS (\n  SELECT unnest(json_extract(body, '$[0].seatestimate.*[*]')) AS j, 'estimate' AS source FROM bodies\n  UNION ALL\n  SELECT unnest(json_extract(body, '$[0].manualcount.*[*]')) AS j, 'staff count' AS source FROM bodies\n),\nreadings AS (\n  SELECT j-\u003e\u003e'location_name' AS code, source,\n         timezone('Europe/Berlin', strptime(j-\u003e'timestamp'-\u003e\u003e'date', '%Y-%m-%d %H:%M:%S.%f')) AS t,\n         least((j-\u003e\u003e'occupied_seats')::INTEGER, (j-\u003e\u003e'occupied_seats')::INTEGER + (j-\u003e\u003e'free_seats')::INTEGER) AS taken,\n         greatest((j-\u003e\u003e'free_seats')::INTEGER, 0) AS free\n  FROM counts\n  QUALIFY source = 'estimate' OR count(*) FILTER (WHERE source = 'estimate') OVER (PARTITION BY j-\u003e\u003e'location_name') = 0\n),\nlatest AS (\n  SELECT readings.* FROM readings, win\n  WHERE t \u003c= w1 AND t \u003e w1 - CASE WHEN source = 'estimate' THEN INTERVAL 20 MINUTE ELSE INTERVAL 4 HOUR END\n  QUALIFY row_number() OVER (PARTITION BY code ORDER BY t DESC) = 1\n)\nSELECT r.code, r.room, r.label, r.building, s.building_name, r.site, r.level, r.floors,\n       r.latitude, r.longitude,\n       l.free, l.taken, l.taken + l.free AS seats,\n       round(100.0 * l.taken / nullif(l.taken + l.free, 0)) AS pct_taken,\n       CASE WHEN l.code IS NULL THEN 'No count now'\n            WHEN l.taken \u003e= 0.95 * (l.taken + l.free) THEN 'Full'\n            WHEN l.taken \u003e= 0.8 * (l.taken + l.free) THEN 'Few seats left'\n            WHEN l.taken \u003e= 0.5 * (l.taken + l.free) THEN 'Filling up'\n            ELSE 'Plenty of seats' END AS status,\n       l.source, strftime(timezone('Europe/Berlin', l.t), '%a %H:%M') AS counted_at\nFROM rooms r JOIN sites s USING (building) LEFT JOIN latest l USING (code)\nORDER BY l.free DESC NULLS LAST, r.room"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "organize",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "building": true,
+                        "building_name": true,
+                        "floors": true,
+                        "label": true,
+                        "latitude": true,
+                        "level": true,
+                        "longitude": true,
+                        "site": true,
+                        "source": true,
+                        "status": true,
+                        "taken": true
+                      },
+                      "indexByName": {
+                        "code": 5,
+                        "counted_at": 4,
+                        "free": 1,
+                        "pct_taken": 3,
+                        "room": 0,
+                        "seats": 2
+                      },
+                      "renameByName": {
+                        "building_name": "Building",
+                        "counted_at": "Counted",
+                        "floors": "Floor",
+                        "free": "Free",
+                        "pct_taken": "Taken",
+                        "room": "Room",
+                        "seats": "Seats",
+                        "source": "Count"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Every room at the end of the time range, most free seats first, and when it was counted. A room's name takes the map to it and the day chart to its day.",
+          "id": 6,
+          "links": [],
+          "title": "Rooms",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "code"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Room"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 165
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Show it on the map",
+                            "url": "/d/${__dashboard.uid}?${__url_time_range}\u0026var-room=${__data.fields.code}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Free"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Seats"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Counted"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Taken"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 100
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 95
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "#73BF69",
+                              "value": 0
+                            },
+                            {
+                              "color": "#FADE2A",
+                              "value": 50
+                            },
+                            {
+                              "color": "#FF9830",
+                              "value": 80
+                            },
+                            {
+                              "color": "#E02F44",
+                              "value": 95
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-free"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-taken"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-fullest"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-latest"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 20,
+              "width": 15,
+              "x": 0,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-rooms"
+              },
+              "height": 11,
+              "width": 9,
+              "x": 15,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-day"
+              },
+              "height": 9,
+              "width": 9,
+              "x": 15,
+              "y": 18
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 12,
+              "width": 24,
+              "x": 0,
+              "y": 27
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "buildings",
+      "business-charts",
+      "duckdb",
+      "kepler",
+      "live",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "5m",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-12h",
+      "hideTimepicker": false,
+      "timezone": "Europe/Berlin",
+      "to": "now"
+    },
+    "title": "Karlsruhe libraries: free seats floor by floor",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Building",
+          "name": "building",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Floor",
+          "name": "floor",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Room",
+          "name": "room",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
