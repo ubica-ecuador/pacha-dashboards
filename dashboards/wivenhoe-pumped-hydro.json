@@ -1,0 +1,1672 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "wivenhoe-pumped-hydro"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Wivenhoe pumped storage hydro station (Queensland) live in 3D and floor by floor: its two 285 MW reversible units in their silos, each part in the colour of what the unit is doing (generating, pumping, idle) from AEMO's five-minute SCADA, the water running down or up its penstock, and a week of pumping at midday and generating at the peaks.",
+    "editable": true,
+    "elements": {
+      "card-energy": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n)\nSELECT round(sum(pump) / 12) AS \"Pumped\", round(sum(gen) / 12) AS \"Generated\",\n       round(100 * sum(gen) / nullif(sum(pump), 0)) AS \"Back out\"\nFROM r\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Energy over the time range, from the five-minute readings (MW × 5 min): what the pumps drew from the grid to lift water up to Splityard Creek Dam, what the generators gave back, and the second as a share of the first. Over a day the upper dam may end fuller or emptier than it began, so the share swings; over the recorded week it comes near the station's round trip (about 68 % this week).",
+          "id": 2,
+          "links": [],
+          "title": "Over the time range",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "MWh"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pumped"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#5794f2",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Generated"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#73bf69",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Back out"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The newest reading of the station's four ids in the time range.\nSELECT max(ts) AS time\nFROM read_parquet([${files:singlequote}])\nWHERE duid IN ('W/HOE#1', 'W/HOE#2', 'PUMP1', 'PUMP2') AND ts BETWEEN $__timeFrom() AND $__timeTo()\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the newest reading in the time range was taken (AEMO stamps each reading with the end of its five-minute interval). Pacha's recorder fetches the SCADA as AEMO publishes it, every five minutes.",
+          "id": 3,
+          "links": [],
+          "title": "Latest data",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\nSELECT CASE WHEN count(*) FILTER (WHERE gen \u003e= 5) \u003e 0 AND count(*) FILTER (WHERE pump \u003e= 5) \u003e 0\n            THEN 'Generating and pumping'\n            WHEN count(*) FILTER (WHERE gen \u003e= 5) \u003e 0\n            THEN 'Generating, ' || count(*) FILTER (WHERE gen \u003e= 5) || ' of 2'\n            WHEN count(*) FILTER (WHERE pump \u003e= 5) \u003e 0\n            THEN 'Pumping, ' || count(*) FILTER (WHERE pump \u003e= 5) || ' of 2'\n            ELSE 'Idle' END AS \"Doing\",\n       round(sum(gen) - sum(pump)) AS \"Output\"\nFROM latest\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What Wivenhoe is doing at the end of the time range (its latest reading when the range ends now): generating, pumping or idle, and how many of its two units, from AEMO's five-minute SCADA; and the station's output, negative while it pumps (what it draws from the grid).",
+          "id": 1,
+          "links": [],
+          "title": "The station now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "mappings": [
+                    {
+                      "options": {
+                        "pattern": "^Generating.*",
+                        "result": {
+                          "color": "#73bf69"
+                        }
+                      },
+                      "type": "regex"
+                    },
+                    {
+                      "options": {
+                        "pattern": "^Pumping.*",
+                        "result": {
+                          "color": "#5794f2"
+                        }
+                      },
+                      "type": "regex"
+                    },
+                    {
+                      "options": {
+                        "Idle": {
+                          "color": "#8e8e8e",
+                          "index": 0
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#5794f2",
+                        "value": null
+                      },
+                      {
+                        "color": "#8e8e8e",
+                        "value": -5
+                      },
+                      {
+                        "color": "#73bf69",
+                        "value": 5
+                      }
+                    ]
+                  },
+                  "unit": "MW"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the station and the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "Wivenhoe Power Station, between Splityard Creek Dam and Lake Wivenhoe in South East Queensland, is Queensland's only pumped storage hydro station: two reversible units of 285 MW in two concrete silos, each a pump-turbine on the shaft of a motor-generator. When power is cheap (these days around midday, while solar floods the grid) the units run as pumps and lift water some 100 m from Lake Wivenhoe up to Splityard Creek Dam; when it is dear (the morning and evening peaks) the water comes back down through the same machines, now turbines. Each unit can do either, never both at once.\n\nOn the map: every part of a unit is in the colour of what the unit was doing at the end of the time range, green generating, blue pumping, grey idle, and the water in its penstock runs down to the lake or up to the dam. The callouts chart each unit's MW over the range, pumping below zero; hover a part for its own card. The picker at the left shows one floor of the silos at a time (the hall, the generator floor, the turbine floor with the inlet valves and the penstocks, the draft tubes), the others see-through; *All* shows the whole station. Tilt and turn the map with the right button or Ctrl+drag. The brush at the top moves the time range over the recorded week: drag its window or press play to watch a day go by.\n\nData: [AEMO NEMweb](https://nemweb.com.au/Reports/Current/Dispatch_SCADA/), dispatch SCADA: every five minutes, each unit's output as a generator (W/HOE#1, W/HOE#2) and its pump's load (PUMP1, PUMP2), in market time (AEST, UTC+10), used under AEMO's copyright permissions; Pacha's recorder keeps about a week of it.\n\nThe model is a schematic, built by `datasets/wivenhoe/build.sh`: the hall, the transformer bays, the intake towers and the penstocks' routes are OpenStreetMap's (© OpenStreetMap contributors, ODbL); the silos' size (about 32 m across inside) and the ratings are the station's public description (CleanCo, Wikipedia). How deep the silos go, the floors' levels, the machines' sizes, which silo is unit 1 and where the silos stand under the hall are drawn, not surveyed. The map is flat (Splityard Creek Dam, about 100 m up the hill, lies at the lake's level), and it hides nothing under it: only the silos and the draft tubes, under the hall and the lake, are drawn below ground. The penstocks lie on the ground along their routes, as their depth in the hill is not known, and drop down a shaft beside the hall into their silos. Keep a flat base map, as saved: on one with relief (*Satellite + relief*) the station floats, because the relief lifts the ground half as high again while the map draws the model, the callouts and the water at sea level (only markers and symbols stand on the relief today).",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The whole recording, whatever the time range: the recorder keeps about a week.\nSET VARIABLE wivenhoe_week = (\n  SELECT list(url) FROM (\n    SELECT url FROM read_json('http://feeds/recordings/aemo-scada/manifest.json',\n                              columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\n    WHERE \"to\" \u003e= now() - INTERVAL 8 DAY\n    UNION ALL SELECT 'http://feeds/recordings/aemo-scada-empty.parquet'));\nWITH s AS (\n  -- The station every five minutes: both generators and both pumps.\n  SELECT ts, coalesce(sum(mw) FILTER (WHERE duid IN ('W/HOE#1', 'W/HOE#2')), 0) AS gen,\n             coalesce(sum(mw) FILTER (WHERE duid IN ('PUMP1', 'PUMP2')), 0) AS pump\n  FROM read_parquet(getvariable('wivenhoe_week'))\n  WHERE duid IN ('W/HOE#1', 'W/HOE#2', 'PUMP1', 'PUMP2')\n  GROUP BY ts\n)\nSELECT time_bucket(INTERVAL 30 MINUTE, ts) AS time,\n       round(avg(gen)) AS \"Generating\", round(avg(pump)) AS \"Pumping\"\nFROM s\nGROUP BY 1\nORDER BY 1\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The whole recording (about a week) half hour by half hour: the station's mean output as a generator (green) and what its pumps drew (blue). Its window is the dashboard's time range: drag it, resize it by its handles or draw a new one, step it, or press play. The map shows the station at the window's end, the callouts and the charts the window; at the latest half hour it follows the readings as they come.",
+          "id": 4,
+          "links": [],
+          "title": "The recorded week: pick the hours on the map",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "aggregation": "mean",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "unit": "MW"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Generating"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#73bf69",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pumping"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#5794f2",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "30m",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "followLatest": true,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "",
+                "loop": false,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "range",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1500,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "",
+                  "to": ""
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-day": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The whole recording, whatever the time range: the recorder keeps about a week.\nSET VARIABLE wivenhoe_week = (\n  SELECT list(url) FROM (\n    SELECT url FROM read_json('http://feeds/recordings/aemo-scada/manifest.json',\n                              columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\n    WHERE \"to\" \u003e= now() - INTERVAL 8 DAY\n    UNION ALL SELECT 'http://feeds/recordings/aemo-scada-empty.parquet'));\nWITH s AS (\n  -- The station every five minutes: both generators and both pumps.\n  SELECT ts, coalesce(sum(mw) FILTER (WHERE duid IN ('W/HOE#1', 'W/HOE#2')), 0) AS gen,\n             coalesce(sum(mw) FILTER (WHERE duid IN ('PUMP1', 'PUMP2')), 0) AS pump\n  FROM read_parquet(getvariable('wivenhoe_week'))\n  WHERE duid IN ('W/HOE#1', 'W/HOE#2', 'PUMP1', 'PUMP2')\n  GROUP BY ts\n)\nSELECT lpad(hour(timezone('Australia/Brisbane', ts - INTERVAL 5 MINUTE))::VARCHAR, 2, '0') || ':00' AS \"Hour\",\n       round(avg(gen)) AS \"Generating\", -round(avg(pump)) AS \"Pumping\"\nFROM s\nGROUP BY 1\nORDER BY 1\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The station's mean output hour by hour of the day in Brisbane time (AEST, no daylight saving), over the whole recording (about a week), whatever the time range: what the generators sent (green, up) and what the pumps drew (blue, down).",
+          "id": 8,
+          "links": [],
+          "title": "An average day, over the recorded week",
+          "vizConfig": {
+            "group": "barchart",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": true,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 0,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "unit": "MW"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Generating"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#73bf69",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pumping"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#5794f2",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.85,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "never",
+                "stacking": "normal",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                },
+                "xField": "Hour",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 60
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- Every part of a unit (parts.parquet names them in model.glb) in the colour of\n-- what its unit was doing at its latest reading in the range, which the 4D\n-- Model shows; level is the part's floor in its silo, for the floor picker.\nSELECT p.part, p.label AS name, p.kind, p.level, p.floor_name,\n       CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(gen - pump) AS mw,\n       strftime(timezone('Australia/Brisbane', ts), '%-d %b %H:%M AEST') AS reading,\n       u.origin_latitude AS latitude, u.origin_longitude AS longitude\nFROM latest JOIN u USING (unit)\nJOIN 'http://feeds/datasets/wivenhoe/parts.parquet' p USING (unit)\nORDER BY p.part\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n)\n-- Each unit's MW over the range for its callout, over its silo above the hall's\n-- roof: generating above zero, pumping below.\nSELECT r.ts AS time, u.name, round(gen - pump) AS mw,\n       u.latitude, u.longitude, 24 AS altitude\nFROM r JOIN u USING (unit)\nORDER BY u.unit, time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- Each unit's water path (water.parquet: intake tower, penstock, valve,\n-- turbine, draft tube, outlet; in the model's metres) at the end of the range:\n-- generating it runs down to the lake (positive), pumping back up (negative).\nSELECT w.name, w.model_geometry, CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(CASE WHEN gen \u003e= 5 THEN gen WHEN pump \u003e= 5 THEN -pump ELSE 0 END) AS water\nFROM 'http://feeds/datasets/wivenhoe/water.parquet' w\nLEFT JOIN latest USING (unit)\nORDER BY w.unit\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The floors for the floor picker (floors.parquet): the ground over the station,\n-- dark and see-through over all that is drawn below it, and each silo's three\n-- round its machine pit; the map lifts each to its level.\nSELECT level, floor_name, name, CASE WHEN level = '0' THEN 'Ground' ELSE 'Floor' END AS kind,\n       geojson AS geometry\nFROM 'http://feeds/datasets/wivenhoe/floors.parquet'\nORDER BY level DESC, name\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The station in 3D over its satellite image, a schematic: the see-through machine hall on the shore of Lake Wivenhoe, and under it the two silos, one unit in each: its motor-generator, the pump-turbine in its spiral case, the inlet valve, the draft tube out to the lake, the penstock up to its intake tower in Splityard Creek Dam and its transformer. Every part in the colour of what its unit was doing at the end of the time range (green generating, blue pumping, grey idle); the water runs down to the lake while it generates and up to the dam while it pumps; each unit's callout charts its MW over the range (pumping below zero). The floor picker shows one floor of the silos at a time.",
+          "id": 5,
+          "links": [],
+          "title": "Wivenhoe at the end of the window, floor by floor",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "fitOnVariables": [],
+                "floors": {
+                  "buildingSettings": {
+                    "": {
+                      "label": "Wivenhoe Power Station"
+                    }
+                  },
+                  "enabled": true,
+                  "field": "level",
+                  "floorSettings": {
+                    "-1": {
+                      "height": 20
+                    },
+                    "-2": {
+                      "height": 12
+                    },
+                    "-3": {
+                      "height": 12
+                    },
+                    "0": {
+                      "height": 22
+                    }
+                  },
+                  "ghostOpacity": 0.15,
+                  "groundFloor": "level",
+                  "nameField": "floor_name",
+                  "others": "ghost",
+                  "queryFloors": {
+                    "B": "always",
+                    "C": "always"
+                  },
+                  "spacing": 12,
+                  "variable": "floor"
+                },
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 64,
+                      "dragRotate": true,
+                      "latitude": -27.371775,
+                      "longitude": 152.632955,
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 70,
+                      "pitch": 58,
+                      "zoom": 17.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-google-satellite",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "mw"
+                              },
+                              {
+                                "format": null,
+                                "name": "reading"
+                              },
+                              {
+                                "format": null,
+                                "name": "floor_name"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "mw"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "water"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "floor_name"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "wivenhoe-callouts",
+                        "wivenhoe-water",
+                        "wivenhoe-floors",
+                        "wivenhoe-parts"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Each unit, MW",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  24,
+                                  27,
+                                  31,
+                                  255
+                                ],
+                                "outlineWidth": 1,
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 60,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    -5,
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    5,
+                                    "#8e8e8e"
+                                  ],
+                                  [
+                                    null,
+                                    "#73bf69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5794f2",
+                                  "#8e8e8e",
+                                  "#73bf69"
+                                ],
+                                "name": "MW (pumping below zero)",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkFill": true,
+                              "sparkMax": 290,
+                              "sparkMin": -250,
+                              "sparkOverlap": "all",
+                              "sparkScale": "common",
+                              "sparkSize": "M",
+                              "sparkTooltip": false,
+                              "sparkUnit": " MW"
+                            }
+                          },
+                          "id": "wivenhoe-callouts",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mw",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "isVisible": true,
+                            "label": "Water through each unit",
+                            "visConfig": {
+                              "elevationScale": 1,
+                              "pipelineSignedSpeed": true,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    -5,
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    5,
+                                    "#8e8e8e"
+                                  ],
+                                  [
+                                    null,
+                                    "#73bf69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5794f2",
+                                  "#8e8e8e",
+                                  "#73bf69"
+                                ],
+                                "name": "MW (pumping below zero)",
+                                "type": "custom"
+                              },
+                              "stroked": true,
+                              "thickness": 5,
+                              "trafficDirectionMode": "straight",
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ]
+                            }
+                          },
+                          "id": "wivenhoe-water",
+                          "type": "pipeline",
+                          "visualChannels": {
+                            "speedField": {
+                              "name": "water",
+                              "type": "real"
+                            },
+                            "speedScale": "linear",
+                            "strokeColorField": {
+                              "name": "water",
+                              "type": "real"
+                            },
+                            "strokeColorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              150,
+                              156,
+                              166
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-D",
+                            "isVisible": true,
+                            "label": "Floors",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Ground",
+                                    "#151b1f"
+                                  ],
+                                  [
+                                    "Floor",
+                                    "#aab1bb"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#151b1f",
+                                  "#aab1bb"
+                                ],
+                                "name": "Floors",
+                                "type": "custom"
+                              },
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.45,
+                              "strokeColor": [
+                                214,
+                                220,
+                                228
+                              ],
+                              "strokeOpacity": 0.7,
+                              "stroked": true,
+                              "thickness": 0.08,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "wivenhoe-floors",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              142,
+                              142,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Wivenhoe's two units",
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardMax": 290,
+                              "cardMin": -250,
+                              "cardNameField": "name",
+                              "cardScale": "common",
+                              "cardShow": "hover",
+                              "cardSize": "S",
+                              "cardTimeField": "none",
+                              "cardUnit": " MW",
+                              "cardValueField": "mw",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Generating",
+                                    "#73bf69"
+                                  ],
+                                  [
+                                    "Pumping",
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    "Idle",
+                                    "#8e8e8e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73bf69",
+                                  "#5794f2",
+                                  "#8e8e8e"
+                                ],
+                                "name": "What the unit is doing",
+                                "type": "custom"
+                              },
+                              "modelAltitude": 0,
+                              "modelHeading": 0,
+                              "modelIdField": "part",
+                              "modelMode": "state",
+                              "modelNoReading": "ghost",
+                              "modelStaleMinutes": 0,
+                              "modelTimeField": "none",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/wivenhoe/model.glb?v=6",
+                              "opacity": 1
+                            }
+                          },
+                          "id": "wivenhoe-parts",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "places": {},
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-modes": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n)\nSELECT ts AS time,\n       max(CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END) FILTER (WHERE unit = 1) AS \"Unit 1\",\n       max(CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END) FILTER (WHERE unit = 2) AS \"Unit 2\"\nFROM r\nGROUP BY ts\nORDER BY ts\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each unit every five minutes over the time range: generating (its generator reading 5 MW or more), pumping (its pump drawing 5 MW or more) or idle, from AEMO's SCADA.",
+          "id": 6,
+          "links": [],
+          "title": "What each unit did",
+          "vizConfig": {
+            "group": "state-timeline",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8e8e8e",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "fillOpacity": 85,
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 900000,
+                    "lineWidth": 0,
+                    "spanNulls": false
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "Generating": {
+                          "color": "#73bf69",
+                          "index": 0,
+                          "text": "Generating"
+                        },
+                        "Idle": {
+                          "color": "#8e8e8e",
+                          "index": 2,
+                          "text": "Idle"
+                        },
+                        "Pumping": {
+                          "color": "#5794f2",
+                          "index": 1,
+                          "text": "Pumping"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                },
+                "overrides": []
+              },
+              "options": {
+                "alignValue": "left",
+                "legend": {
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "mergeValues": true,
+                "rowHeight": 0.8,
+                "showValue": "never",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-output": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n)\nSELECT ts AS time,\n       max(round(gen - pump)) FILTER (WHERE unit = 1) AS \"Unit 1\",\n       max(round(gen - pump)) FILTER (WHERE unit = 2) AS \"Unit 2\"\nFROM r\nGROUP BY ts\nORDER BY ts\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each unit's output every five minutes over the time range: what its generator sends to the grid, minus what its pump draws from it, from AEMO's SCADA. A unit is a generator or a pump, never both at once.",
+          "id": 7,
+          "links": [],
+          "title": "Each unit, MW (pumping below zero)",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 18,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "line"
+                    }
+                  },
+                  "decimals": 0,
+                  "max": 300,
+                  "min": -300,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "transparent",
+                        "value": null
+                      },
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "MW"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Unit 1"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#f2cc0c",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Unit 2"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#b877d9",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "min",
+                    "max"
+                  ],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-now"
+              },
+              "height": 4,
+              "width": 9,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-energy"
+              },
+              "height": 4,
+              "width": 10,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-latest"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 19,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 21,
+              "width": 15,
+              "x": 0,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-modes"
+              },
+              "height": 6,
+              "width": 9,
+              "x": 15,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-output"
+              },
+              "height": 8,
+              "width": 9,
+              "x": 15,
+              "y": 15
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-day"
+              },
+              "height": 7,
+              "width": 9,
+              "x": 15,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 30
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "duckdb",
+      "energy",
+      "kepler",
+      "live",
+      "plus",
+      "water"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "Australia/Brisbane",
+      "to": "now"
+    },
+    "title": "Wivenhoe pumped hydro, live: two reversible units in 3D, floor by floor",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The recording's files that overlap the time range, from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded files",
+          "multi": true,
+          "name": "files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/aemo-scada/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" \u003e= $__timeFrom() AND \"from\" \u003c= $__timeTo()\nUNION ALL SELECT 'http://feeds/recordings/aemo-scada-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Floor",
+          "name": "floor",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
