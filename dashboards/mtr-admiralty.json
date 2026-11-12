@@ -1,0 +1,1271 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "mtr-admiralty"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Admiralty, the Hong Kong MTR station where four lines meet on eight floors down to 34 m under the street, from the Lands Department's 3D Indoor Map, with the trains at its eight platforms placed from MTR's live Next Train times.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Admiralty station from the Lands Department's 3D Indoor Map (datasets/mtr-admiralty): its\n-- platforms, tracks, escalators, stairs, lifts, concourses, toilets and shops, floor by floor.\nSELECT unit, kind, name, level, floor_name, area_m2, geometry\nFROM 'http://feeds/datasets/mtr-admiralty/units.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each floor's outline, the slab it stands on.\nSELECT level, floor_name, z_mpd, geometry\nFROM 'http://feeds/datasets/mtr-admiralty/floors.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each floor's outline as a low wall.\nSELECT level, floor_name, height_m, geometry\nFROM 'http://feeds/datasets/mtr-admiralty/walls.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Exits, gates, customer service, toilets, defibrillators, shops and the platforms' own markers\n-- (what a link with var-platform flies to).\nSELECT kind, name, coalesce(label, '') AS label,\n       CASE WHEN kind = 'Platform' THEN 'Platform ' || label END AS platform,\n       level, floor_name, latitude, longitude\nFROM 'http://feeds/datasets/mtr-admiralty/points.parquet'\nWHERE kind \u003c\u003e 'Platform' OR label IS NOT NULL\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MTR's Next Train API (data.gov.hk), through the gateway's 10 s cache: the next four trains\n-- each way on the four lines at Admiralty, their platform and estimated time (Hong Kong time,\n-- UTC+8, to the second).\nWITH feed AS (\n  SELECT line, from_json(r-\u003e\u003e'body', '{\"sys_time\":\"VARCHAR\",\"data\":\"JSON\"}') AS j\n  FROM (SELECT line, http_get('http://feeds/mtr/nexttrain/' || line || '/ADM') AS r\n        FROM (VALUES ('ISL'), ('TWL'), ('SIL'), ('EAL')) v(line))\n  WHERE (r-\u003e\u003e'status') = '200'\n),\nnext AS (\n  SELECT f.line, t.seq::INTEGER AS seq, t.dest, t.plat::INTEGER AS plat,\n         strptime(t.\"time\", '%Y-%m-%d %H:%M:%S') - INTERVAL 8 HOUR AS due\n  FROM feed f, (VALUES ('UP'), ('DOWN')) d(dir),\n       unnest(from_json(f.j.data -\u003e (f.line || '-ADM') -\u003e d.dir,\n                        '[{\"seq\":\"VARCHAR\",\"dest\":\"VARCHAR\",\"plat\":\"VARCHAR\",\"time\":\"VARCHAR\"}]')) u(t)\n  WHERE regexp_matches(t.\"time\", '^\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d$')\n),\nplaces(code, place) AS (VALUES\n  ('ADM', 'Admiralty'), ('TSW', 'Tsuen Wan'), ('CEN', 'Central'), ('KET', 'Kennedy Town'), ('CHW', 'Chai Wan'),\n  ('SOH', 'South Horizons'), ('LMC', 'Lok Ma Chau'), ('LOW', 'Lo Wu'), ('SHS', 'Sheung Shui'),\n  ('TAP', 'Tai Po Market'), ('RAC', 'Racecourse'), ('FOT', 'Fo Tan'), ('SHT', 'Sha Tin'), ('HUH', 'Hung Hom'),\n  ('MKK', 'Mong Kok East'), ('UNI', 'University'), ('TAW', 'Tai Wai'), ('KOT', 'Kowloon Tong'),\n  ('OCP', 'Ocean Park'), ('WCH', 'Wong Chuk Hang'), ('LET', 'Lei Tung'), ('TST', 'Tsim Sha Tsui'),\n  ('MOK', 'Mong Kok'), ('LAK', 'Lai King'), ('KWF', 'Kwai Fong'), ('NOP', 'North Point'), ('SKW', 'Shau Kei Wan'),\n  ('HFC', 'Heng Fa Chuen'), ('CAB', 'Causeway Bay'), ('QUB', 'Quarry Bay'), ('TAK', 'Tai Koo'),\n  ('SWH', 'Sai Wan Ho'), ('SYP', 'Sai Ying Pun'), ('SHW', 'Sheung Wan'), ('HKU', 'HKU'), ('WAC', 'Wan Chai')),\n-- Where each train is now. MTR publishes times, not positions: a train ending here or running\n-- through comes in over the 30 s before its time, braking to its stop 3 m short of the\n-- platform's end, waits 30 s and pulls out; one leaving a terminus platform (5, 6, 7) waits\n-- there the 2 minutes before its time, then goes back out the way it came.\npos AS (\n  SELECT n.*, coalesce(pl.place, n.dest) AS destination, p.platform, p.line_name, p.level, p.floor_name,\n         p.latitude, p.longitude, p.x_stop, p.train_m, p.car_m, p.terminus,\n         epoch(n.due) - epoch(now()) AS s,\n         n.dest = 'ADM' OR NOT p.terminus AS arrives\n  FROM next n\n  JOIN 'http://feeds/datasets/mtr-admiralty/platforms.parquet' p USING (plat)\n  LEFT JOIN places pl ON pl.code = n.dest\n),\nmoving AS (\n  SELECT *,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN 'Arriving'\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN 'At the platform'\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN 'Leaving'\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN 'At the platform'\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN 'Leaving'\n         END AS state,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN x_stop - 250 * (s / 30) ^ 2\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN x_stop\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN x_stop + 0.6 * (-s - 30) ^ 2\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN x_stop\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN x_stop - 0.6 * s ^ 2\n         END AS front\n  FROM pos\n)\n-- Each train as the metre slices of track it covers, a 1 m gap between its cars, 3.7 m high.\nSELECT m.line_name AS line, m.platform, m.destination, m.state,\n       strftime(m.due + INTERVAL 8 HOUR, '%H:%M:%S') AS due_hkt,\n       floor((m.front - sl.x) / m.car_m)::INTEGER + 1 AS car,\n       sl.level, sl.floor_name, 3.7 AS height_m, sl.geometry\nFROM moving m\nJOIN 'http://feeds/datasets/mtr-admiralty/slices.parquet' sl\n  ON sl.plat = m.plat AND sl.x \u003e= m.front - m.train_m AND sl.x \u003c m.front\n AND fmod(m.front - sl.x, m.car_m) \u003c m.car_m - 1\nWHERE m.state IS NOT NULL\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MTR's Next Train API (data.gov.hk), through the gateway's 10 s cache: the next four trains\n-- each way on the four lines at Admiralty, their platform and estimated time (Hong Kong time,\n-- UTC+8, to the second).\nWITH feed AS (\n  SELECT line, from_json(r-\u003e\u003e'body', '{\"sys_time\":\"VARCHAR\",\"data\":\"JSON\"}') AS j\n  FROM (SELECT line, http_get('http://feeds/mtr/nexttrain/' || line || '/ADM') AS r\n        FROM (VALUES ('ISL'), ('TWL'), ('SIL'), ('EAL')) v(line))\n  WHERE (r-\u003e\u003e'status') = '200'\n),\nnext AS (\n  SELECT f.line, t.seq::INTEGER AS seq, t.dest, t.plat::INTEGER AS plat,\n         strptime(t.\"time\", '%Y-%m-%d %H:%M:%S') - INTERVAL 8 HOUR AS due\n  FROM feed f, (VALUES ('UP'), ('DOWN')) d(dir),\n       unnest(from_json(f.j.data -\u003e (f.line || '-ADM') -\u003e d.dir,\n                        '[{\"seq\":\"VARCHAR\",\"dest\":\"VARCHAR\",\"plat\":\"VARCHAR\",\"time\":\"VARCHAR\"}]')) u(t)\n  WHERE regexp_matches(t.\"time\", '^\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d$')\n),\nplaces(code, place) AS (VALUES\n  ('ADM', 'Admiralty'), ('TSW', 'Tsuen Wan'), ('CEN', 'Central'), ('KET', 'Kennedy Town'), ('CHW', 'Chai Wan'),\n  ('SOH', 'South Horizons'), ('LMC', 'Lok Ma Chau'), ('LOW', 'Lo Wu'), ('SHS', 'Sheung Shui'),\n  ('TAP', 'Tai Po Market'), ('RAC', 'Racecourse'), ('FOT', 'Fo Tan'), ('SHT', 'Sha Tin'), ('HUH', 'Hung Hom'),\n  ('MKK', 'Mong Kok East'), ('UNI', 'University'), ('TAW', 'Tai Wai'), ('KOT', 'Kowloon Tong'),\n  ('OCP', 'Ocean Park'), ('WCH', 'Wong Chuk Hang'), ('LET', 'Lei Tung'), ('TST', 'Tsim Sha Tsui'),\n  ('MOK', 'Mong Kok'), ('LAK', 'Lai King'), ('KWF', 'Kwai Fong'), ('NOP', 'North Point'), ('SKW', 'Shau Kei Wan'),\n  ('HFC', 'Heng Fa Chuen'), ('CAB', 'Causeway Bay'), ('QUB', 'Quarry Bay'), ('TAK', 'Tai Koo'),\n  ('SWH', 'Sai Wan Ho'), ('SYP', 'Sai Ying Pun'), ('SHW', 'Sheung Wan'), ('HKU', 'HKU'), ('WAC', 'Wan Chai')),\n-- Where each train is now. MTR publishes times, not positions: a train ending here or running\n-- through comes in over the 30 s before its time, braking to its stop 3 m short of the\n-- platform's end, waits 30 s and pulls out; one leaving a terminus platform (5, 6, 7) waits\n-- there the 2 minutes before its time, then goes back out the way it came.\npos AS (\n  SELECT n.*, coalesce(pl.place, n.dest) AS destination, p.platform, p.line_name, p.level, p.floor_name,\n         p.latitude, p.longitude, p.x_stop, p.train_m, p.car_m, p.terminus,\n         epoch(n.due) - epoch(now()) AS s,\n         n.dest = 'ADM' OR NOT p.terminus AS arrives\n  FROM next n\n  JOIN 'http://feeds/datasets/mtr-admiralty/platforms.parquet' p USING (plat)\n  LEFT JOIN places pl ON pl.code = n.dest\n),\nmoving AS (\n  SELECT *,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN 'Arriving'\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN 'At the platform'\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN 'Leaving'\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN 'At the platform'\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN 'Leaving'\n         END AS state,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN x_stop - 250 * (s / 30) ^ 2\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN x_stop\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN x_stop + 0.6 * (-s - 30) ^ 2\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN x_stop\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN x_stop - 0.6 * s ^ 2\n         END AS front\n  FROM pos\n)\n-- A sign over each platform: its number, the next train's destination and when; trains_in\n-- counts the trains in the platform now (the floor picker adds them up per floor).\nSELECT p.plat, coalesce(t.destination, p.toward) || ' · ' ||\n         CASE WHEN t.s IS NULL THEN '-'\n              WHEN t.state IS NOT NULL THEN lower(t.state)\n              WHEN t.s \u003e 3600 THEN 'at ' || strftime(t.due + INTERVAL 8 HOUR, '%H:%M')\n              ELSE ceil(t.s / 60)::INTEGER || ' min' END AS sign,\n       -- no other text column: the sign card's title would be it\n       p.level, p.latitude, p.longitude, coalesce(t.trains_in, 0) AS trains_in\nFROM 'http://feeds/datasets/mtr-admiralty/platforms.parquet' p\nLEFT JOIN (\n  SELECT plat, arg_min(destination, due) AS destination, arg_min_null(state, due) AS state, min(due) AS due,\n         arg_min(s, due) AS s, count(*) FILTER (WHERE state IS NOT NULL) AS trains_in\n  FROM moving WHERE s \u003e -55 GROUP BY plat\n) t ON t.plat = p.plat\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "F"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Pick a floor on the lift panel (empty: every floor, stacked at their real heights). Trains are placed from MTR's predicted times, not tracked: arriving over the last 30 s, 30 s at the platform, then out.",
+          "id": 1,
+          "links": [],
+          "title": "Admiralty, floor by floor, and its trains now",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-positron",
+                "floors": {
+                  "badge": {
+                    "agg": "sum",
+                    "alert": 999,
+                    "field": "trains_in",
+                    "label": "trains at the platforms",
+                    "warn": 99
+                  },
+                  "buildingSettings": {
+                    "": {
+                      "label": "Admiralty station"
+                    }
+                  },
+                  "defaultFloor": "",
+                  "enabled": true,
+                  "field": "level",
+                  "floorSettings": {
+                    "-1": {
+                      "height": 23.73,
+                      "label": "Concourse"
+                    },
+                    "-2": {
+                      "height": 20.37,
+                      "label": "Platforms 3, 4"
+                    },
+                    "-3": {
+                      "height": 15.6,
+                      "label": "Platforms 1, 2"
+                    },
+                    "-4": {
+                      "height": 20.85,
+                      "label": "Interchange"
+                    },
+                    "-5": {
+                      "height": 20.85,
+                      "label": "East Rail Line"
+                    },
+                    "-6": {
+                      "height": 16.8,
+                      "label": "South Island Line"
+                    },
+                    "0": {
+                      "height": 20.01,
+                      "label": "Street exits"
+                    },
+                    "1": {
+                      "label": "Landscape deck"
+                    }
+                  },
+                  "ghostOpacity": 0.12,
+                  "groundFloor": "picked",
+                  "minZoom": 15.5,
+                  "nameField": "floor_name",
+                  "others": "ghost",
+                  "selectField": "platform",
+                  "selectVariable": "platform",
+                  "spacing": 18,
+                  "variable": "floor"
+                },
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -25,
+                      "dragRotate": true,
+                      "latitude": 22.27885,
+                      "longitude": 114.16575,
+                      "pitch": 55,
+                      "zoom": 17.6
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-positron",
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": false,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "floor_name"
+                              },
+                              {
+                                "name": "area_m2"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "floor_name"
+                              }
+                            ],
+                            "grafana-E": [
+                              {
+                                "name": "line"
+                              },
+                              {
+                                "name": "destination"
+                              },
+                              {
+                                "name": "state"
+                              },
+                              {
+                                "name": "due_hkt"
+                              },
+                              {
+                                "name": "car"
+                              },
+                              {
+                                "name": "platform"
+                              }
+                            ],
+                            "grafana-F": [
+                              {
+                                "name": "plat"
+                              },
+                              {
+                                "name": "sign"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": null,
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              33,
+                              37,
+                              41
+                            ],
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-F",
+                            "isVisible": true,
+                            "label": "Platform signs",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "sign",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 22,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#E2231A"
+                                  ],
+                                  [
+                                    4,
+                                    "#007DC5"
+                                  ],
+                                  [
+                                    5,
+                                    "#E2231A"
+                                  ],
+                                  [
+                                    7,
+                                    "#B5BD00"
+                                  ],
+                                  [
+                                    null,
+                                    "#5EB7E8"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E2231A",
+                                  "#007DC5",
+                                  "#E2231A",
+                                  "#B5BD00",
+                                  "#5EB7E8"
+                                ],
+                                "name": "Platforms by line",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkOverlap": "none",
+                              "sparkSize": "L",
+                              "sparkTooltip": false,
+                              "sparkUnit": ""
+                            }
+                          },
+                          "id": "signs",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "plat",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              33,
+                              37,
+                              41
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Exits and services",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "backgroundColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  230
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  33,
+                                  37,
+                                  41
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -14
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "outlineWidth": 2,
+                                "size": 11,
+                                "weight": 600
+                              }
+                            ],
+                            "visConfig": {
+                              "billboard": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Exit",
+                                    "#2f9e44"
+                                  ],
+                                  [
+                                    "Gate",
+                                    "#495057"
+                                  ],
+                                  [
+                                    "Customer service",
+                                    "#1971c2"
+                                  ],
+                                  [
+                                    "Toilets",
+                                    "#1098ad"
+                                  ],
+                                  [
+                                    "Defibrillator",
+                                    "#e03131"
+                                  ],
+                                  [
+                                    "Baby care",
+                                    "#ae3ec9"
+                                  ],
+                                  [
+                                    "Shop",
+                                    "#9c36b5"
+                                  ],
+                                  [
+                                    "Platform",
+                                    "#212529"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2f9e44",
+                                  "#495057",
+                                  "#1971c2",
+                                  "#1098ad",
+                                  "#e03131",
+                                  "#ae3ec9",
+                                  "#9c36b5",
+                                  "#212529"
+                                ],
+                                "name": "Exits and services",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 1,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "points",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              0,
+                              125,
+                              197
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-E",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Trains",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Island Line",
+                                    "#007DC5"
+                                  ],
+                                  [
+                                    "Tsuen Wan Line",
+                                    "#E2231A"
+                                  ],
+                                  [
+                                    "South Island Line",
+                                    "#B5BD00"
+                                  ],
+                                  [
+                                    "East Rail Line",
+                                    "#5EB7E8"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#007DC5",
+                                  "#E2231A",
+                                  "#B5BD00",
+                                  "#5EB7E8"
+                                ],
+                                "name": "Lines",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 1,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": false,
+                              "filled": true,
+                              "fixedHeight": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 1,
+                              "stroked": false,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "trains",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "line",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "heightField": {
+                              "name": "height_m",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Walls",
+                            "visConfig": {
+                              "elevationScale": 1,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": false,
+                              "filled": true,
+                              "fixedHeight": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.7,
+                              "stroked": false,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "walls",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "heightField": {
+                              "name": "height_m",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Station",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Concourse",
+                                    "#ffffff"
+                                  ],
+                                  [
+                                    "Platform",
+                                    "#efe6d2"
+                                  ],
+                                  [
+                                    "Track",
+                                    "#7c828c"
+                                  ],
+                                  [
+                                    "Escalator",
+                                    "#f2b36b"
+                                  ],
+                                  [
+                                    "Stairs",
+                                    "#d9b38c"
+                                  ],
+                                  [
+                                    "Lift",
+                                    "#8fc79a"
+                                  ],
+                                  [
+                                    "Toilets",
+                                    "#cfe3ef"
+                                  ],
+                                  [
+                                    "Shop",
+                                    "#e3d5f0"
+                                  ],
+                                  [
+                                    "Station room",
+                                    "#dfe2e6"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#ffffff",
+                                  "#efe6d2",
+                                  "#7c828c",
+                                  "#f2b36b",
+                                  "#d9b38c",
+                                  "#8fc79a",
+                                  "#cfe3ef",
+                                  "#e3d5f0",
+                                  "#dfe2e6"
+                                ],
+                                "name": "Station",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "opacity": 1,
+                              "strokeColor": [
+                                190,
+                                194,
+                                200
+                              ],
+                              "stroked": true,
+                              "thickness": 0.05
+                            }
+                          },
+                          "id": "units",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              241,
+                              241,
+                              238
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Floors",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "strokeColor": [
+                                150,
+                                156,
+                                164
+                              ],
+                              "stroked": true,
+                              "thickness": 0.1
+                            }
+                          },
+                          "id": "floors",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": [
+                  {
+                    "field": "level",
+                    "keepOnDeselect": true,
+                    "source": "click",
+                    "variable": "floor"
+                  }
+                ]
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MTR's Next Train API (data.gov.hk), through the gateway's 10 s cache: the next four trains\n-- each way on the four lines at Admiralty, their platform and estimated time (Hong Kong time,\n-- UTC+8, to the second).\nWITH feed AS (\n  SELECT line, from_json(r-\u003e\u003e'body', '{\"sys_time\":\"VARCHAR\",\"data\":\"JSON\"}') AS j\n  FROM (SELECT line, http_get('http://feeds/mtr/nexttrain/' || line || '/ADM') AS r\n        FROM (VALUES ('ISL'), ('TWL'), ('SIL'), ('EAL')) v(line))\n  WHERE (r-\u003e\u003e'status') = '200'\n),\nnext AS (\n  SELECT f.line, t.seq::INTEGER AS seq, t.dest, t.plat::INTEGER AS plat,\n         strptime(t.\"time\", '%Y-%m-%d %H:%M:%S') - INTERVAL 8 HOUR AS due\n  FROM feed f, (VALUES ('UP'), ('DOWN')) d(dir),\n       unnest(from_json(f.j.data -\u003e (f.line || '-ADM') -\u003e d.dir,\n                        '[{\"seq\":\"VARCHAR\",\"dest\":\"VARCHAR\",\"plat\":\"VARCHAR\",\"time\":\"VARCHAR\"}]')) u(t)\n  WHERE regexp_matches(t.\"time\", '^\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d$')\n),\nplaces(code, place) AS (VALUES\n  ('ADM', 'Admiralty'), ('TSW', 'Tsuen Wan'), ('CEN', 'Central'), ('KET', 'Kennedy Town'), ('CHW', 'Chai Wan'),\n  ('SOH', 'South Horizons'), ('LMC', 'Lok Ma Chau'), ('LOW', 'Lo Wu'), ('SHS', 'Sheung Shui'),\n  ('TAP', 'Tai Po Market'), ('RAC', 'Racecourse'), ('FOT', 'Fo Tan'), ('SHT', 'Sha Tin'), ('HUH', 'Hung Hom'),\n  ('MKK', 'Mong Kok East'), ('UNI', 'University'), ('TAW', 'Tai Wai'), ('KOT', 'Kowloon Tong'),\n  ('OCP', 'Ocean Park'), ('WCH', 'Wong Chuk Hang'), ('LET', 'Lei Tung'), ('TST', 'Tsim Sha Tsui'),\n  ('MOK', 'Mong Kok'), ('LAK', 'Lai King'), ('KWF', 'Kwai Fong'), ('NOP', 'North Point'), ('SKW', 'Shau Kei Wan'),\n  ('HFC', 'Heng Fa Chuen'), ('CAB', 'Causeway Bay'), ('QUB', 'Quarry Bay'), ('TAK', 'Tai Koo'),\n  ('SWH', 'Sai Wan Ho'), ('SYP', 'Sai Ying Pun'), ('SHW', 'Sheung Wan'), ('HKU', 'HKU'), ('WAC', 'Wan Chai')),\n-- Where each train is now. MTR publishes times, not positions: a train ending here or running\n-- through comes in over the 30 s before its time, braking to its stop 3 m short of the\n-- platform's end, waits 30 s and pulls out; one leaving a terminus platform (5, 6, 7) waits\n-- there the 2 minutes before its time, then goes back out the way it came.\npos AS (\n  SELECT n.*, coalesce(pl.place, n.dest) AS destination, p.platform, p.line_name, p.level, p.floor_name,\n         p.latitude, p.longitude, p.x_stop, p.train_m, p.car_m, p.terminus,\n         epoch(n.due) - epoch(now()) AS s,\n         n.dest = 'ADM' OR NOT p.terminus AS arrives\n  FROM next n\n  JOIN 'http://feeds/datasets/mtr-admiralty/platforms.parquet' p USING (plat)\n  LEFT JOIN places pl ON pl.code = n.dest\n),\nmoving AS (\n  SELECT *,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN 'Arriving'\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN 'At the platform'\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN 'Leaving'\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN 'At the platform'\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN 'Leaving'\n         END AS state,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN x_stop - 250 * (s / 30) ^ 2\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN x_stop\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN x_stop + 0.6 * (-s - 30) ^ 2\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN x_stop\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN x_stop - 0.6 * s ^ 2\n         END AS front\n  FROM pos\n)\n-- The next two trains of each platform, soonest first.\nSELECT platform AS \"Platform\", line_name AS \"Line\", destination AS \"To\",\n       strftime(due + INTERVAL 8 HOUR, '%H:%M') AS \"Time\",\n       CASE WHEN state IS NOT NULL THEN state\n            WHEN s \u003e 3600 THEN 'First train'\n            ELSE ceil(s / 60)::INTEGER || ' min' END AS \"In\"\nFROM moving\nWHERE s \u003e -55 AND (state IS NOT NULL OR s \u003e 0)\nQUALIFY row_number() OVER (PARTITION BY plat ORDER BY due) \u003c= 2\nORDER BY moving.due\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The next two trains of each platform, from MTR's Next Train API (Hong Kong time). A platform flies the map to it.",
+          "id": 3,
+          "links": [],
+          "title": "Next trains",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Platform"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Show it on the map",
+                            "url": "/d/mtr-admiralty?var-platform=${__data.fields.Platform}\u0026refresh=10s"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Line"
+                    },
+                    "properties": [
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "East Rail Line": {
+                                "color": "#5EB7E8",
+                                "index": 3
+                              },
+                              "Island Line": {
+                                "color": "#007DC5",
+                                "index": 0
+                              },
+                              "South Island Line": {
+                                "color": "#B5BD00",
+                                "index": 2
+                              },
+                              "Tsuen Wan Line": {
+                                "color": "#E2231A",
+                                "index": 1
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- MTR's Next Train API (data.gov.hk), through the gateway's 10 s cache: the next four trains\n-- each way on the four lines at Admiralty, their platform and estimated time (Hong Kong time,\n-- UTC+8, to the second).\nWITH feed AS (\n  SELECT line, from_json(r-\u003e\u003e'body', '{\"sys_time\":\"VARCHAR\",\"data\":\"JSON\"}') AS j\n  FROM (SELECT line, http_get('http://feeds/mtr/nexttrain/' || line || '/ADM') AS r\n        FROM (VALUES ('ISL'), ('TWL'), ('SIL'), ('EAL')) v(line))\n  WHERE (r-\u003e\u003e'status') = '200'\n),\nnext AS (\n  SELECT f.line, t.seq::INTEGER AS seq, t.dest, t.plat::INTEGER AS plat,\n         strptime(t.\"time\", '%Y-%m-%d %H:%M:%S') - INTERVAL 8 HOUR AS due\n  FROM feed f, (VALUES ('UP'), ('DOWN')) d(dir),\n       unnest(from_json(f.j.data -\u003e (f.line || '-ADM') -\u003e d.dir,\n                        '[{\"seq\":\"VARCHAR\",\"dest\":\"VARCHAR\",\"plat\":\"VARCHAR\",\"time\":\"VARCHAR\"}]')) u(t)\n  WHERE regexp_matches(t.\"time\", '^\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d$')\n),\nplaces(code, place) AS (VALUES\n  ('ADM', 'Admiralty'), ('TSW', 'Tsuen Wan'), ('CEN', 'Central'), ('KET', 'Kennedy Town'), ('CHW', 'Chai Wan'),\n  ('SOH', 'South Horizons'), ('LMC', 'Lok Ma Chau'), ('LOW', 'Lo Wu'), ('SHS', 'Sheung Shui'),\n  ('TAP', 'Tai Po Market'), ('RAC', 'Racecourse'), ('FOT', 'Fo Tan'), ('SHT', 'Sha Tin'), ('HUH', 'Hung Hom'),\n  ('MKK', 'Mong Kok East'), ('UNI', 'University'), ('TAW', 'Tai Wai'), ('KOT', 'Kowloon Tong'),\n  ('OCP', 'Ocean Park'), ('WCH', 'Wong Chuk Hang'), ('LET', 'Lei Tung'), ('TST', 'Tsim Sha Tsui'),\n  ('MOK', 'Mong Kok'), ('LAK', 'Lai King'), ('KWF', 'Kwai Fong'), ('NOP', 'North Point'), ('SKW', 'Shau Kei Wan'),\n  ('HFC', 'Heng Fa Chuen'), ('CAB', 'Causeway Bay'), ('QUB', 'Quarry Bay'), ('TAK', 'Tai Koo'),\n  ('SWH', 'Sai Wan Ho'), ('SYP', 'Sai Ying Pun'), ('SHW', 'Sheung Wan'), ('HKU', 'HKU'), ('WAC', 'Wan Chai')),\n-- Where each train is now. MTR publishes times, not positions: a train ending here or running\n-- through comes in over the 30 s before its time, braking to its stop 3 m short of the\n-- platform's end, waits 30 s and pulls out; one leaving a terminus platform (5, 6, 7) waits\n-- there the 2 minutes before its time, then goes back out the way it came.\npos AS (\n  SELECT n.*, coalesce(pl.place, n.dest) AS destination, p.platform, p.line_name, p.level, p.floor_name,\n         p.latitude, p.longitude, p.x_stop, p.train_m, p.car_m, p.terminus,\n         epoch(n.due) - epoch(now()) AS s,\n         n.dest = 'ADM' OR NOT p.terminus AS arrives\n  FROM next n\n  JOIN 'http://feeds/datasets/mtr-admiralty/platforms.parquet' p USING (plat)\n  LEFT JOIN places pl ON pl.code = n.dest\n),\nmoving AS (\n  SELECT *,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN 'Arriving'\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN 'At the platform'\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN 'Leaving'\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN 'At the platform'\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN 'Leaving'\n         END AS state,\n         CASE WHEN arrives AND s BETWEEN 0 AND 30 THEN x_stop - 250 * (s / 30) ^ 2\n              WHEN arrives AND s BETWEEN -30 AND 0 THEN x_stop\n              WHEN arrives AND NOT terminus AND s BETWEEN -55 AND -30 THEN x_stop + 0.6 * (-s - 30) ^ 2\n              WHEN NOT arrives AND s BETWEEN 0 AND 120 THEN x_stop\n              WHEN NOT arrives AND s BETWEEN -25 AND 0 THEN x_stop - 0.6 * s ^ 2\n         END AS front\n  FROM pos\n)\n-- How fresh the predictions are, and how many trains are due in the next ten minutes.\nSELECT (epoch(now()) - max(epoch(strptime(f.j.sys_time, '%Y-%m-%d %H:%M:%S') - INTERVAL 8 HOUR)))::BIGINT AS \"Feed age\",\n       (SELECT count(*) FROM moving WHERE s BETWEEN -55 AND 600)::BIGINT AS \"Trains in the next 10 minutes\",\n       (SELECT count(*) FROM moving WHERE state IS NOT NULL)::BIGINT AS \"In the station now\"\nFROM feed f\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Feed age: seconds since MTR's system time in its answer (up to 10 s of the gateway's cache and the time since the last refresh). Green under a minute.",
+          "id": 4,
+          "links": [],
+          "title": "Is the feed live?",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Feed age"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "green",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 60
+                            },
+                            {
+                              "color": "red",
+                              "value": 300
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n\n**The station.** The [3D Indoor Map](https://portal.csdi.gov.hk/csdi-webpage/dataset/landsd_rcd_1671437329821_60808) of the Lands Department, made with MTR Corporation, from the CSDI Portal's Map API: Admiralty's eight floors, from the South Island Line 34 m under the street (L6) to the landscape deck (U1), with their platforms, tracks, escalators, lifts and shops. Built once per instance by `datasets/mtr-admiralty/build.sh`.\n\n**The trains.** [Real-time MTR train information](https://data.gov.hk/en-data/dataset/mtr-data2-nexttrain-data) (MTR Corporation, DATA.GOV.HK): the next four trains each way on the Island, Tsuen Wan, South Island and East Rail lines, with their platform and estimated time. MTR publishes times, not positions: the map places each train from its time (in over the last 30 s, braking to its stop, 30 s at the platform, then out; at the terminus platforms 5, 6 and 7, waiting two minutes before leaving the way it came), its length from the cars the line runs. No trains run between about 01:00 and 06:00 Hong Kong time.\n\n\u003cimg src=\"https://api.hkmapservice.gov.hk/mapapi/landsdlogo.jpg\" alt=\"Lands Department\" height=\"28\"\u003e Map from Lands Department. Source: the Government of the HKSAR and the CSDI Portal.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 22,
+              "width": 17,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 4,
+              "width": 7,
+              "x": 17,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 18,
+              "width": 7,
+              "x": 17,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 22
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "buildings",
+      "duckdb",
+      "kepler",
+      "live",
+      "plus",
+      "transit"
+    ],
+    "timeSettings": {
+      "autoRefresh": "10s",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-15m",
+      "hideTimepicker": false,
+      "timezone": "Asia/Hong_Kong",
+      "to": "now"
+    },
+    "title": "Admiralty station, trains live",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Floor",
+          "name": "floor",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Platform",
+          "name": "platform",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

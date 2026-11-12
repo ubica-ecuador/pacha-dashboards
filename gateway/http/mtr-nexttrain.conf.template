@@ -1,0 +1,3 @@
+# MTR Next Train (mtr-admiralty): a station's next trains, kept 10 seconds.
+proxy_cache_path /var/cache/nginx/mtrnext levels=1:2 keys_zone=mtrnext:1m
+                 max_size=20m inactive=1h use_temp_path=off;

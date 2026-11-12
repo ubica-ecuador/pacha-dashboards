@@ -1,0 +1,18 @@
+    # MTR Next Train (data.gov.hk, from MTR Corporation), behind mtr-admiralty:
+    # the next four trains each way at a station, with their platform and
+    # estimated time, by line and station code (/mtr/nexttrain/ISL/ADM). No key.
+    # The API answers HEAD with 404 and too many requests with 429, and its own
+    # CDN keeps an answer 10 s: each line and station is fetched here at most
+    # once every 10 s, however many viewers refresh, and a 429 or an error gets
+    # the previous copy. Read with http_get (one GET), never with read_json.
+    location ~ "^/mtr/nexttrain/(AEL|TCL|TML|TKL|EAL|SIL|TWL|ISL|KTL|DRL)/([A-Z]{3})$" {
+        set $mtr_nexttrain rt.data.gov.hk;
+        proxy_pass https://$mtr_nexttrain/v1/transport/mtr/getSchedule.php?line=$1&sta=$2;
+        proxy_set_header Host $mtr_nexttrain;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache mtrnext;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 10s;
+        proxy_cache_use_stale error timeout http_429 http_500 http_502 http_503 http_504;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
