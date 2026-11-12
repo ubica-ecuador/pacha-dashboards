@@ -1,0 +1,1119 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "tum-garching-lectures"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "The Technical University of Munich's Garching campus on a Tuesday: two buildings floor by floor from OpenStreetMap's indoor mapping, each room in its kind and lit while a lecture is on, from TUM's room calendars; a card per building zoomed out.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every room of the two buildings drawn inside (datasets/tum-garching): its floor, its kind from NavigaTUM's use,\n-- how many lectures it holds today, its outline.\nSELECT room, building, code, kind, use, level, floor_name, lectures, area_m2, geometry\nFROM 'http://feeds/datasets/tum-garching/rooms.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Their corridors and halls.\nSELECT room, building, level, floor_name, geometry\nFROM 'http://feeds/datasets/tum-garching/corridors.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each floor of the two buildings, its rooms and corridors merged: what a floor seen through shows.\nSELECT building, level, floor_name, geometry\nFROM 'http://feeds/datasets/tum-garching/slabs.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Walls along the rooms at half height, open at the doors OpenStreetMap maps.\nSELECT building, level, floor_name, height_m, geometry\nFROM 'http://feeds/datasets/tum-garching/walls.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The rooms in a lecture in the quarter hour the dashboard shows (the Time Brush moves it), lit up on their floor.\nSELECT slot, room, code, building, title, type, \"when\", level, floor_name, 1 AS in_lecture, geometry\nFROM 'http://feeds/datasets/tum-garching/lectures.parquet'\nWHERE slot \u003e= ${__from} AND slot \u003c ${__to}\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "F"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every building of the campus as a facade: zoomed out all of them, indoors the ones not looked at.\nSELECT building, name, height_m, geometry\nFROM 'http://feeds/datasets/tum-garching/facades.parquet'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "G"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- A callout over each room in a lecture: the lecture and the minutes left. The quarter is no time column here, so\n-- the callout draws no chart.\nSELECT room, title_short AS title, building, level, min_left, latitude, longitude\nFROM 'http://feeds/datasets/tum-garching/lectures.parquet'\nWHERE slot \u003e= ${__from} AND slot \u003c ${__to}\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "H"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Rooms: © OpenStreetMap contributors (ODbL). Kinds of room and lectures: NavigaTUM (TUMonline).",
+          "id": 1,
+          "links": [],
+          "title": "TUM Garching: rooms in a lecture",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-positron",
+                "floors": {
+                  "badge": {
+                    "agg": "sum",
+                    "field": "in_lecture",
+                    "label": "rooms in a lecture"
+                  },
+                  "buildingField": "building",
+                  "buildingSettings": {
+                    "MI": {
+                      "label": "Mathematics and Informatics"
+                    },
+                    "MW": {
+                      "label": "Mechanical Engineering"
+                    }
+                  },
+                  "buildingVariable": "building",
+                  "defaultFloor": "0",
+                  "enabled": true,
+                  "field": "level",
+                  "ghostOpacity": 0.1,
+                  "nameField": "floor_name",
+                  "otherBuildings": "hide",
+                  "others": "ghost",
+                  "queryFloors": {
+                    "G": "facade"
+                  },
+                  "selectField": "code",
+                  "selectVariable": "room",
+                  "spacing": 9,
+                  "variable": "floor"
+                },
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 15,
+                      "dragRotate": true,
+                      "latitude": 48.2638,
+                      "longitude": 11.6693,
+                      "pitch": 52,
+                      "zoom": 16.1
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-positron",
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": false,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "room"
+                              },
+                              {
+                                "name": "use"
+                              },
+                              {
+                                "name": "floor_name"
+                              },
+                              {
+                                "name": "lectures"
+                              },
+                              {
+                                "name": "area_m2"
+                              }
+                            ],
+                            "grafana-F": [
+                              {
+                                "name": "title"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "when"
+                              },
+                              {
+                                "name": "room"
+                              },
+                              {
+                                "name": "floor_name"
+                              }
+                            ],
+                            "grafana-G": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "height_m"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              232,
+                              89,
+                              12
+                            ],
+                            "columns": {
+                              "altitude": "floor_z",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-H",
+                            "isVisible": true,
+                            "label": "What is on",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "title",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 28,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    16,
+                                    "#f08c00"
+                                  ],
+                                  [
+                                    null,
+                                    "#e8590c"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#f08c00",
+                                  "#e8590c"
+                                ],
+                                "name": "Minutes left",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkOverlap": "none",
+                              "sparkSize": "M",
+                              "sparkTooltip": false,
+                              "sparkUnit": "min left"
+                            }
+                          },
+                          "id": "lecture-callouts",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "min_left",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-D",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Walls",
+                            "visConfig": {
+                              "elevationScale": 1,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": false,
+                              "filled": true,
+                              "fixedHeight": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 1,
+                              "stroked": false,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "walls",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "heightField": {
+                              "name": "height_m",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              232,
+                              89,
+                              12
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-F",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Rooms in a lecture",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Lecture",
+                                    "#e8590c"
+                                  ],
+                                  [
+                                    "Exercise class",
+                                    "#f08c00"
+                                  ],
+                                  [
+                                    "Seminar",
+                                    "#d6336c"
+                                  ],
+                                  [
+                                    "Lab course",
+                                    "#2f9e44"
+                                  ],
+                                  [
+                                    "Exam",
+                                    "#c92a2a"
+                                  ],
+                                  [
+                                    "Other",
+                                    "#7048e8"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#e8590c",
+                                  "#f08c00",
+                                  "#d6336c",
+                                  "#2f9e44",
+                                  "#c92a2a",
+                                  "#7048e8"
+                                ],
+                                "name": "Lectures",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 0.85,
+                              "stroked": false
+                            }
+                          },
+                          "id": "in-lecture",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "type",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              221,
+                              232,
+                              244
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Rooms by kind",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Lecture hall",
+                                    "#f4c08f"
+                                  ],
+                                  [
+                                    "Teaching room",
+                                    "#f7dfa0"
+                                  ],
+                                  [
+                                    "Office",
+                                    "#dde8f4"
+                                  ],
+                                  [
+                                    "Meeting room",
+                                    "#c9daf0"
+                                  ],
+                                  [
+                                    "Lab",
+                                    "#d4ecd9"
+                                  ],
+                                  [
+                                    "Library and study",
+                                    "#e6dcf3"
+                                  ],
+                                  [
+                                    "Social",
+                                    "#f4d6e2"
+                                  ],
+                                  [
+                                    "Toilets",
+                                    "#d3e6ef"
+                                  ],
+                                  [
+                                    "Stairs and lifts",
+                                    "#dcd7e8"
+                                  ],
+                                  [
+                                    "Services",
+                                    "#e9e8e4"
+                                  ],
+                                  [
+                                    "Corridor",
+                                    "#ffffff"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#f4c08f",
+                                  "#f7dfa0",
+                                  "#dde8f4",
+                                  "#c9daf0",
+                                  "#d4ecd9",
+                                  "#e6dcf3",
+                                  "#f4d6e2",
+                                  "#d3e6ef",
+                                  "#dcd7e8",
+                                  "#e9e8e4",
+                                  "#ffffff"
+                                ],
+                                "name": "Rooms",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 1,
+                              "stroked": false
+                            }
+                          },
+                          "id": "rooms",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Corridors",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "stroked": false
+                            }
+                          },
+                          "id": "corridors",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              213,
+                              217,
+                              223
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-G",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Facades",
+                            "visConfig": {
+                              "elevationScale": 1,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": false,
+                              "filled": true,
+                              "fixedHeight": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.75,
+                              "strokeColor": [
+                                154,
+                                163,
+                                174
+                              ],
+                              "stroked": true,
+                              "thickness": 0.05,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "facades",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "heightField": {
+                              "name": "height_m",
+                              "type": "real"
+                            },
+                            "heightScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              241,
+                              241,
+                              238
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "highlightColor": [
+                              50,
+                              116,
+                              217,
+                              90
+                            ],
+                            "isVisible": true,
+                            "label": "Floor",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "strokeColor": [
+                                195,
+                                199,
+                                205
+                              ],
+                              "stroked": true,
+                              "thickness": 0.05
+                            }
+                          },
+                          "id": "slabs",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": [
+                  {
+                    "field": "level",
+                    "keepOnDeselect": true,
+                    "source": "click",
+                    "variable": "floor"
+                  },
+                  {
+                    "field": "code",
+                    "source": "click",
+                    "variable": "room"
+                  }
+                ]
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- How many rooms are in a lecture each quarter hour of the day, 07:00 to 21:00.\nSELECT epoch_ms(time) AS time, rooms_in_lecture\nFROM 'http://feeds/datasets/tum-garching/quarters.parquet'\nORDER BY time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 2,
+          "links": [],
+          "title": "Rooms in a lecture, quarter by quarter",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "rooms_in_lecture"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "rooms in a lecture"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "max"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#e8590c",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "bucket": "15m",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "domain": "data",
+                "hatchGaps": false,
+                "loop": true,
+                "output": "range",
+                "outsideOpacity": 35,
+                "publishIntervalMs": 800,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showHistogram": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 900,
+                "windowMode": "interval"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The lectures on in the quarter hour the dashboard shows; a room's name goes to its floor and rings it.\nSELECT slot, \"when\", title, type, room, floor, building_name AS building, code\nFROM 'http://feeds/datasets/tum-garching/lectures.parquet'\nWHERE slot \u003e= ${__from} AND slot \u003c ${__to}\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "organize",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "slot": true,
+                        "type": true,
+                        "when": true
+                      },
+                      "indexByName": {
+                        "building": 3,
+                        "floor": 2,
+                        "room": 0,
+                        "title": 1
+                      },
+                      "renameByName": {
+                        "building": "Building",
+                        "floor": "Floor",
+                        "room": "Room",
+                        "title": "Lecture"
+                      }
+                    }
+                  }
+                },
+                {
+                  "group": "sortBy",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "sort": [
+                        {
+                          "field": "Building"
+                        },
+                        {
+                          "field": "Floor"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "The lectures of the quarter hour shown; a room flies the map to it.",
+          "id": 3,
+          "links": [],
+          "title": "On now",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "code"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hidden",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Room"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Show it on the map",
+                            "url": "/d/plus-floors-campus?${__url_time_range}\u0026var-room=${__data.fields.code}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 21,
+              "width": 18,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 21,
+              "width": 6,
+              "x": 18,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 21
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "buildings",
+      "duckdb",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2026-11-10T13:00:00.000Z",
+      "hideTimepicker": false,
+      "timezone": "Europe/Berlin",
+      "to": "2026-11-10T13:15:00.000Z"
+    },
+    "title": "TUM Garching through a day of lectures",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Building",
+          "name": "building",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Floor",
+          "name": "floor",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "dontHide",
+          "label": "Room",
+          "name": "room",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
