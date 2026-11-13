@@ -1473,7 +1473,7 @@
                               "sparkPublishCrosshair": false,
                               "sparkRange": "data",
                               "sparkScale": "common",
-                              "sparkSize": "M",
+                              "sparkSize": "S",
                               "sparkTimeField": "auto",
                               "sparkTooltip": false,
                               "sparkUnit": "ppm",
