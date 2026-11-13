@@ -57,6 +57,25 @@ test('every room traced on a plan has its reading each quarter, in a sane range'
   assert.ok(Math.max(...day.map((q) => q.people)) > 1000, 'a full hall');
 });
 
+test("each callout charts its room's day up to the quarter shown, ending on that quarter's reading", { timeout: 120_000 }, async () => {
+  const callout = map.vizConfig.spec.options.mapConfig.config.visState.layers.find((l) => l.type === 'callout');
+  assert.equal(callout.config.dataId, 'grafana-F');
+  // The chart runs over the rows, not over the dashboard's quarter (Plus: Chart over, The data).
+  assert.equal(callout.config.visConfig.sparkRange, 'data');
+  const sqlOfRef = (refId) => map.data.spec.queries.find((q) => q.spec.refId === refId).spec.query.spec.rawSql;
+  const [history, quarter] = await Promise.all([duckdb(STACK_URL, windowed(sqlOfRef('F'))), duckdb(STACK_URL, windowed(sqlOfRef('E')))]);
+  const quarters = (FROM - Date.parse('2026-11-09T06:00:00Z')) / 900_000 + 1;
+  assert.equal(history.length, 18 * quarters);
+  for (const now of quarter) {
+    const rows = history.filter((r) => r.room === now.room);
+    assert.equal(rows.length, quarters, now.room);
+    // Ordered by time: the last row is the quarter shown, the card's value.
+    assert.equal(new Date(rows.at(-1).time).getTime(), FROM, now.room);
+    assert.equal(rows.at(-1).co2_ppm, now.co2_ppm, now.room);
+    assert.equal(rows.at(-1).occupancy, now.occupancy, now.room);
+  }
+});
+
 test('opens with no panel in error', { skip, timeout: 240_000 }, async () => {
   const view = await openDashboard(`/d/${UID}`, { chaski: false, timeoutMs: 180_000 });
   try {
