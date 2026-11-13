@@ -41,7 +41,7 @@ here=$(pwd)
 UA='pacha-dataset-build'
 MODEL='https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/model/deep-space-network-34-meter/Deep%20Space%20Network%2034-meter.glb'
 PYTHON_IMAGE='python:3.12-slim'
-PACKAGES='duckdb==1.5.4 DracoPy==2.2.0'
+PACKAGES='duckdb==1.5.4 numpy==2.3.4 DracoPy==2.2.0'
 FILES='gdscc.glb mdscc.glb cdscc.glb dishes.parquet recording-empty.parquet'
 
 work=$(mktemp -d)
