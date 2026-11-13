@@ -1,0 +1,1382 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "who-visits-whom"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "1.3 million records of animals visiting flowers, from Global Biotic Interactions (GloBI): bees, butterflies, hoverflies, beetles, hummingbirds and bats, where they were seen, on which plants and in which month. An interaction matrix of visitor groups and plant families, the most visited plants, the visitors on the most plants and the months played on a timeline, every view following every pick in the browser.",
+    "editable": true,
+    "elements": {
+      "card-places": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Different places with a record (to 0.01°, about 1 km).",
+          "id": 4,
+          "links": [],
+          "title": "Places",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: visits, filterBy: $visitFilters }\n    text: { count: place, distinct: true }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 30\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "card-plants": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Different plants they visited, named to the species or the genus.",
+          "id": 3,
+          "links": [],
+          "title": "Plants",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: visits, filterBy: $visitFilters }\n    text: { count: plant, distinct: true }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 30\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "card-records": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Records of an animal visiting or pollinating a flower, under every pick on the page.",
+          "id": 1,
+          "links": [],
+          "title": "Records",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: visits, filterBy: $visitFilters }\n    text: { sum: records }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 30\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "card-visitors": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Different visitors, named to the species or the genus.",
+          "id": 2,
+          "links": [],
+          "title": "Visitors",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: visits, filterBy: $visitFilters }\n    text: { count: visitor, distinct: true }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 30\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 13,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Animals on flowers\n\n| | |\n| --- | --- |\n| **Records** | [Global Biotic Interactions](https://www.globalbioticinteractions.org) (GloBI) at its [snapshot of 10 September 2026](https://doi.org/10.5281/zenodo.22691479) (CC0): the records of an animal pollinating or visiting the flowers of a plant that have coordinates, 1,309,430 of 2.1 million |\n| **Sources** | GloBI gathers hundreds of datasets, each under its own terms. The largest here: [EuPPollNet](https://doi.org/10.5281/zenodo.14747448) (Lanuza et al. 2025, CC BY 4.0), 579,668 records; [iNaturalist](https://www.inaturalist.org) observations, 440,325 (under each observer's licence); [DoPI](https://doi.org/10.1002/ecy.3801) (Balfour et al. 2022), 79,634; GBIF-US bee collections, 60,036; CropPol, 32,366; Web of Life, 22,482 |\n| **Groups** | By the visitor's class, order and family as GloBI matched its name. Bees are the bee families (Apidae, Halictidae, Andrenidae, Megachilidae, Colletidae, Melittidae, Stenotritidae); wasps and ants, the rest of the Hymenoptera; then hoverflies (Syrphidae), other flies, butterflies and moths, beetles, other insects, birds and bats. A name that matched something that visits no flower (a fish, a squirrel) falls outside the groups and out |\n| **Names** | A visitor or a plant by its species, or its genus when the species is unknown (*Bombus sp.*). Records named only to the family or above are left out (2 %) |\n| **Pairs** | A visitor and a plant seen together at least once. The charts count pairs and places, not records: a few studies counted one crop for weeks. Sunflowers alone are 27 % of the records, and the honey bee 35 %, but 2 % of the pairs |\n| **Months** | 86 % of the records have a date. A date of 1 January is read as a year alone, since DoPI, CropPol and a dozen studies give every record of a year that day: its month is left empty |\n| **Places** | To 0.01°, about 1 km. A study's records often share its site's coordinates |\n| **Sightings** | What the Timeline counts: a visitor on a plant at one place in one month, however many records it holds |\n| **Coverage** | Where people looked: 56 % of the records are from Europe and 41 % from North America. An empty place on the map has no records, not no pollinators |\n| **A visit** | An animal seen on a flower, not proof that it pollinated it |\n| **Built by** | `datasets/pollinators/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards): DuckDB reads the 95 row groups of GloBI's `interactions.parquet` that hold flower visits and writes the visits in numbers and two tables of names, joined in the browser |",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-groups": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Different pairs of a visitor and a plant seen together, by the visitor's group: pairs, not records, so a study that counted one crop for weeks weighs no more than a walk in a meadow. Click a group to keep it; click it again to let go.",
+          "id": 5,
+          "links": [],
+          "subtitle": "Click a group to keep it",
+          "title": "Who visits: plant–visitor pairs by group",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: visits, filterBy: $visitFilters }\n    x: { count: link, distinct: true }\n    y: visitor_group\n    fill: visitor_group\n    inset: 1\n  - select: toggleY\n    as: $visitFilters\nyDomain: ['Bees', 'Butterflies and moths', 'Hoverflies', 'Other flies', 'Wasps and ants', 'Beetles', 'Birds', 'Bats', 'Other insects']\ncolorDomain: ['Bees', 'Butterflies and moths', 'Hoverflies', 'Other flies', 'Wasps and ants', 'Beetles', 'Birds', 'Bats', 'Other insects']\ncolorRange: ['#FADE2A', '#B877D9', '#FF9830', '#73BF69', '#8AB8FF', '#F2495C', '#5ED3F3', '#FFFFFF', '#8E8E8E']\nxGrid: true\nxLabel: plant–visitor pairs →\nyLabel: null\nmarginLeft: 150\nmarginRight: 16\nmarginBottom: 36\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-headline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 12,
+          "links": [],
+          "title": "Who visits whom",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**1.3 million records of animals on flowers**, from bees to bats, at 118,264 places: 13,845 visitors and 12,072 plants, in 178,611 different pairs.\n\n- **The great generalist:** the honey bee was seen on 3,520 plants. Next comes the common eastern bumblebee (*Bombus impatiens*), on 1,434.\n- **The most visited plants:** wild carrot had 1,016 different visitors and yarrow 993. The daisy family, Asteraceae, holds 27.4 % of all the pairs.\n- **Same job, different birds:** 9,562 records of 204 hummingbird species, every one in the Americas, from 53° N to 43° S. In Africa and Asia, sunbirds take the job. Nectar bats split the same way: leaf-nosed bats in the Americas, fruit bats in the Old World.\n- **The visits follow the summer:** north of the tropics, places with a visit peak in July and all but vanish in December and January; south of them, they dip from May to August.\n- **Mind the gaps:** 97 % of the records come from Europe and North America, where people looked.\n\n*Press play on the months above. Click a group, a plant family, a plant or a visitor and every view follows; draw an area on the map to keep what is inside.*",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every row of the dataset: the map draws a point per row and filters them with the page's picks.\n-- Birds and bats last, so they are drawn over the insects; the insects shuffled, so no group covers another.\nSELECT latitude, longitude, visitor_group, visitor, plant, plant_family, \"month\", month_mid, records\nFROM $visits\nORDER BY visitor_group IN ('Birds', 'Bats'), hash(link)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each place where an animal was recorded on a flower, coloured by the visitor's group: bees yellow, butterflies and moths purple, hoverflies orange, other flies green, wasps and ants blue, beetles red, birds cyan, bats white. Birds and bats are drawn over the insects, so a few of them show among many bees. The map follows every pick on the page; draw an area on it to keep the places inside. Hover a point for the visitor, the plant and the month.",
+          "id": 11,
+          "links": [],
+          "title": "Where they were seen",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 30,
+                      "longitude": -20,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 1.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": true
+                      },
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "visitor"
+                              },
+                              {
+                                "name": "visitor_group"
+                              },
+                              {
+                                "name": "plant"
+                              },
+                              {
+                                "name": "plant_family"
+                              },
+                              {
+                                "name": "month"
+                              },
+                              {
+                                "name": "records"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "visits"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              222,
+                              42
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Flower visits",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Bees",
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    "Butterflies and moths",
+                                    "#B877D9"
+                                  ],
+                                  [
+                                    "Hoverflies",
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    "Other flies",
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    "Wasps and ants",
+                                    "#8AB8FF"
+                                  ],
+                                  [
+                                    "Beetles",
+                                    "#F2495C"
+                                  ],
+                                  [
+                                    "Birds",
+                                    "#5ED3F3"
+                                  ],
+                                  [
+                                    "Bats",
+                                    "#FFFFFF"
+                                  ],
+                                  [
+                                    "Other insects",
+                                    "#8E8E8E"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FADE2A",
+                                  "#B877D9",
+                                  "#FF9830",
+                                  "#73BF69",
+                                  "#8AB8FF",
+                                  "#F2495C",
+                                  "#5ED3F3",
+                                  "#FFFFFF",
+                                  "#8E8E8E"
+                                ],
+                                "name": "Visitor groups",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 4.5,
+                              "radiusRange": [
+                                1,
+                                8
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "visits",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "visitor_group",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicColumns": "longitude, latitude",
+                "mosaicSelection": "visitFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-matrix": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Plant–visitor pairs for each visitor group (columns) and plant family (rows), the 16 families with the most pairs under the other picks. Click a family to keep it.",
+          "id": 6,
+          "links": [],
+          "subtitle": "Click a family to keep it",
+          "title": "Who visits whom: the interaction matrix",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: cell\n    data: { from: visits, filterBy: $visitFilters }\n    x: visitor_group\n    y: plant_family\n    fill: { count: link, distinct: true }\n    inset: 0.5\n    sort: { y: { value: fill, reduce: sum, reverse: true, limit: 16 } }\n  - select: toggleY\n    as: $visitFilters\nxDomain: ['Bees', 'Butterflies and moths', 'Hoverflies', 'Other flies', 'Wasps and ants', 'Beetles', 'Birds', 'Bats', 'Other insects']\ncolorScheme: magma\ncolorScale: sqrt\nxTickRotate: -25\nxLabel: null\nyLabel: null\nmarginLeft: 120\nmarginBottom: 80\nmarginTop: 8\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-plants": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Plants by the number of different visitors seen on them, under the other picks. Click a plant to see where and by whom.",
+          "id": 8,
+          "links": [],
+          "subtitle": "Click a plant to see where and by whom",
+          "title": "The most visited plants",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: visits, filterBy: $visitFilters }\n    x: { count: visitor, distinct: true }\n    y: plant\n    fill: '#73BF69'\n    inset: 1\n    sort: { y: -x, limit: 12 }\n  - select: toggleY\n    as: $visitFilters\nxGrid: true\nxLabel: different visitors →\nyLabel: null\nmarginLeft: 170\nmarginRight: 16\nmarginBottom: 36\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-season": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Places with a record, by month (across) and latitude (up, in 5° bands): the visits follow the summer, north in July and south from October to January. Drag across months to keep them; the Timeline above holds the same brush.",
+          "id": 7,
+          "links": [],
+          "subtitle": "Drag across months to keep them",
+          "title": "The season by latitude: places with a visit",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: rect\n    data: { from: visits, filterBy: $visitFilters }\n    x: { bin: month_mid, step: 1 }\n    y: { bin: latitude, step: 5 }\n    fill: { count: place, distinct: true }\n    inset: 0\n  - select: intervalX\n    as: $visitFilters\ncolorScheme: viridis\ncolorScale: log\nxDomain: [1, 13]\nxTicks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]\nxLabel: month →\nyLabel: ↑ latitude\nyDomain: [-60, 75]\nmarginLeft: 44\nmarginBottom: 32\n",
+                "variables": "- param: visitFilters\n  column: month_mid\n  from: m_lo\n  to: m_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every view keeps the months the brush holds, records of any year together; bars count sightings, a visitor on a plant at one place in one month. Press play to run the year.",
+          "id": 10,
+          "links": [],
+          "title": "Months of the year: brush or play",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 12,
+                "filters": "visitFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "sightings",
+                "playMode": "slide",
+                "playMotion": "steps",
+                "selection": "",
+                "stepMs": 1500,
+                "timeColumn": "",
+                "timeline": "month"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-visitors": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Visitors by the number of different plants they were seen on, coloured by group. Click one to see where and on what.",
+          "id": 9,
+          "links": [],
+          "subtitle": "Click a visitor to see where and on what",
+          "title": "The visitors on the most plants",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  visitFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: visits, filterBy: $visitFilters }\n    x: { count: plant, distinct: true }\n    y: visitor\n    fill: visitor_group\n    inset: 1\n    sort: { y: -x, limit: 12 }\n  - select: toggleY\n    as: $visitFilters\ncolorDomain: ['Bees', 'Butterflies and moths', 'Hoverflies', 'Other flies', 'Wasps and ants', 'Beetles', 'Birds', 'Bats', 'Other insects']\ncolorRange: ['#FADE2A', '#B877D9', '#FF9830', '#73BF69', '#8AB8FF', '#F2495C', '#5ED3F3', '#FFFFFF', '#8E8E8E']\nxGrid: true\nxLabel: different plants →\nyLabel: null\nmarginLeft: 170\nmarginRight: 16\nmarginBottom: 36\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-timeline"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 18,
+              "width": 16,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-records"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-visitors"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-plants"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-places"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-headline"
+              },
+              "height": 12,
+              "width": 8,
+              "x": 16,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-groups"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 0,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-matrix"
+              },
+              "height": 11,
+              "width": 16,
+              "x": 8,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-season"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 0,
+              "y": 33
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-plants"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 8,
+              "y": 33
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-visitors"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 16,
+              "y": 33
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 15,
+              "width": 24,
+              "x": 0,
+              "y": 44
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "AutoGridLayout",
+        "spec": {
+          "columnWidthMode": "standard",
+          "items": [],
+          "maxColumnCount": 3,
+          "rowHeightMode": "standard"
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus",
+      "wildlife"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1y",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Who visits whom: animals on flowers, worldwide",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The visits in numbers only, read by the server when the dashboard opens.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Visit rows",
+          "multi": false,
+          "name": "visitRows",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "visitRows",
+              "refId": "visitRows",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: animals seen visiting or pollinating flowers, from Global Biotic Interactions\n-- (GloBI, its snapshot of 10 September 2026, CC0; each source dataset under its own terms), written by\n-- datasets/pollinators/build.sh. One row per place (to 0.01°), visitor (v), plant (p) and month, with the\n-- records behind it: numbers only, so they reach the browser quickly; the names are in two small tables.\nSELECT latitude, longitude, v, p, \"month\", records\nFROM 'http://feeds/datasets/pollinators/visits.parquet'",
+                  "refId": "visitRows"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The visitors' names and groups.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Visitors",
+          "multi": false,
+          "name": "visitorNames",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "visitorNames",
+              "refId": "visitorNames",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the visitors' numbers, names and groups.\nSELECT v, visitor, visitor_group FROM 'http://feeds/datasets/pollinators/visitors.parquet'",
+                  "refId": "visitorNames"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The plants' names and families.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Plants",
+          "multi": false,
+          "name": "plantNames",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "plantNames",
+              "refId": "plantNames",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the plants' numbers, names and families.\nSELECT p, plant, plant_family FROM 'http://feeds/datasets/pollinators/plants.parquet'",
+                  "refId": "plantNames"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The visits with their names, joined in the browser: what every panel reads.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Visits",
+          "multi": false,
+          "name": "visits",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "visits",
+              "refId": "visits",
+              "source": {
+                "sql": "-- In the browser: the visits with their names. link numbers each visitor and plant pair, place each place,\n-- so the panels can count them. month_mid is the month at the middle of its bar (January is 1.5), so a\n-- window the Timeline plays, a little over a bar wide, holds one month.\nSELECT c.latitude, c.longitude, n.visitor_group, n.visitor, pl.plant, pl.plant_family, c.\"month\", c.\"month\" + 0.5 AS month_mid, c.records,\n       c.v::BIGINT * 100000 + c.p AS link,\n       ((c.latitude + 90) * 100)::INTEGER * 40000 + ((c.longitude + 180) * 100)::INTEGER AS place\nFROM $visitRows AS c\nJOIN $visitorNames AS n USING (v)\nJOIN $plantNames AS pl USING (p)",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "m_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "m_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "ufo#7516b149",
+            "value": "ufo#7516b149"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Filters",
+          "multi": false,
+          "name": "visitFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$visits",
+              "filters": [
+                {
+                  "column": "month_mid",
+                  "from": "$m_lo",
+                  "label": "Month",
+                  "name": "month",
+                  "to": "$m_hi",
+                  "type": "range"
+                }
+              ],
+              "kind": "filters",
+              "refId": "visitFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
