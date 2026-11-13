@@ -666,7 +666,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- Every part of a unit (parts.parquet names them in model.glb) in the colour of\n-- what its unit was doing at its latest reading in the range, which the 4D\n-- Model shows; level is the part's floor in its silo, for the floor picker.\nSELECT p.part, p.label AS name, p.kind, p.level, p.floor_name,\n       CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(gen - pump) AS mw,\n       strftime(timezone('Australia/Brisbane', ts), '%-d %b %H:%M AEST') AS reading,\n       u.origin_latitude AS latitude, u.origin_longitude AS longitude\nFROM latest JOIN u USING (unit)\nJOIN 'http://feeds/datasets/wivenhoe/parts.parquet' p USING (unit)\nORDER BY p.part\n"
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- Every part of a unit in the station (parts.parquet names them in station.glb)\n-- in the colour of what its unit was doing at its latest reading in the range,\n-- which the 4D Model shows; level is the part's floor, for the floor picker.\nSELECT p.part, p.label AS name, p.kind, p.level, p.floor_name,\n       CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(gen - pump) AS mw,\n       strftime(timezone('Australia/Brisbane', ts), '%-d %b %H:%M AEST') AS reading,\n       u.origin_latitude AS latitude, u.origin_longitude AS longitude\nFROM latest JOIN u USING (unit)\nJOIN 'http://feeds/datasets/wivenhoe/parts.parquet' p USING (unit)\nWHERE p.model = 'station'\nORDER BY p.part\n"
                       },
                       "version": "v0"
                     },
@@ -706,7 +706,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- Each unit's water path (water.parquet: intake tower, penstock, valve,\n-- turbine, draft tube, outlet; in the model's metres) at the end of the range:\n-- generating it runs down to the lake (positive), pumping back up (negative).\nSELECT w.name, w.model_geometry, CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(CASE WHEN gen \u003e= 5 THEN gen WHEN pump \u003e= 5 THEN -pump ELSE 0 END) AS water\nFROM 'http://feeds/datasets/wivenhoe/water.parquet' w\nLEFT JOIN latest USING (unit)\nORDER BY w.unit\n"
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- Each unit's water path through the station (station-water.parquet: shaft,\n-- valve, turbine, draft tube, outlet; in the station model's metres) at the end\n-- of the range: generating it runs to the lake (positive), pumping back (negative).\nSELECT w.name, w.model_geometry, CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(CASE WHEN gen \u003e= 5 THEN gen WHEN pump \u003e= 5 THEN -pump ELSE 0 END) AS water\nFROM 'http://feeds/datasets/wivenhoe/station-water.parquet' w\nLEFT JOIN latest USING (unit)\nORDER BY w.unit\n"
                       },
                       "version": "v0"
                     },
@@ -731,6 +731,46 @@
                       "version": "v0"
                     },
                     "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- The intake towers in Splityard Creek Dam, a model of their own (intakes.glb)\n-- standing at its own origin up the hill, in the colour of their unit.\nSELECT p.part, p.label AS name, p.kind, p.level, p.floor_name,\n       CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(gen - pump) AS mw,\n       strftime(timezone('Australia/Brisbane', ts), '%-d %b %H:%M AEST') AS reading,\n       u.intake_latitude AS latitude, u.intake_longitude AS longitude\nFROM latest JOIN u USING (unit)\nJOIN 'http://feeds/datasets/wivenhoe/parts.parquet' p USING (unit)\nWHERE p.model = 'intakes'\nORDER BY p.part\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH u AS (SELECT * FROM 'http://feeds/datasets/wivenhoe/units.parquet'),\nr AS (\n  -- Each unit's two readings every five minutes: as a generator (W/HOE#n) and\n  -- as a pump (PUMPn, a load, positive when it draws from the grid).\n  SELECT r.ts, u.unit,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.gen_duid), 0) AS gen,\n         coalesce(max(r.mw) FILTER (WHERE r.duid = u.pump_duid), 0) AS pump\n  FROM read_parquet([${files:singlequote}]) r JOIN u ON r.duid IN (u.gen_duid, u.pump_duid)\n  WHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\n  GROUP BY r.ts, u.unit\n),\nlatest AS (SELECT * FROM r WHERE ts = (SELECT max(ts) FROM r))\n-- Each penstock down the hill (penstocks.parquet: from the intake tower to the\n-- shaft beside the hall, in longitude and latitude, on the ground) at the end\n-- of the range: generating the water runs down (positive), pumping up (negative).\nSELECT k.name, k.geometry, CASE WHEN gen \u003e= 5 THEN 'Generating' WHEN pump \u003e= 5 THEN 'Pumping' ELSE 'Idle' END AS state,\n       round(CASE WHEN gen \u003e= 5 THEN gen WHEN pump \u003e= 5 THEN -pump ELSE 0 END) AS water\nFROM 'http://feeds/datasets/wivenhoe/penstocks.parquet' k\nLEFT JOIN latest USING (unit)\nORDER BY k.unit\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "F"
                   }
                 }
               ],
@@ -778,11 +818,13 @@
                   },
                   "ghostOpacity": 0.15,
                   "groundFloor": "level",
+                  "minZoom": 0,
                   "nameField": "floor_name",
                   "others": "ghost",
                   "queryFloors": {
                     "B": "always",
-                    "C": "always"
+                    "C": "always",
+                    "F": "always"
                   },
                   "spacing": 12,
                   "variable": "floor"
@@ -894,6 +936,38 @@
                                 "format": null,
                                 "name": "floor_name"
                               }
+                            ],
+                            "grafana-E": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "mw"
+                              },
+                              {
+                                "format": null,
+                                "name": "reading"
+                              }
+                            ],
+                            "grafana-F": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "water"
+                              }
                             ]
                           }
                         }
@@ -902,8 +976,10 @@
                       "layerOrder": [
                         "wivenhoe-callouts",
                         "wivenhoe-water",
+                        "wivenhoe-penstocks",
                         "wivenhoe-floors",
-                        "wivenhoe-parts"
+                        "wivenhoe-parts",
+                        "wivenhoe-intakes"
                       ],
                       "layers": [
                         {
@@ -1065,6 +1141,66 @@
                         },
                         {
                           "config": {
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-F",
+                            "isVisible": true,
+                            "label": "Penstocks down the hill",
+                            "visConfig": {
+                              "elevationScale": 1,
+                              "pipelineSignedSpeed": true,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    -5,
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    5,
+                                    "#8e8e8e"
+                                  ],
+                                  [
+                                    null,
+                                    "#73bf69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5794f2",
+                                  "#8e8e8e",
+                                  "#73bf69"
+                                ],
+                                "name": "MW (pumping below zero)",
+                                "type": "custom"
+                              },
+                              "stroked": true,
+                              "thickness": 9,
+                              "trafficDirectionMode": "straight",
+                              "trafficLapsRange": [
+                                1,
+                                6
+                              ]
+                            }
+                          },
+                          "id": "wivenhoe-penstocks",
+                          "type": "pipeline",
+                          "visualChannels": {
+                            "speedField": {
+                              "name": "water",
+                              "type": "real"
+                            },
+                            "speedScale": "linear",
+                            "strokeColorField": {
+                              "name": "water",
+                              "type": "real"
+                            },
+                            "strokeColorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
                             "color": [
                               150,
                               156,
@@ -1178,11 +1314,83 @@
                               "modelStaleMinutes": 0,
                               "modelTimeField": "none",
                               "modelUnscheduled": true,
-                              "modelUrl": "https://pacha.ubica.dev/datasets/wivenhoe/model.glb?v=6",
+                              "modelUrl": "https://pacha.ubica.dev/datasets/wivenhoe/station.glb?v=1",
                               "opacity": 1
                             }
                           },
                           "id": "wivenhoe-parts",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              142,
+                              142,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "isVisible": true,
+                            "label": "Intake towers",
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardMax": 290,
+                              "cardMin": -250,
+                              "cardNameField": "name",
+                              "cardScale": "common",
+                              "cardShow": "hover",
+                              "cardSize": "S",
+                              "cardTimeField": "none",
+                              "cardUnit": " MW",
+                              "cardValueField": "mw",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Generating",
+                                    "#73bf69"
+                                  ],
+                                  [
+                                    "Pumping",
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    "Idle",
+                                    "#8e8e8e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73bf69",
+                                  "#5794f2",
+                                  "#8e8e8e"
+                                ],
+                                "name": "What the unit is doing",
+                                "type": "custom"
+                              },
+                              "modelAltitude": 0,
+                              "modelHeading": 0,
+                              "modelIdField": "part",
+                              "modelMode": "state",
+                              "modelNoReading": "ghost",
+                              "modelStaleMinutes": 0,
+                              "modelTimeField": "none",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/wivenhoe/intakes.glb?v=1",
+                              "opacity": 1
+                            }
+                          },
+                          "id": "wivenhoe-intakes",
                           "type": "model4d",
                           "visualChannels": {
                             "colorField": {

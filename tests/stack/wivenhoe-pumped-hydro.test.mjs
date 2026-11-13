@@ -54,9 +54,16 @@ test('follows the dashboards conventions', () => {
   const options = map.vizConfig.spec.options;
   assert.equal(options.floors.enabled, true);
   assert.equal(options.floors.variable, 'floor');
-  const model = options.mapConfig.config.visState.layers.find((l) => l.type === 'model4d');
-  assert.equal(model.config.visConfig.modelMode, 'state');
-  assert.match(model.config.visConfig.modelUrl, /^https:\/\/[^/]+\/datasets\/wivenhoe\/model\.glb/);
+  // Two models: the station first (rows in its frame and their ground follow the map's first 4D Model), then the
+  // intake towers up the hill, each standing on the ground under its own origin on a relief base map.
+  const models = options.mapConfig.config.visState.layers.filter((l) => l.type === 'model4d');
+  assert.deepEqual(
+    models.map((m) => m.config.visConfig.modelUrl.replace(/\?.*$/, '').replace(/^https:\/\/[^/]+/, '')),
+    ['/datasets/wivenhoe/station.glb', '/datasets/wivenhoe/intakes.glb']
+  );
+  for (const m of models) assert.equal(m.config.visConfig.modelMode, 'state');
+  // Indoors at every zoom, or Floors drops the models below the indoor zoom.
+  assert.equal(options.floors.minZoom, 0);
 });
 
 test('is provisioned in Pacha dashboards', { skip: noPlus }, () => {
@@ -64,16 +71,20 @@ test('is provisioned in Pacha dashboards', { skip: noPlus }, () => {
   assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
-test('the model has every part the map names, and the gateway serves it as glTF', { skip }, async () => {
+test('each model has every part the map names, and the gateway serves it as glTF', { skip }, async () => {
   const parts = await duckdb(STACK_URL, "SELECT * FROM 'http://feeds/datasets/wivenhoe/parts.parquet'");
   assert.equal(parts.length, 14);
-  const res = await fetch(new URL('/datasets/wivenhoe/model.glb', STACK_URL));
-  assert.equal(res.status, 200);
-  const glb = Buffer.from(await res.arrayBuffer());
-  assert.equal(glb.toString('ascii', 0, 4), 'glTF');
-  const json = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12)));
-  const nodes = new Set(json.nodes.map((n) => n.name));
-  for (const p of parts) assert.ok(nodes.has(p.part), p.part);
+  for (const [model, count] of [['station', 12], ['intakes', 2]]) {
+    const res = await fetch(new URL(`/datasets/wivenhoe/${model}.glb`, STACK_URL));
+    assert.equal(res.status, 200);
+    const glb = Buffer.from(await res.arrayBuffer());
+    assert.equal(glb.toString('ascii', 0, 4), 'glTF');
+    const json = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12)));
+    const nodes = new Set(json.nodes.map((n) => n.name));
+    const named = parts.filter((p) => p.model === model);
+    assert.equal(named.length, count, model);
+    for (const p of named) assert.ok(nodes.has(p.part), `${model}: ${p.part}`);
+  }
   const floors = await duckdb(STACK_URL, sqlOf(map, 'D'));
   assert.deepEqual([...new Set(floors.map((f) => f.level))].sort(), ['-1', '-2', '-3', '0']);
 });
@@ -84,11 +95,18 @@ test('each unit generates, pumps or idles, never both, within its ratings', { sk
   for (const r of rows) {
     for (const unit of ['Unit 1', 'Unit 2']) assert.ok(r[unit] >= -260 && r[unit] <= 300, JSON.stringify(r));
   }
-  const parts = await duckdb(STACK_URL, sqlOf(map, 'A'));
+  const parts = [...(await duckdb(STACK_URL, sqlOf(map, 'A'))), ...(await duckdb(STACK_URL, sqlOf(map, 'E')))];
   assert.equal(parts.length, 14);
   for (const p of parts) assert.ok(['Generating', 'Pumping', 'Idle'].includes(p.state), JSON.stringify(p));
   const water = await duckdb(STACK_URL, sqlOf(map, 'C'));
   assert.deepEqual(water.map((w) => w.name), ['Unit 1', 'Unit 2']);
+  // The penstocks down the hill, in longitude and latitude, from the towers in Splityard Creek Dam to the hall.
+  const penstocks = await duckdb(STACK_URL, sqlOf(map, 'F'));
+  assert.equal(penstocks.length, 2);
+  for (const k of penstocks) {
+    const [start, end] = JSON.parse(k.geometry).coordinates;
+    assert.ok(start[0] > end[0] && start[1] > end[1], `${k.name}: down the hill to the south-west`);
+  }
 });
 
 test('the week: the pumps draw more than the generators give back', { skip, timeout: 120_000 }, async () => {

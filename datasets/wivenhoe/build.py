@@ -1,28 +1,33 @@
-"""Wivenhoe Power Station as a schematic 3D model, for the wivenhoe-pumped-hydro dashboard.
+"""Wivenhoe Power Station as schematic 3D models, for the wivenhoe-pumped-hydro dashboard.
 
 Run by build.sh (python build.py <osm.json> <out>) with DuckDB, NumPy and mapbox_earcut installed. Reads
 OpenStreetMap's data around the station and writes to <out>:
 
-- model.glb: the machine hall (OpenStreetMap's footprint, drawn as its frame), and under it the two concrete silos
-  (drawn as their ribs and rings), one unit in each: the motor-generator, the shaft, the pump-turbine in its spiral case, the spherical valve where the
-  penstock comes in, and the draft tube out to Lake Wivenhoe; the floors of each silo; each unit's penstock from its
-  intake tower in Splityard Creek Dam (OpenStreetMap's two underground pipelines) and its transformer bay (the two
-  substations beside the hall). All opaque, so nothing hides the machines. Every part of a unit is one glTF node named U<n>-<part>. Metres, Y up, -Z north,
-  the origin at the centre of the hall.
-- units.parquet: each unit's AEMO ids (generating and pumping), ratings, where its silo stands, the model's origin.
-- parts.parquet: every named part: its unit, what it is, the floor it stands on.
+- station.glb: the machine hall (OpenStreetMap's footprint, drawn as its frame), and under it the two concrete silos
+  (drawn as their ribs and rings), one unit in each: the motor-generator, the shaft, the pump-turbine in its spiral
+  case, the spherical valve where the penstock comes in down its shaft beside the hall, and the draft tube out to Lake
+  Wivenhoe; and each unit's transformer bay (the two substations beside the hall). All opaque, so nothing hides the
+  machines. Every part of a unit is one glTF node named U<n>-<part>. Metres, Y up, -Z north, the origin at the centre
+  of the hall.
+- intakes.glb: the two intake towers in Splityard Creek Dam (where OpenStreetMap's two underground pipelines start)
+  and the pier out to them; the origin between the towers.
+- units.parquet: each unit's AEMO ids (generating and pumping), ratings, where its silo stands, both models' origins.
+- parts.parquet: every named part: its unit, what it is, the floor it stands on, its model (station or intakes).
 - floors.parquet: the floors, for the map's floor picker: the ground over the station (round the hall and all that is
   drawn under it) and each silo's three floors round its machine pit, in longitude and latitude; the map lifts each
   to its level.
-- water.parquet: each unit's water path from the intake to the outlet, in the model's metres (model_geometry).
+- penstocks.parquet: each unit's penstock down the hill, from its intake tower to the shaft beside the hall, along
+  OpenStreetMap's route, in longitude and latitude, on the ground.
+- station-water.parquet: each unit's water path through the station, from the shaft to the outlet, in the station
+  model's metres (model_geometry).
 
 A schematic, not a survey. The silos' size (about 32 m internal diameter) and the units' ratings are the station's
 public description; how deep the silos go, the floors' levels, the machines' sizes, which silo is unit 1 and where
-the silos stand under the hall are drawn, not measured. The map is flat (Splityard Creek Dam, about 100 m above Lake
-Wivenhoe, lies at the same level), and nothing the map draws hides what is under it: a part drawn underground seems to
-slide off its place when the map is tilted. So only the silos and the draft tubes, under the hall and the lake, are
-drawn below ground; the penstocks lie on the ground along OpenStreetMap's routes, as their depth in the hill is not
-known, and drop down a shaft beside the hall into their silos, and the intake towers stand from the water up.
+the silos stand under the hall are drawn, not measured. Nothing a map draws is hidden by the ground, so a part drawn
+underground seems to slide off its place when the map is tilted: only the silos and the draft tubes, under the hall
+and the lake, are drawn below ground. Splityard Creek Dam stands some 100 m above the hall: on a relief base map each
+model stands on the ground under its origin, so the towers are a model of their own, and the penstocks, whose depth
+in the hill is not known, run along the ground between them.
 """
 import json
 import math
@@ -309,14 +314,19 @@ def main(osm_path, out):
     bays = [origin(r) for r in bays_lonlat]
     bay_of = sorted(range(2), key=lambda k: np.hypot(*(bays[k][:-1].mean(axis=0) - silos[0])))
 
-    parts, part_rows, water_rows, unit_rows, floor_rows = [], [], [], [], []
+    parts, intake_parts, part_rows, water_rows, penstock_rows, unit_rows, floor_rows = [], [], [], [], [], [], []
+    # The intake towers are a model of their own, standing where they do: in Splityard Creek Dam, some 100 m above the
+    # hall. On a relief base map a rigid model stands on the ground under its origin, so one model for both would leave
+    # the towers 100 m down in the hill; the penstocks between run along the ground (penstocks.parquet).
+    intake_points = [origin.back(*pipes[k][0]) for k in range(2)]
+    intake_origin = Local(*np.mean(intake_points, axis=0))
     below = [hall]  # what the ground over the station covers: the hall, and all that is drawn under it
     level_name = {f: name for f, name, _ in FLOORS}
 
-    def part(name, kind, label, floor, mesh, unit):
+    def part(name, kind, label, floor, mesh, unit, model='station'):
         verts, faces = mesh
-        parts.append((name, 'machine', verts, faces))
-        part_rows.append((name, unit, f'Unit {unit}', kind, label, floor, level_name[floor]))
+        (intake_parts if model == 'intakes' else parts).append((name, 'machine', verts, faces))
+        part_rows.append((name, unit, f'Unit {unit}', kind, label, floor, level_name[floor], model))
 
     for k, (unit, gen_id, pump_id, gen_mw, pump_mw) in enumerate(UNITS):
         s = silos[k]
@@ -340,11 +350,16 @@ def main(osm_path, out):
         part(f'{name}-turbine', 'Pump-turbine', f'Unit {unit} pump-turbine', '-2', merge(shaft, case, runner), unit)
         valve_at = np.array([*(s + towards * 13.0), -31.0])
         part(f'{name}-valve', 'Spherical valve', f'Unit {unit} inlet valve', '-2', sphere(valve_at, 4.6, 12, 20), unit)
-        # The penstock: from the intake tower on the ground along its route, down a shaft beside the hall, into the
-        # silo at the valve.
+        # The penstock's end in the station: down a shaft beside the hall, into the silo at the valve. Its run down the
+        # hill from the intake tower is penstocks.parquet's, in longitude and latitude, along the ground.
         outside = s + towards * (SILO_R_OUT + 6.0)
-        pen_path = [[*intake, PIPE_R], [*outside, PIPE_R], [*outside, -31.0], valve_at.tolist()]
+        pen_path = [[*outside, PIPE_R], [*outside, -31.0], valve_at.tolist()]
         part(f'{name}-penstock', 'Penstock', f'Unit {unit} penstock', '-2', tube(pen_path, PIPE_R), unit)
+        hill = [[*origin.back(*intake), PIPE_R], [*origin.back(*outside), PIPE_R]]
+        hill_m = sum(math.dist(a[:2], b[:2]) for a, b in zip([intake, outside][:-1], [intake, outside][1:]))
+        penstock_rows.append((unit, f'Unit {unit} penstock', json.dumps(
+            {'type': 'LineString', 'coordinates': [[round(p[0], 8), round(p[1], 8), p[2]] for p in hill]}),
+            round(hill_m)))
         # The draft tube: down from the runner, then out under the lake's edge, away from the hill.
         lake = -towards
         draft_path = [[*s, -36.0], [*s, -42.0], [*(s + lake * (SILO_R_OUT + 10.0)), -42.0],
@@ -352,12 +367,13 @@ def main(osm_path, out):
         part(f'{name}-draft', 'Draft tube', f'Unit {unit} draft tube', '-3', tube(draft_path, PIPE_R + 0.8), unit)
         below += [circle(*s, SILO_R_OUT + 4, 32), circle(*outside, PIPE_R + 4, 12),
                   circle(*draft_path[-1][:2], PIPE_R + 5, 12)]
-        # The intake tower in Splityard Creek Dam, and the transformer bay beside the hall.
-        part(f'{name}-intake', 'Intake tower', f'Unit {unit} intake tower', '0', cylinder(*intake, 8.2, 0.0, 14.0, 40),
-             unit)
+        # The intake tower in Splityard Creek Dam (the intakes' model), and the transformer bay beside the hall.
+        tower = intake_origin([intake_points[pipe_of[k]]])[0]
+        part(f'{name}-intake', 'Intake tower', f'Unit {unit} intake tower', '0', cylinder(*tower, 8.2, 0.0, 14.0, 40),
+             unit, 'intakes')
         part(f'{name}-transformer', 'Transformer', f'Unit {unit} transformer', '0', prism(bays[bay_of[k]], 0, 9.0),
              unit)
-        # The water's whole way, for the Pipeline layer: generating it runs this way, pumping the other.
+        # The water's way through the station, for the Pipeline layer: generating it runs this way, pumping the other.
         path = [*pen_path, [*(s + towards * 9.0), -31.0],
                 [*s, -34.5], *draft_path[1:]]
         length = sum(math.dist(a, b) for a, b in zip(path[:-1], path[1:]))
@@ -375,31 +391,36 @@ def main(osm_path, out):
     ground = [[round(x, 8), round(y, 8)] for x, y in (origin.back(*p) for p in hull(np.vstack(below)))]
     floor_rows.append(('0', FLOORS[0][1], None, 'Ground and lake over the silos',
                        json.dumps({'type': 'Polygon', 'coordinates': [ground]})))
-    pier = origin(pier_lonlat)
-    parts.append(('pier', 'context', *prism(pier, 8.0, 9.5)))
-    write_glb(out / 'model.glb', parts)
+    intake_parts.append(('pier', 'context', *prism(intake_origin(pier_lonlat), 8.0, 9.5)))
+    write_glb(out / 'station.glb', parts)
+    write_glb(out / 'intakes.glb', intake_parts)
 
     olon, olat = origin.lon, origin.lat
     c = duckdb.connect()
     c.execute('CREATE TABLE units (unit INTEGER, name VARCHAR, gen_duid VARCHAR, pump_duid VARCHAR, gen_mw DOUBLE, '
               'pump_mw DOUBLE, latitude DOUBLE, longitude DOUBLE, silo_x DOUBLE, silo_y DOUBLE)')
     c.executemany('INSERT INTO units VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', unit_rows)
-    c.execute(f"COPY (SELECT *, {olat} AS origin_latitude, {olon} AS origin_longitude FROM units ORDER BY unit) "
-              f"TO '{out / 'units.parquet'}' (FORMAT parquet)")
+    c.execute(f"COPY (SELECT *, {olat} AS origin_latitude, {olon} AS origin_longitude, "
+              f"{intake_origin.lat} AS intake_latitude, {intake_origin.lon} AS intake_longitude FROM units "
+              f"ORDER BY unit) TO '{out / 'units.parquet'}' (FORMAT parquet)")
     c.execute('CREATE TABLE parts (part VARCHAR, unit INTEGER, unit_name VARCHAR, kind VARCHAR, label VARCHAR, '
-              'level VARCHAR, floor_name VARCHAR)')
-    c.executemany('INSERT INTO parts VALUES (?, ?, ?, ?, ?, ?, ?)', part_rows)
+              'level VARCHAR, floor_name VARCHAR, model VARCHAR)')
+    c.executemany('INSERT INTO parts VALUES (?, ?, ?, ?, ?, ?, ?, ?)', part_rows)
     c.execute(f"COPY (SELECT * FROM parts ORDER BY unit, part) TO '{out / 'parts.parquet'}' (FORMAT parquet)")
     c.execute('CREATE TABLE water (unit INTEGER, name VARCHAR, model_geometry VARCHAR, length_m DOUBLE)')
     c.executemany('INSERT INTO water VALUES (?, ?, ?, ?)', water_rows)
-    c.execute(f"COPY (SELECT * FROM water ORDER BY unit) TO '{out / 'water.parquet'}' (FORMAT parquet)")
+    c.execute(f"COPY (SELECT * FROM water ORDER BY unit) TO '{out / 'station-water.parquet'}' (FORMAT parquet)")
+    c.execute('CREATE TABLE penstocks (unit INTEGER, name VARCHAR, geometry VARCHAR, length_m DOUBLE)')
+    c.executemany('INSERT INTO penstocks VALUES (?, ?, ?, ?)', penstock_rows)
+    c.execute(f"COPY (SELECT * FROM penstocks ORDER BY unit) TO '{out / 'penstocks.parquet'}' (FORMAT parquet)")
     c.execute('CREATE TABLE floors (level VARCHAR, floor_name VARCHAR, unit INTEGER, name VARCHAR, geojson VARCHAR)')
     c.executemany('INSERT INTO floors VALUES (?, ?, ?, ?, ?)', floor_rows)
     c.execute(f"COPY (SELECT * FROM floors ORDER BY level DESC, unit) TO '{out / 'floors.parquet'}' (FORMAT parquet)")
-    print(f'{len(parts)} pieces in model.glb ({(out / "model.glb").stat().st_size / 1e3:.0f} kB); hall '
+    print(f'{len(parts)} pieces in station.glb ({(out / "station.glb").stat().st_size / 1e3:.0f} kB), '
+          f'{len(intake_parts)} in intakes.glb; hall '
           f'{2 * half_len:.0f} x {2 * half_wid:.0f} m, its long axis '
           f'{math.degrees(math.atan2(along[0], along[1])):.0f} deg from north; silos at '
-          f'{[tuple(round(float(v), 1) for v in s) for s in silos]}; penstocks {[r[3] for r in water_rows]} m; '
+          f'{[tuple(round(float(v), 1) for v in s) for s in silos]}; penstocks down the hill {[r[3] for r in penstock_rows]} m; '
           f'origin {olat:.6f}, {olon:.6f}')
 
 
