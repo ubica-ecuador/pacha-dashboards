@@ -1,0 +1,40 @@
+    # DSN Now (eyes.nasa.gov), behind dsn-now: what each antenna of NASA's Deep
+    # Space Network is doing, every few seconds, as one XML file of about 7 KB
+    # (where it points, the spacecraft it talks to, the signals up and down, the
+    # round-trip light time). No key.
+    #
+    # The feed changes every 5 s but is served with max-age=3600: that header is
+    # ignored, each copy kept 5 s, a visitor getting the previous one while it is
+    # renewed in the background; a ?r= of the time asks NASA's CDN past its own
+    # copy, as DSN Now's page does. Read with http_get (one GET), never read_text:
+    # a renewal between DuckDB's HEAD and its GET would cut the file.
+    location = /dsn/dsn.xml {
+        set $dsn eyes.nasa.gov;
+        proxy_pass https://$dsn/dsn/data/dsn.xml?r=$msec;
+        proxy_set_header Host $dsn;
+        proxy_set_header Accept-Encoding "";
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache dsn;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 5s;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # DSN Now's configuration: the complexes, their antennas and the spacecraft's
+    # full names (JWST: James Webb Space Telescope). Kept a day.
+    location = /dsn/config.xml {
+        set $dsn eyes.nasa.gov;
+        proxy_pass https://$dsn/dsn/config.xml;
+        proxy_set_header Host $dsn;
+        proxy_set_header Accept-Encoding "";
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_cache dsn;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 1d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

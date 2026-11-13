@@ -1,0 +1,2742 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "deep-space-network"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "NASA's Deep Space Network live: its fifteen antennas at Goldstone, Madrid and Canberra in 3D over their satellite images, each turned to where it points now and coloured by what it is doing, from the DSN Now feed; the spacecraft each one talks to, the data coming down, and how long each signal takes to reach Earth.",
+    "editable": true,
+    "elements": {
+      "card-contact": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- DSN Now's feed through the gateway (/dsn/dsn.xml, kept 5 s): one XML file with a \u003cdish\u003e for each antenna\n-- at work, where it points, and inside it a \u003ctarget\u003e for each spacecraft with its \u003cupSignal\u003es and \u003cdownSignal\u003es.\nWITH feed AS (\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/dsn/dsn.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\ndish AS (\n  SELECT x, regexp_extract(x, '\u003cdish [^\u003e]*\u003e') AS tag\n  FROM (SELECT unnest(regexp_extract_all(xml, '(?s)\u003cdish [^\u003e]*\u003e.*?\u003c/dish\u003e')) AS x FROM feed)\n),\nlive AS (\n  SELECT regexp_extract(tag, ' name=\"([^\"]*)\"', 1) AS dish,\n         TRY_CAST(regexp_extract(tag, 'azimuthAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS azimuth,\n         TRY_CAST(regexp_extract(tag, 'elevationAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS elevation,\n         TRY_CAST(regexp_extract(tag, 'windSpeed=\"([^\"]*)\"', 1) AS DOUBLE) AS wind,\n         regexp_extract(tag, 'activity=\"([^\"]*)\"', 1) AS activity,\n         -- DSN and DSS are the network itself (tests, maintenance), not a spacecraft.\n         list_filter(regexp_extract_all(x, '\u003ctarget name=\"([^\"]*)\"', 1), t -\u003e t NOT IN ('DSN', 'DSS', '')) AS targets,\n         list_max(list_transform(regexp_extract_all(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*dataRate=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS down_bps,\n         list_max(list_transform(regexp_extract_all(x, '\u003cupSignal [^\u003e]*active=\"true\"[^\u003e]*power=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS up_kw,\n         nullif(regexp_extract(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*band=\"([^\"]*)\"', 1), '') AS band,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*downlegRange=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS range_km,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*rtlt=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS rtlt_s\n  FROM dish\n),\ndishes AS (\n  -- Every antenna, those the feed leaves out (idle) too, and what it is doing now.\n  SELECT d.*, l.azimuth, l.elevation, l.wind, l.activity, coalesce(l.targets, []) AS targets,\n         l.down_bps, l.up_kw, l.band,\n         CASE WHEN l.range_km \u003e 0 THEN l.range_km END AS range_km,\n         CASE WHEN l.rtlt_s \u003e 0 THEN l.rtlt_s END AS rtlt_s,\n         CASE WHEN len(coalesce(l.targets, [])) = 0 THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN live l USING (dish)\n),\nnames AS (\n  SELECT dish, string_agg(coalesce(c.craft, t), ', ') AS spacecraft\n  FROM (SELECT dish, unnest(targets) AS t FROM dishes) LEFT JOIN craft c ON c.code = t\n  GROUP BY dish\n)\n-- Spacecraft with a signal up or down on some antenna now.\nSELECT count(DISTINCT t) AS spacecraft\nFROM (SELECT unnest(targets) AS t FROM dishes WHERE state IN ('Two-way', 'Receiving', 'Transmitting'))\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Spacecraft with a signal going up or coming down on one of the fifteen antennas now (the network itself, in tests or maintenance, is left out).",
+          "id": 1,
+          "links": [],
+          "title": "Spacecraft in contact",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-down": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- DSN Now's feed through the gateway (/dsn/dsn.xml, kept 5 s): one XML file with a \u003cdish\u003e for each antenna\n-- at work, where it points, and inside it a \u003ctarget\u003e for each spacecraft with its \u003cupSignal\u003es and \u003cdownSignal\u003es.\nWITH feed AS (\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/dsn/dsn.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\ndish AS (\n  SELECT x, regexp_extract(x, '\u003cdish [^\u003e]*\u003e') AS tag\n  FROM (SELECT unnest(regexp_extract_all(xml, '(?s)\u003cdish [^\u003e]*\u003e.*?\u003c/dish\u003e')) AS x FROM feed)\n),\nlive AS (\n  SELECT regexp_extract(tag, ' name=\"([^\"]*)\"', 1) AS dish,\n         TRY_CAST(regexp_extract(tag, 'azimuthAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS azimuth,\n         TRY_CAST(regexp_extract(tag, 'elevationAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS elevation,\n         TRY_CAST(regexp_extract(tag, 'windSpeed=\"([^\"]*)\"', 1) AS DOUBLE) AS wind,\n         regexp_extract(tag, 'activity=\"([^\"]*)\"', 1) AS activity,\n         -- DSN and DSS are the network itself (tests, maintenance), not a spacecraft.\n         list_filter(regexp_extract_all(x, '\u003ctarget name=\"([^\"]*)\"', 1), t -\u003e t NOT IN ('DSN', 'DSS', '')) AS targets,\n         list_max(list_transform(regexp_extract_all(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*dataRate=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS down_bps,\n         list_max(list_transform(regexp_extract_all(x, '\u003cupSignal [^\u003e]*active=\"true\"[^\u003e]*power=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS up_kw,\n         nullif(regexp_extract(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*band=\"([^\"]*)\"', 1), '') AS band,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*downlegRange=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS range_km,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*rtlt=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS rtlt_s\n  FROM dish\n),\ndishes AS (\n  -- Every antenna, those the feed leaves out (idle) too, and what it is doing now.\n  SELECT d.*, l.azimuth, l.elevation, l.wind, l.activity, coalesce(l.targets, []) AS targets,\n         l.down_bps, l.up_kw, l.band,\n         CASE WHEN l.range_km \u003e 0 THEN l.range_km END AS range_km,\n         CASE WHEN l.rtlt_s \u003e 0 THEN l.rtlt_s END AS rtlt_s,\n         CASE WHEN len(coalesce(l.targets, [])) = 0 THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN live l USING (dish)\n),\nnames AS (\n  SELECT dish, string_agg(coalesce(c.craft, t), ', ') AS spacecraft\n  FROM (SELECT dish, unnest(targets) AS t FROM dishes) LEFT JOIN craft c ON c.code = t\n  GROUP BY dish\n)\n-- Data coming down on every antenna now, each antenna's fastest signal.\nSELECT coalesce(sum(down_bps), 0) AS downlink FROM dishes\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Data coming down on every antenna now: each antenna's fastest signal, added up.",
+          "id": 3,
+          "links": [],
+          "title": "Coming down now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "bps"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-farthest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- DSN Now's feed through the gateway (/dsn/dsn.xml, kept 5 s): one XML file with a \u003cdish\u003e for each antenna\n-- at work, where it points, and inside it a \u003ctarget\u003e for each spacecraft with its \u003cupSignal\u003es and \u003cdownSignal\u003es.\nWITH feed AS (\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/dsn/dsn.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\ndish AS (\n  SELECT x, regexp_extract(x, '\u003cdish [^\u003e]*\u003e') AS tag\n  FROM (SELECT unnest(regexp_extract_all(xml, '(?s)\u003cdish [^\u003e]*\u003e.*?\u003c/dish\u003e')) AS x FROM feed)\n),\nlive AS (\n  SELECT regexp_extract(tag, ' name=\"([^\"]*)\"', 1) AS dish,\n         TRY_CAST(regexp_extract(tag, 'azimuthAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS azimuth,\n         TRY_CAST(regexp_extract(tag, 'elevationAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS elevation,\n         TRY_CAST(regexp_extract(tag, 'windSpeed=\"([^\"]*)\"', 1) AS DOUBLE) AS wind,\n         regexp_extract(tag, 'activity=\"([^\"]*)\"', 1) AS activity,\n         -- DSN and DSS are the network itself (tests, maintenance), not a spacecraft.\n         list_filter(regexp_extract_all(x, '\u003ctarget name=\"([^\"]*)\"', 1), t -\u003e t NOT IN ('DSN', 'DSS', '')) AS targets,\n         list_max(list_transform(regexp_extract_all(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*dataRate=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS down_bps,\n         list_max(list_transform(regexp_extract_all(x, '\u003cupSignal [^\u003e]*active=\"true\"[^\u003e]*power=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS up_kw,\n         nullif(regexp_extract(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*band=\"([^\"]*)\"', 1), '') AS band,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*downlegRange=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS range_km,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*rtlt=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS rtlt_s\n  FROM dish\n),\ndishes AS (\n  -- Every antenna, those the feed leaves out (idle) too, and what it is doing now.\n  SELECT d.*, l.azimuth, l.elevation, l.wind, l.activity, coalesce(l.targets, []) AS targets,\n         l.down_bps, l.up_kw, l.band,\n         CASE WHEN l.range_km \u003e 0 THEN l.range_km END AS range_km,\n         CASE WHEN l.rtlt_s \u003e 0 THEN l.rtlt_s END AS rtlt_s,\n         CASE WHEN len(coalesce(l.targets, [])) = 0 THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN live l USING (dish)\n),\nnames AS (\n  SELECT dish, string_agg(coalesce(c.craft, t), ', ') AS spacecraft\n  FROM (SELECT dish, unnest(targets) AS t FROM dishes) LEFT JOIN craft c ON c.code = t\n  GROUP BY dish\n)\n-- The farthest spacecraft in contact, by its round-trip light time, and how long its signal takes to arrive.\nSELECT coalesce(c.craft, t) || ' · ' || CASE WHEN (rtlt_s / 2) IS NULL THEN NULL WHEN (rtlt_s / 2) \u003c 60 THEN printf('%.1f s', (rtlt_s / 2)) WHEN (rtlt_s / 2) \u003c 3600 THEN printf('%d min %02d s', ((rtlt_s / 2) // 60)::INT, ((rtlt_s / 2) % 60)::INT) ELSE printf('%d h %02d min', ((rtlt_s / 2) // 3600)::INT, (((rtlt_s / 2) % 3600) // 60)::INT) END AS farthest\nFROM (SELECT unnest(targets) AS t, rtlt_s FROM dishes\n      WHERE state IN ('Two-way', 'Receiving', 'Transmitting') AND len(targets) = 1) x\nLEFT JOIN craft c ON c.code = t\nORDER BY rtlt_s DESC NULLS LAST\nLIMIT 1\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The spacecraft in contact farthest away, and how long its signal takes to reach Earth: half its round-trip light time as DSN Now gives it.",
+          "id": 2,
+          "links": [],
+          "title": "Farthest in contact",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- When DSN Now wrote the feed (its \u003ctimestamp\u003e, epoch ms), through the gateway (kept 5 s).\nSELECT epoch_ms(TRY_CAST(regexp_extract(r-\u003e\u003e'body', '\u003ctimestamp\u003e([0-9]+)\u003c/timestamp\u003e', 1) AS BIGINT)) AS time\nFROM (SELECT http_get('http://feeds/dsn/dsn.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When DSN Now wrote the feed. NASA updates it every few seconds; the gateway keeps a copy 5 s and the dashboard reloads every 10 s.",
+          "id": 4,
+          "links": [],
+          "title": "Latest data",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "map-canberra": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- Two parts of each antenna in the model (cdscc.glb), at every instant: its alidade turns to the azimuth\n-- (model_yaw, degrees clockwise from north), its elevation wheel tilts the dish down from the zenith\n-- (model_pitch); both in the colour of what the antenna is doing. The map shows each part's reading at the\n-- Time Brush's instant. Every row stands at the model's origin (the complex's 70 m antenna).\nSELECT g.dish || '.' || p.part AS part, g.time,\n       g.name || ' · ' || coalesce(n.spacecraft, nullif(g.activity, ''), 'idle') AS name,\n       g.state,\n       CASE WHEN p.part = 'azimuth' THEN g.azimuth END AS model_yaw,\n       CASE WHEN p.part = 'elevation' THEN g.elevation - 90 END AS model_pitch,\n       round(g.down_bps / 1000, 1) AS downlink_kbps,\n       round(g.range_km / 149597870.7, 4) AS distance_au,\n       g.up_kw AS uplink_kw,\n       g.azimuth, g.elevation,\n       g.origin_latitude AS latitude, g.origin_longitude AS longitude\nFROM grid g LEFT JOIN names n USING (targets), (VALUES ('azimuth'), ('elevation')) p(part)\nWHERE g.site = 'cdscc'\nORDER BY part, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- A callout over each antenna: its spacecraft and the data coming down (kb/s) over the range, read at the\n-- Time Brush's instant.\nSELECT g.time, g.name || ' · ' || coalesce(n.spacecraft, 'idle') AS name,\n       coalesce(round(g.down_bps / 1000, 1), 0) AS downlink_kbps,\n       g.latitude, g.longitude,\n       -- Over the dish's rim when it points at the zenith.\n       CASE WHEN g.type = '70M' THEN 85 ELSE 45 END AS altitude\nFROM grid g LEFT JOIN names n USING (targets)\nWHERE g.site = 'cdscc'\nORDER BY g.dish, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Canberra Deep Space Communication Complex at Tidbinbilla: the 70 m DSS-43, the only antenna that can talk to Voyager 2, and the 34 m DSS-34, DSS-35 and DSS-36. Each antenna is NASA's model of a 34 m DSN antenna (a 70 m one at twice the size) turned to where it pointed at the Time Brush's instant (the end of its window; now, by default): its alidade to the azimuth and its dish down from the zenith to the elevation, as DSN Now said it then. Alidade and elevation wheel in the colour of what the antenna was doing (green two-way, blue receiving, orange transmitting, purple pointing with no signal, grey idle or in maintenance); over each, its spacecraft and the data coming down over the range, read at the instant. Play the Time Brush to watch them track and slew. Hover an antenna for its card.",
+          "id": 7,
+          "links": [],
+          "title": "Canberra, Australia: Tidbinbilla",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "fitOnVariables": [],
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 90,
+                      "dragRotate": true,
+                      "latitude": -35.3983,
+                      "longitude": 148.9804,
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 70,
+                      "pitch": 55,
+                      "zoom": 16.25
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-google-satellite",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            0
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              },
+                              {
+                                "format": null,
+                                "name": "distance_au"
+                              },
+                              {
+                                "format": null,
+                                "name": "azimuth"
+                              },
+                              {
+                                "format": null,
+                                "name": "elevation"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "cdscc-callouts",
+                        "cdscc-antennas"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              87,
+                              148,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Spacecraft and data rate",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  24,
+                                  27,
+                                  31,
+                                  255
+                                ],
+                                "outlineWidth": 1,
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 40,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    0.05,
+                                    "#8e8e8e"
+                                  ],
+                                  [
+                                    null,
+                                    "#5794f2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#8e8e8e",
+                                  "#5794f2"
+                                ],
+                                "name": "Data coming down",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkFill": true,
+                              "sparkOverlap": "all",
+                              "sparkRange": "data",
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkTooltip": false,
+                              "sparkUnit": " kb/s"
+                            }
+                          },
+                          "id": "cdscc-callouts",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "downlink_kbps",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              142,
+                              142,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Antennas",
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardExtras": [
+                                {
+                                  "field": "distance_au",
+                                  "label": "Distance",
+                                  "unit": " AU"
+                                },
+                                {
+                                  "field": "elevation",
+                                  "label": "Elevation",
+                                  "unit": "°"
+                                },
+                                {
+                                  "field": "uplink_kw",
+                                  "label": "Uplink",
+                                  "unit": " kW"
+                                }
+                              ],
+                              "cardNameField": "name",
+                              "cardScale": "perSite",
+                              "cardShow": "hover",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": " kb/s",
+                              "cardValueField": "downlink_kbps",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Two-way",
+                                    "#73bf69"
+                                  ],
+                                  [
+                                    "Receiving",
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    "Transmitting",
+                                    "#ff9830"
+                                  ],
+                                  [
+                                    "Pointing",
+                                    "#b877d9"
+                                  ],
+                                  [
+                                    "Idle or in maintenance",
+                                    "#8e8e8e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73bf69",
+                                  "#5794f2",
+                                  "#ff9830",
+                                  "#b877d9",
+                                  "#8e8e8e"
+                                ],
+                                "name": "What the antenna is doing",
+                                "type": "custom"
+                              },
+                              "modelAltitude": 0,
+                              "modelHeading": 0,
+                              "modelIdField": "part",
+                              "modelMode": "state",
+                              "modelNoReading": "ghost",
+                              "modelStaleMinutes": 10,
+                              "modelTimeField": "time",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/dsn-antennas/cdscc.glb?v=1",
+                              "opacity": 1
+                            }
+                          },
+                          "id": "cdscc-antennas",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "map-goldstone": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- Two parts of each antenna in the model (gdscc.glb), at every instant: its alidade turns to the azimuth\n-- (model_yaw, degrees clockwise from north), its elevation wheel tilts the dish down from the zenith\n-- (model_pitch); both in the colour of what the antenna is doing. The map shows each part's reading at the\n-- Time Brush's instant. Every row stands at the model's origin (the complex's 70 m antenna).\nSELECT g.dish || '.' || p.part AS part, g.time,\n       g.name || ' · ' || coalesce(n.spacecraft, nullif(g.activity, ''), 'idle') AS name,\n       g.state,\n       CASE WHEN p.part = 'azimuth' THEN g.azimuth END AS model_yaw,\n       CASE WHEN p.part = 'elevation' THEN g.elevation - 90 END AS model_pitch,\n       round(g.down_bps / 1000, 1) AS downlink_kbps,\n       round(g.range_km / 149597870.7, 4) AS distance_au,\n       g.up_kw AS uplink_kw,\n       g.azimuth, g.elevation,\n       g.origin_latitude AS latitude, g.origin_longitude AS longitude\nFROM grid g LEFT JOIN names n USING (targets), (VALUES ('azimuth'), ('elevation')) p(part)\nWHERE g.site = 'gdscc'\nORDER BY part, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- A callout over each antenna: its spacecraft and the data coming down (kb/s) over the range, read at the\n-- Time Brush's instant.\nSELECT g.time, g.name || ' · ' || coalesce(n.spacecraft, 'idle') AS name,\n       coalesce(round(g.down_bps / 1000, 1), 0) AS downlink_kbps,\n       g.latitude, g.longitude,\n       -- Over the dish's rim when it points at the zenith.\n       CASE WHEN g.type = '70M' THEN 85 ELSE 45 END AS altitude\nFROM grid g LEFT JOIN names n USING (targets)\nWHERE g.site = 'gdscc'\nORDER BY g.dish, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Goldstone Deep Space Communications Complex in the Mojave Desert: the four 34 m beam-waveguide antennas of the Apollo site (DSS-23 to DSS-26). The 70 m DSS-14 stands 10 km north, in its own map. Each antenna is NASA's model of a 34 m DSN antenna (a 70 m one at twice the size) turned to where it pointed at the Time Brush's instant (the end of its window; now, by default): its alidade to the azimuth and its dish down from the zenith to the elevation, as DSN Now said it then. Alidade and elevation wheel in the colour of what the antenna was doing (green two-way, blue receiving, orange transmitting, purple pointing with no signal, grey idle or in maintenance); over each, its spacecraft and the data coming down over the range, read at the instant. Play the Time Brush to watch them track and slew. Hover an antenna for its card.",
+          "id": 5,
+          "links": [],
+          "title": "Goldstone, California: the Apollo site",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "fitOnVariables": [],
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 35.3376,
+                      "longitude": -116.874,
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 70,
+                      "pitch": 58,
+                      "zoom": 16.35
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-google-satellite",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            0
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              },
+                              {
+                                "format": null,
+                                "name": "distance_au"
+                              },
+                              {
+                                "format": null,
+                                "name": "azimuth"
+                              },
+                              {
+                                "format": null,
+                                "name": "elevation"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "gdscc-callouts",
+                        "gdscc-antennas"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              87,
+                              148,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Spacecraft and data rate",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  24,
+                                  27,
+                                  31,
+                                  255
+                                ],
+                                "outlineWidth": 1,
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 40,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    0.05,
+                                    "#8e8e8e"
+                                  ],
+                                  [
+                                    null,
+                                    "#5794f2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#8e8e8e",
+                                  "#5794f2"
+                                ],
+                                "name": "Data coming down",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkFill": true,
+                              "sparkOverlap": "all",
+                              "sparkRange": "data",
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkTooltip": false,
+                              "sparkUnit": " kb/s"
+                            }
+                          },
+                          "id": "gdscc-callouts",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "downlink_kbps",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              142,
+                              142,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Antennas",
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardExtras": [
+                                {
+                                  "field": "distance_au",
+                                  "label": "Distance",
+                                  "unit": " AU"
+                                },
+                                {
+                                  "field": "elevation",
+                                  "label": "Elevation",
+                                  "unit": "°"
+                                },
+                                {
+                                  "field": "uplink_kw",
+                                  "label": "Uplink",
+                                  "unit": " kW"
+                                }
+                              ],
+                              "cardNameField": "name",
+                              "cardScale": "perSite",
+                              "cardShow": "hover",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": " kb/s",
+                              "cardValueField": "downlink_kbps",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Two-way",
+                                    "#73bf69"
+                                  ],
+                                  [
+                                    "Receiving",
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    "Transmitting",
+                                    "#ff9830"
+                                  ],
+                                  [
+                                    "Pointing",
+                                    "#b877d9"
+                                  ],
+                                  [
+                                    "Idle or in maintenance",
+                                    "#8e8e8e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73bf69",
+                                  "#5794f2",
+                                  "#ff9830",
+                                  "#b877d9",
+                                  "#8e8e8e"
+                                ],
+                                "name": "What the antenna is doing",
+                                "type": "custom"
+                              },
+                              "modelAltitude": 0,
+                              "modelHeading": 0,
+                              "modelIdField": "part",
+                              "modelMode": "state",
+                              "modelNoReading": "ghost",
+                              "modelStaleMinutes": 10,
+                              "modelTimeField": "time",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/dsn-antennas/gdscc.glb?v=1",
+                              "opacity": 1
+                            }
+                          },
+                          "id": "gdscc-antennas",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "map-madrid": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- Two parts of each antenna in the model (mdscc.glb), at every instant: its alidade turns to the azimuth\n-- (model_yaw, degrees clockwise from north), its elevation wheel tilts the dish down from the zenith\n-- (model_pitch); both in the colour of what the antenna is doing. The map shows each part's reading at the\n-- Time Brush's instant. Every row stands at the model's origin (the complex's 70 m antenna).\nSELECT g.dish || '.' || p.part AS part, g.time,\n       g.name || ' · ' || coalesce(n.spacecraft, nullif(g.activity, ''), 'idle') AS name,\n       g.state,\n       CASE WHEN p.part = 'azimuth' THEN g.azimuth END AS model_yaw,\n       CASE WHEN p.part = 'elevation' THEN g.elevation - 90 END AS model_pitch,\n       round(g.down_bps / 1000, 1) AS downlink_kbps,\n       round(g.range_km / 149597870.7, 4) AS distance_au,\n       g.up_kw AS uplink_kw,\n       g.azimuth, g.elevation,\n       g.origin_latitude AS latitude, g.origin_longitude AS longitude\nFROM grid g LEFT JOIN names n USING (targets), (VALUES ('azimuth'), ('elevation')) p(part)\nWHERE g.site = 'mdscc'\nORDER BY part, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- A callout over each antenna: its spacecraft and the data coming down (kb/s) over the range, read at the\n-- Time Brush's instant.\nSELECT g.time, g.name || ' · ' || coalesce(n.spacecraft, 'idle') AS name,\n       coalesce(round(g.down_bps / 1000, 1), 0) AS downlink_kbps,\n       g.latitude, g.longitude,\n       -- Over the dish's rim when it points at the zenith.\n       CASE WHEN g.type = '70M' THEN 85 ELSE 45 END AS altitude\nFROM grid g LEFT JOIN names n USING (targets)\nWHERE g.site = 'mdscc'\nORDER BY g.dish, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Madrid Deep Space Communications Complex at Robledo de Chavela, west of Madrid: the 70 m DSS-63, the 34 m DSS-65 and the four 34 m beam-waveguide antennas DSS-53 to DSS-56. Each antenna is NASA's model of a 34 m DSN antenna (a 70 m one at twice the size) turned to where it pointed at the Time Brush's instant (the end of its window; now, by default): its alidade to the azimuth and its dish down from the zenith to the elevation, as DSN Now said it then. Alidade and elevation wheel in the colour of what the antenna was doing (green two-way, blue receiving, orange transmitting, purple pointing with no signal, grey idle or in maintenance); over each, its spacecraft and the data coming down over the range, read at the instant. Play the Time Brush to watch them track and slew. Hover an antenna for its card.",
+          "id": 6,
+          "links": [],
+          "title": "Madrid, Spain: Robledo de Chavela",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "fitOnVariables": [],
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 117,
+                      "dragRotate": true,
+                      "latitude": 40.4279,
+                      "longitude": -4.2502,
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 70,
+                      "pitch": 55,
+                      "zoom": 16.2
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-google-satellite",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            0
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              },
+                              {
+                                "format": null,
+                                "name": "distance_au"
+                              },
+                              {
+                                "format": null,
+                                "name": "azimuth"
+                              },
+                              {
+                                "format": null,
+                                "name": "elevation"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "mdscc-callouts",
+                        "mdscc-antennas"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              87,
+                              148,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Spacecraft and data rate",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  24,
+                                  27,
+                                  31,
+                                  255
+                                ],
+                                "outlineWidth": 1,
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 40,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    0.05,
+                                    "#8e8e8e"
+                                  ],
+                                  [
+                                    null,
+                                    "#5794f2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#8e8e8e",
+                                  "#5794f2"
+                                ],
+                                "name": "Data coming down",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkFill": true,
+                              "sparkOverlap": "all",
+                              "sparkRange": "data",
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkTooltip": false,
+                              "sparkUnit": " kb/s"
+                            }
+                          },
+                          "id": "mdscc-callouts",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "downlink_kbps",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              142,
+                              142,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Antennas",
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardExtras": [
+                                {
+                                  "field": "distance_au",
+                                  "label": "Distance",
+                                  "unit": " AU"
+                                },
+                                {
+                                  "field": "elevation",
+                                  "label": "Elevation",
+                                  "unit": "°"
+                                },
+                                {
+                                  "field": "uplink_kw",
+                                  "label": "Uplink",
+                                  "unit": " kW"
+                                }
+                              ],
+                              "cardNameField": "name",
+                              "cardScale": "perSite",
+                              "cardShow": "hover",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": " kb/s",
+                              "cardValueField": "downlink_kbps",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Two-way",
+                                    "#73bf69"
+                                  ],
+                                  [
+                                    "Receiving",
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    "Transmitting",
+                                    "#ff9830"
+                                  ],
+                                  [
+                                    "Pointing",
+                                    "#b877d9"
+                                  ],
+                                  [
+                                    "Idle or in maintenance",
+                                    "#8e8e8e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73bf69",
+                                  "#5794f2",
+                                  "#ff9830",
+                                  "#b877d9",
+                                  "#8e8e8e"
+                                ],
+                                "name": "What the antenna is doing",
+                                "type": "custom"
+                              },
+                              "modelAltitude": 0,
+                              "modelHeading": 0,
+                              "modelIdField": "part",
+                              "modelMode": "state",
+                              "modelNoReading": "ghost",
+                              "modelStaleMinutes": 10,
+                              "modelTimeField": "time",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/dsn-antennas/mdscc.glb?v=1",
+                              "opacity": 1
+                            }
+                          },
+                          "id": "mdscc-antennas",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "map-mars": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- Two parts of each antenna in the model (gdscc.glb), at every instant: its alidade turns to the azimuth\n-- (model_yaw, degrees clockwise from north), its elevation wheel tilts the dish down from the zenith\n-- (model_pitch); both in the colour of what the antenna is doing. The map shows each part's reading at the\n-- Time Brush's instant. Every row stands at the model's origin (the complex's 70 m antenna).\nSELECT g.dish || '.' || p.part AS part, g.time,\n       g.name || ' · ' || coalesce(n.spacecraft, nullif(g.activity, ''), 'idle') AS name,\n       g.state,\n       CASE WHEN p.part = 'azimuth' THEN g.azimuth END AS model_yaw,\n       CASE WHEN p.part = 'elevation' THEN g.elevation - 90 END AS model_pitch,\n       round(g.down_bps / 1000, 1) AS downlink_kbps,\n       round(g.range_km / 149597870.7, 4) AS distance_au,\n       g.up_kw AS uplink_kw,\n       g.azimuth, g.elevation,\n       g.origin_latitude AS latitude, g.origin_longitude AS longitude\nFROM grid g LEFT JOIN names n USING (targets), (VALUES ('azimuth'), ('elevation')) p(part)\nWHERE g.site = 'gdscc'\nORDER BY part, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the recording of DSN Now (Pacha's recorder, feed dsn-now: every antenna every 30 s, kept a\n-- week) over the time range, at most about 1,500 instants per antenna (one every 30 s for a day, every few\n-- minutes for a week). Every antenna stands at every instant: one the feed left out was idle. With nothing\n-- recorded in the range, each antenna stands once, idle, at its end.\nSET VARIABLE dsn_step = greatest(30, (CAST(${__to} AS BIGINT) - CAST(${__from} AS BIGINT)) // 1500000);\nWITH rec AS (\n  SELECT * FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nnames AS (\n  SELECT t AS targets, string_agg(coalesce(c.craft, u.code), ', ') AS spacecraft\n  FROM (SELECT DISTINCT targets AS t FROM rec WHERE targets \u003c\u003e ''), unnest(string_split(t, ',')) AS u(code)\n  LEFT JOIN craft c ON c.code = u.code\n  GROUP BY t\n),\nsteps AS (\n  SELECT DISTINCT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time FROM rec\n  UNION ALL SELECT $__timeTo()::TIMESTAMPTZ WHERE NOT EXISTS (SELECT 1 FROM rec)\n),\nlast AS (\n  -- Each antenna's last reading in each instant's step.\n  SELECT time_bucket(to_seconds(getvariable('dsn_step')), ts) AS time, * EXCLUDE (ts)\n  FROM rec\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(to_seconds(getvariable('dsn_step')), ts) ORDER BY ts DESC) = 1\n),\ngrid AS (\n  SELECT s.time, d.*, l.azimuth, l.elevation, l.activity, coalesce(l.targets, '') AS targets,\n         l.down_bps, l.up_kw, l.range_km,\n         CASE WHEN coalesce(l.targets, '') = '' THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM steps s CROSS JOIN 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN last l ON l.hex = d.dish AND l.time = s.time\n)\n-- A callout over each antenna: its spacecraft and the data coming down (kb/s) over the range, read at the\n-- Time Brush's instant.\nSELECT g.time, g.name || ' · ' || coalesce(n.spacecraft, 'idle') AS name,\n       coalesce(round(g.down_bps / 1000, 1), 0) AS downlink_kbps,\n       g.latitude, g.longitude,\n       -- Over the dish's rim when it points at the zenith.\n       CASE WHEN g.type = '70M' THEN 85 ELSE 45 END AS altitude\nFROM grid g LEFT JOIN names n USING (targets)\nWHERE g.site = 'gdscc'\nORDER BY g.dish, g.time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "DSS-14, the 70 m \"Mars antenna\" at Goldstone's Mars site, 10 km north of the Apollo site. Each antenna is NASA's model of a 34 m DSN antenna (a 70 m one at twice the size) turned to where it pointed at the Time Brush's instant (the end of its window; now, by default): its alidade to the azimuth and its dish down from the zenith to the elevation, as DSN Now said it then. Alidade and elevation wheel in the colour of what the antenna was doing (green two-way, blue receiving, orange transmitting, purple pointing with no signal, grey idle or in maintenance); over each, its spacecraft and the data coming down over the range, read at the instant. Play the Time Brush to watch them track and slew. Hover an antenna for its card.",
+          "id": 8,
+          "links": [],
+          "title": "Goldstone: the 70 m Mars antenna, DSS-14",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "fitOnVariables": [],
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 35.4266,
+                      "longitude": -116.8897,
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 70,
+                      "pitch": 58,
+                      "zoom": 17.0
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "plus-google-satellite",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            0
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              },
+                              {
+                                "format": null,
+                                "name": "distance_au"
+                              },
+                              {
+                                "format": null,
+                                "name": "azimuth"
+                              },
+                              {
+                                "format": null,
+                                "name": "elevation"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "downlink_kbps"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "mars-callouts",
+                        "mars-antennas"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              87,
+                              148,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Spacecraft and data rate",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  24,
+                                  27,
+                                  31,
+                                  255
+                                ],
+                                "outlineWidth": 1,
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 2,
+                              "calloutStem": 40,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    0.05,
+                                    "#8e8e8e"
+                                  ],
+                                  [
+                                    null,
+                                    "#5794f2"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#8e8e8e",
+                                  "#5794f2"
+                                ],
+                                "name": "Data coming down",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 4,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkFill": true,
+                              "sparkOverlap": "all",
+                              "sparkRange": "data",
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkTooltip": false,
+                              "sparkUnit": " kb/s"
+                            }
+                          },
+                          "id": "mars-callouts",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "downlink_kbps",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              142,
+                              142,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Antennas",
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardExtras": [
+                                {
+                                  "field": "distance_au",
+                                  "label": "Distance",
+                                  "unit": " AU"
+                                },
+                                {
+                                  "field": "elevation",
+                                  "label": "Elevation",
+                                  "unit": "°"
+                                },
+                                {
+                                  "field": "uplink_kw",
+                                  "label": "Uplink",
+                                  "unit": " kW"
+                                }
+                              ],
+                              "cardNameField": "name",
+                              "cardScale": "perSite",
+                              "cardShow": "hover",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": " kb/s",
+                              "cardValueField": "downlink_kbps",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Two-way",
+                                    "#73bf69"
+                                  ],
+                                  [
+                                    "Receiving",
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    "Transmitting",
+                                    "#ff9830"
+                                  ],
+                                  [
+                                    "Pointing",
+                                    "#b877d9"
+                                  ],
+                                  [
+                                    "Idle or in maintenance",
+                                    "#8e8e8e"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73bf69",
+                                  "#5794f2",
+                                  "#ff9830",
+                                  "#b877d9",
+                                  "#8e8e8e"
+                                ],
+                                "name": "What the antenna is doing",
+                                "type": "custom"
+                              },
+                              "modelAltitude": 0,
+                              "modelHeading": 0,
+                              "modelIdField": "part",
+                              "modelMode": "state",
+                              "modelNoReading": "ghost",
+                              "modelStaleMinutes": 10,
+                              "modelTimeField": "time",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/dsn-antennas/gdscc.glb?v=1",
+                              "opacity": 1
+                            }
+                          },
+                          "id": "mars-antennas",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "About the network and the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "NASA's Deep Space Network (DSN) is how every mission beyond the Moon talks to Earth: fifteen large antennas at three complexes about 120° apart in longitude, at Goldstone in California, near Madrid in Spain and near Canberra in Australia, so that as Earth turns one of them always sees each spacecraft. JPL runs it for NASA; it also tracks other agencies' missions.\n\n**On the maps** each antenna turns to where it pointed at the Time Brush's instant. DSN Now, the public feed behind NASA's own [DSN Now](https://eyes.nasa.gov/apps/dsn-now/dsn.html) page, gives every few seconds each antenna's azimuth and elevation, the spacecraft it talks to, the signals going up and coming down (data rate, band, power) and the round-trip light time, but keeps no history: Pacha's recorder reads it every 30 seconds and keeps a week, from the hour it first ran, and that recording is what the Time Brush moves through. Its window's end is the maps' instant: the antenna's alidade turns to the azimuth and its dish tilts down from the zenith to the elevation as they were then (Kepler Plus's 4D Model in State mode, its parts turned by model_yaw and model_pitch); play it to watch the antennas track their spacecraft across the sky and slew to the next. An antenna the feed leaves out is idle and stands pointing at the zenith. With a Kepler Plus older than its moving parts, every antenna stands that way. The cards at the top, the table and the light times are DSN Now as it is now.\n\n**Reading it:** two-way (a signal up and down) is green, receiving only blue, transmitting only orange, pointing with no signal purple, idle or in maintenance grey. One antenna may serve several spacecraft at once (Multiple Spacecraft Per Aperture, around Mars); the light time is then left out of the cards and charts.\n\n**Sources.** The feed: DSN Now (eyes.nasa.gov, NASA/JPL), read through Pacha's gateway, which keeps a copy 5 seconds. The antenna: [NASA's 3D model of a 34 m DSN antenna](https://science.nasa.gov/3d-resources/deep-space-network-34-meter/) (NASA 3D Resources, free to use under NASA's media guidelines; NASA does not endorse this dashboard), drawn at twice its size for the 70 m antennas. Where each antenna stands: © OpenStreetMap contributors (ODbL). Satellite imagery: Google. Built by `datasets/dsn-antennas/build.sh`.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the spacecraft in contact (a signal up or down) each minute, from the recording; the brush\n-- draws the most in each of its bars. By the minute, so the brush's span ends at the newest reading.\nSELECT time_bucket(INTERVAL 1 MINUTE, ts) AS time, count(DISTINCT u.code) AS \"Spacecraft in contact\"\nFROM read_parquet([${files:singlequote}], union_by_name = true), unnest(string_split(targets, ',')) AS u(code)\nWHERE ts BETWEEN $__timeFrom() AND $__timeTo() AND targets \u003c\u003e '' AND (up_kw IS NOT NULL OR down_bps IS NOT NULL)\nGROUP BY 1\nORDER BY 1\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The spacecraft in contact (the most in each bar), as Pacha's recorder kept DSN Now (every 30 s, for a week, from the hour it first ran). The end of the window is the maps' instant: drag it, or play it, and every antenna turns to where it pointed then, in the colour of what it was doing, its callout reading the data coming down. The window follows the newest reading on each refresh unless you move it.",
+          "id": 12,
+          "links": [],
+          "title": "The recording: pick an instant, or play it to watch the antennas turn",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794f2",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "max",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "10m",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "followLatest": true,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "",
+                "loop": false,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1500,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-light": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- DSN Now's feed through the gateway (/dsn/dsn.xml, kept 5 s): one XML file with a \u003cdish\u003e for each antenna\n-- at work, where it points, and inside it a \u003ctarget\u003e for each spacecraft with its \u003cupSignal\u003es and \u003cdownSignal\u003es.\nWITH feed AS (\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/dsn/dsn.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\ndish AS (\n  SELECT x, regexp_extract(x, '\u003cdish [^\u003e]*\u003e') AS tag\n  FROM (SELECT unnest(regexp_extract_all(xml, '(?s)\u003cdish [^\u003e]*\u003e.*?\u003c/dish\u003e')) AS x FROM feed)\n),\nlive AS (\n  SELECT regexp_extract(tag, ' name=\"([^\"]*)\"', 1) AS dish,\n         TRY_CAST(regexp_extract(tag, 'azimuthAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS azimuth,\n         TRY_CAST(regexp_extract(tag, 'elevationAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS elevation,\n         TRY_CAST(regexp_extract(tag, 'windSpeed=\"([^\"]*)\"', 1) AS DOUBLE) AS wind,\n         regexp_extract(tag, 'activity=\"([^\"]*)\"', 1) AS activity,\n         -- DSN and DSS are the network itself (tests, maintenance), not a spacecraft.\n         list_filter(regexp_extract_all(x, '\u003ctarget name=\"([^\"]*)\"', 1), t -\u003e t NOT IN ('DSN', 'DSS', '')) AS targets,\n         list_max(list_transform(regexp_extract_all(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*dataRate=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS down_bps,\n         list_max(list_transform(regexp_extract_all(x, '\u003cupSignal [^\u003e]*active=\"true\"[^\u003e]*power=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS up_kw,\n         nullif(regexp_extract(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*band=\"([^\"]*)\"', 1), '') AS band,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*downlegRange=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS range_km,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*rtlt=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS rtlt_s\n  FROM dish\n),\ndishes AS (\n  -- Every antenna, those the feed leaves out (idle) too, and what it is doing now.\n  SELECT d.*, l.azimuth, l.elevation, l.wind, l.activity, coalesce(l.targets, []) AS targets,\n         l.down_bps, l.up_kw, l.band,\n         CASE WHEN l.range_km \u003e 0 THEN l.range_km END AS range_km,\n         CASE WHEN l.rtlt_s \u003e 0 THEN l.rtlt_s END AS rtlt_s,\n         CASE WHEN len(coalesce(l.targets, [])) = 0 THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN live l USING (dish)\n),\nnames AS (\n  SELECT dish, string_agg(coalesce(c.craft, t), ', ') AS spacecraft\n  FROM (SELECT dish, unnest(targets) AS t FROM dishes) LEFT JOIN craft c ON c.code = t\n  GROUP BY dish\n)\n-- Each spacecraft in contact and how long its signal takes to reach Earth (half its round trip).\nSELECT coalesce(c.craft, t) AS \"Spacecraft\", max(rtlt_s) / 2 AS \"Light time\"\nFROM (SELECT unnest(targets) AS t, rtlt_s FROM dishes WHERE rtlt_s IS NOT NULL AND len(targets) = 1) x\nLEFT JOIN craft c ON c.code = t\nGROUP BY 1\nORDER BY 2 DESC\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each spacecraft in contact and its one-way light time (half the round trip DSN Now gives), on a logarithmic scale: seconds from the Moon, minutes from the Sun's neighbourhood and the planets, hours from the Voyagers.",
+          "id": 10,
+          "links": [],
+          "title": "How long each signal takes to reach Earth",
+          "vizConfig": {
+            "group": "barchart",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794f2",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 0,
+                    "scaleDistribution": {
+                      "log": 10,
+                      "type": "log"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "unit": "s"
+                },
+                "overrides": []
+              },
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.8,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "orientation": "horizontal",
+                "showValue": "always",
+                "stacking": "none",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                },
+                "xField": "Spacecraft",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-links": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- DSN Now's feed through the gateway (/dsn/dsn.xml, kept 5 s): one XML file with a \u003cdish\u003e for each antenna\n-- at work, where it points, and inside it a \u003ctarget\u003e for each spacecraft with its \u003cupSignal\u003es and \u003cdownSignal\u003es.\nWITH feed AS (\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/dsn/dsn.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\ncraft AS (\n  -- The spacecraft's full names (JWST: James Webb Space Telescope), from DSN Now's configuration (kept a day).\n  SELECT upper(regexp_extract(s, ' name=\"([^\"]*)\"', 1)) AS code, regexp_extract(s, 'friendlyName=\"([^\"]*)\"', 1) AS craft\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '\u003cspacecraft [^\u003e]*\u003e')) AS s\n        FROM (SELECT http_get('http://feeds/dsn/config.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\ndish AS (\n  SELECT x, regexp_extract(x, '\u003cdish [^\u003e]*\u003e') AS tag\n  FROM (SELECT unnest(regexp_extract_all(xml, '(?s)\u003cdish [^\u003e]*\u003e.*?\u003c/dish\u003e')) AS x FROM feed)\n),\nlive AS (\n  SELECT regexp_extract(tag, ' name=\"([^\"]*)\"', 1) AS dish,\n         TRY_CAST(regexp_extract(tag, 'azimuthAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS azimuth,\n         TRY_CAST(regexp_extract(tag, 'elevationAngle=\"([^\"]*)\"', 1) AS DOUBLE) AS elevation,\n         TRY_CAST(regexp_extract(tag, 'windSpeed=\"([^\"]*)\"', 1) AS DOUBLE) AS wind,\n         regexp_extract(tag, 'activity=\"([^\"]*)\"', 1) AS activity,\n         -- DSN and DSS are the network itself (tests, maintenance), not a spacecraft.\n         list_filter(regexp_extract_all(x, '\u003ctarget name=\"([^\"]*)\"', 1), t -\u003e t NOT IN ('DSN', 'DSS', '')) AS targets,\n         list_max(list_transform(regexp_extract_all(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*dataRate=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS down_bps,\n         list_max(list_transform(regexp_extract_all(x, '\u003cupSignal [^\u003e]*active=\"true\"[^\u003e]*power=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS up_kw,\n         nullif(regexp_extract(x, '\u003cdownSignal [^\u003e]*active=\"true\"[^\u003e]*band=\"([^\"]*)\"', 1), '') AS band,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*downlegRange=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS range_km,\n         list_max(list_transform(regexp_extract_all(x, '\u003ctarget [^\u003e]*rtlt=\"([^\"]*)\"', 1),\n                                 v -\u003e TRY_CAST(v AS DOUBLE))) AS rtlt_s\n  FROM dish\n),\ndishes AS (\n  -- Every antenna, those the feed leaves out (idle) too, and what it is doing now.\n  SELECT d.*, l.azimuth, l.elevation, l.wind, l.activity, coalesce(l.targets, []) AS targets,\n         l.down_bps, l.up_kw, l.band,\n         CASE WHEN l.range_km \u003e 0 THEN l.range_km END AS range_km,\n         CASE WHEN l.rtlt_s \u003e 0 THEN l.rtlt_s END AS rtlt_s,\n         CASE WHEN len(coalesce(l.targets, [])) = 0 THEN 'Idle or in maintenance'\n              WHEN l.up_kw IS NOT NULL AND l.down_bps IS NOT NULL THEN 'Two-way'\n              WHEN l.down_bps IS NOT NULL THEN 'Receiving'\n              WHEN l.up_kw IS NOT NULL THEN 'Transmitting'\n              ELSE 'Pointing' END AS state\n  FROM 'http://feeds/datasets/dsn-antennas/dishes.parquet' d LEFT JOIN live l USING (dish)\n),\nnames AS (\n  SELECT dish, string_agg(coalesce(c.craft, t), ', ') AS spacecraft\n  FROM (SELECT dish, unnest(targets) AS t FROM dishes) LEFT JOIN craft c ON c.code = t\n  GROUP BY dish\n)\nSELECT d.site_name AS \"Complex\", d.name AS \"Antenna\", d.diameter_m AS \"Size\",\n       d.state AS \"State\", coalesce(n.spacecraft, '') AS \"Spacecraft\", coalesce(d.activity, 'Not in the feed') AS \"Activity\",\n       round(d.down_bps / 1000, 1) AS \"Down\", d.up_kw AS \"Up\", d.band AS \"Band\",\n       round(d.range_km / 149597870.7, 4) AS \"Distance\",\n       CASE WHEN (d.rtlt_s / 2) IS NULL THEN NULL WHEN (d.rtlt_s / 2) \u003c 60 THEN printf('%.1f s', (d.rtlt_s / 2)) WHEN (d.rtlt_s / 2) \u003c 3600 THEN printf('%d min %02d s', ((d.rtlt_s / 2) // 60)::INT, ((d.rtlt_s / 2) % 60)::INT) ELSE printf('%d h %02d min', ((d.rtlt_s / 2) // 3600)::INT, (((d.rtlt_s / 2) % 3600) // 60)::INT) END AS \"Light time\",\n       d.azimuth AS \"Azimuth\", d.elevation AS \"Elevation\", d.wind AS \"Wind\"\nFROM dishes d LEFT JOIN names n USING (dish)\nORDER BY CASE d.state WHEN 'Idle or in maintenance' THEN 1 ELSE 0 END, d.rtlt_s DESC NULLS LAST, d.dish\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The fifteen antennas, those at work first, farthest spacecraft first: what each is doing (DSN Now's activity), the spacecraft it talks to, the data coming down (kb/s, its fastest signal) and the power going up (kW), the band, the distance (astronomical units, from the downlink range) and the one-way light time, where it points (degrees: azimuth clockwise from north, elevation over the horizon) and the wind at the antenna (km/h).",
+          "id": 9,
+          "links": [],
+          "title": "Every antenna now",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "State"
+                    },
+                    "properties": [
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Idle or in maintenance": {
+                                "color": "#8e8e8e",
+                                "index": 4
+                              },
+                              "Pointing": {
+                                "color": "#b877d9",
+                                "index": 3
+                              },
+                              "Receiving": {
+                                "color": "#5794f2",
+                                "index": 1
+                              },
+                              "Transmitting": {
+                                "color": "#ff9830",
+                                "index": 2
+                              },
+                              "Two-way": {
+                                "color": "#73bf69",
+                                "index": 0
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 165
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Size"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "lengthm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Antenna"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Complex"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Down"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "kbps"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Up"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "kwatt"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Band"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 55
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Distance"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "suffix: AU"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 95
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Light time"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 105
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Azimuth"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "degree"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 75
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Elevation"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "degree"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Wind"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "velocitykmh"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-contact"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-farthest"
+              },
+              "height": 4,
+              "width": 9,
+              "x": 5,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-down"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 14,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-latest"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 19,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map-goldstone"
+              },
+              "height": 15,
+              "width": 12,
+              "x": 0,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map-mars"
+              },
+              "height": 15,
+              "width": 12,
+              "x": 12,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map-madrid"
+              },
+              "height": 15,
+              "width": 24,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map-canberra"
+              },
+              "height": 15,
+              "width": 24,
+              "x": 0,
+              "y": 39
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-links"
+              },
+              "height": 14,
+              "width": 24,
+              "x": 0,
+              "y": 54
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-light"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 0,
+              "y": 68
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 12,
+              "y": 68
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "live",
+      "network",
+      "plus",
+      "space"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "30s",
+        "1m",
+        "5m",
+        "15m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "NASA's Deep Space Network, live: where each antenna points and who it talks to",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The recording's files that overlap the time range, from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded files",
+          "multi": true,
+          "name": "files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/dsn-now/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" \u003e= $__timeFrom() AND \"from\" \u003c= $__timeTo()\nUNION ALL SELECT 'http://feeds/datasets/dsn-antennas/recording-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The Time Brush's window when the dashboard opens: the last hour, its end the maps' instant. The brush\n-- overwrites it (custom values allowed), and a shared link keeps its own.\nSELECT strftime(now() AT TIME ZONE 'UTC' - INTERVAL 1 HOUR, '%Y-%m-%dT%H:%M:%S.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window from (Time Brush; the last hour by default)",
+          "multi": false,
+          "name": "t0",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The Time Brush's window when the dashboard opens: the last hour, its end the maps' instant. The brush\n-- overwrites it (custom values allowed), and a shared link keeps its own.\nSELECT strftime(now() AT TIME ZONE 'UTC' - INTERVAL 1 HOUR, '%Y-%m-%dT%H:%M:%S.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The Time Brush's window when the dashboard opens: the last hour, its end the maps' instant. The brush\n-- overwrites it (custom values allowed), and a shared link keeps its own.\nSELECT strftime(now() AT TIME ZONE 'UTC', '%Y-%m-%dT%H:%M:%S.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window to (Time Brush; now by default): the maps' instant",
+          "multi": false,
+          "name": "t1",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The Time Brush's window when the dashboard opens: the last hour, its end the maps' instant. The brush\n-- overwrites it (custom values allowed), and a shared link keeps its own.\nSELECT strftime(now() AT TIME ZONE 'UTC', '%Y-%m-%dT%H:%M:%S.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
