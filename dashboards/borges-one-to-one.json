@@ -1,0 +1,1640 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "borges-one-to-one"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Borges' ladder, step 5 of 5: the 1987 sheet laid at 1:1 over the town of Rhyolite and left to the years. Play the brush to watch it tear while the animals recorded in the town move into its ruins.",
+    "editable": true,
+    "elements": {
+      "card-animals": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH w AS (SELECT least(2026, greatest(1987, year(coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '2026-01-01'))))::INTEGER AS y)\nSELECT count(*)::DOUBLE AS \"Animals\" FROM $animals, w WHERE year \u003c= w.y"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "GBIF occurrences of animals in the town (CC0 and CC BY 4.0) with a year up to the window's year.",
+          "id": 4,
+          "links": [],
+          "title": "Animals recorded by then",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794F2",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-kinds": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH w AS (SELECT least(2026, greatest(1987, year(coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '2026-01-01'))))::INTEGER AS y)\nSELECT count(DISTINCT animal)::DOUBLE AS \"Kinds\" FROM $animals, w WHERE year \u003c= w.y"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Different species (or genera, when the species is unknown) among them.",
+          "id": 5,
+          "links": [],
+          "title": "Kinds of animals",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F2495C",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-paper": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH w AS (SELECT least(2026, greatest(1987, year(coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '2026-01-01'))))::INTEGER AS y)\nSELECT paper_left AS \"Paper left\" FROM $stages, w WHERE w.y BETWEEN year_from AND year_to"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the 1:1 map still on the ground that year (the stage of five years it falls in).",
+          "id": 3,
+          "links": [],
+          "title": "Paper left",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FADE2A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-year": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH w AS (SELECT least(2026, greatest(1987, year(coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '2026-01-01'))))::INTEGER AS y)\nSELECT w.y::VARCHAR AS \"The year\" FROM w"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The first year of the time brush's window: the map and the animals as they were then.",
+          "id": 2,
+          "links": [],
+          "title": "The year",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFFFFF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "About the data",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "| | |\n|---|---|\n| Maps | The [USGS Historical Topographic Map Collection](https://www.usgs.gov/programs/national-geospatial-program/historical-topographic-maps-preserving-past) (public domain): Furnace Creek at 1:250,000 (1908), Bullfrog at 1:125,000 (1942), Bullfrog at 1:62,500 (1954) and Beatty at 1:24,000 (1987), the USGS's georeferenced GeoTIFF scans |\n| Placing | Each sheet clipped at its neatline and moved from NAD27 to WGS 84 with NOAA's grids, in Web Mercator. A scan's own georeferencing can be off by a few tens of metres |\n| The 1:1 map | The 1987 sheet over the town of Rhyolite at 2.5 m a pixel, 2.85 by 2.22 km, in eight stages of five years from 1987: torn along a fractal field (seeded 1946, the year of the story) and bleached toward the sand. Drawn, not observed |\n| Animals | [GBIF](https://www.gbif.org) occurrences of animals in the town with coordinates and a year, under CC0 or CC BY 4.0 (CC BY-NC records left out): 537 records of 76 kinds, from 1913 to 2026, named after the GBIF backbone. Each record's dataset is in its tooltip |\n| Rhyolite | The magenta ring on every map: Rhyolite where the USGS's [Geographic Names Information System](https://www.usgs.gov/tools/geographic-names-information-system-gnis) puts it (feature 845627), 36.90384° N, 116.82924° W |\n| Satellite | The satellite base map, credited on the map |\n| The story | Jorge Luis Borges, *Del rigor en la ciencia* (On Exactitude in Science), 1946 |\n| Built by | `datasets/borges/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards) |",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The years the brush is drawn over: the animals GBIF records in the town each year, and the paper left.\nWITH years AS (SELECT unnest(generate_series(TIMESTAMP '1987-01-01', TIMESTAMP '2026-01-01', INTERVAL 1 YEAR)) AS \"time\")\nSELECT y.\"time\",\n       (SELECT count(*) FROM $animals a WHERE a.year = year(y.\"time\"))::DOUBLE AS \"Animals recorded\",\n       (SELECT 100 * s.paper_left FROM $stages s WHERE year(y.\"time\") BETWEEN s.year_from AND s.year_to) AS \"Paper left (%)\"\nFROM years AS y\nORDER BY y.\"time\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every view takes the first year of the window: drag it, step it or press play to run the years from 1987. Bars: animals recorded in the town each year; line: the share of the paper still there.",
+          "id": 8,
+          "links": [],
+          "title": "Years since the map was laid: brush or play",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794F2",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "sum",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Paper left (%)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "line"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E8D9B5",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "#111827",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1y",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.6
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": true,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "always",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 900,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1000,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t_lo",
+                  "to": "t_hi"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The 1987 sheet over the town at 1:1, as torn as the brush's year leaves it: one file every five years.\nWITH w AS (SELECT least(2026, greatest(1987, year(coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '2026-01-01'))))::INTEGER AS y)\nSELECT 'http://feeds/datasets/borges/' || file AS raster_url FROM $stages, w WHERE w.y BETWEEN year_from AND year_to"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The animals GBIF holds for the town, recorded by the brush's year: they live in the ruins of the map.\nWITH w AS (SELECT least(2026, greatest(1987, year(coalesce(try_cast($t_lo AS TIMESTAMP), TIMESTAMP '2026-01-01'))))::INTEGER AS y)\nSELECT latitude, longitude, coalesce(english, animal) AS name, animal AS scientific, CASE class WHEN 'Aves' THEN 'Aves' WHEN 'Squamata' THEN 'Squamata' WHEN 'Mammalia' THEN 'Mammalia' WHEN 'Insecta' THEN 'Insecta' ELSE 'Other' END AS \"group\",\n       year, licence, dataset\nFROM $animals, w WHERE year \u003c= w.y"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Rhyolite where the USGS's Geographic Names Information System puts it (feature 845627): the same mark on every map.\nSELECT 36.90384 AS latitude, -116.82924 AS longitude, 'Rhyolite' AS label"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The 1987 sheet at 1:1 as the brush's year leaves it, over the satellite. The dots are the animals recorded in the town by then, coloured by group: birds blue, lizards and snakes red, mammals purple, insects green. The magenta ring is Rhyolite, at the same spot on every map of the ladder.",
+          "id": 1,
+          "links": [],
+          "title": "Rhyolite at 1:1: the paper in the desert",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "grafana-satellite",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "gazetteer": "",
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 36.904,
+                      "longitude": -116.82900000000001,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 14.11
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "grafana-satellite",
+                      "threeDBuildingColor": [
+                        9.311499150948377,
+                        9.311499150948377,
+                        9.311499150948377
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "label": true,
+                        "road": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "scientific"
+                              },
+                              {
+                                "name": "year"
+                              },
+                              {
+                                "name": "licence"
+                              },
+                              {
+                                "name": "dataset"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "label"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "subtractive",
+                      "layerOrder": [
+                        "rhyolite",
+                        "animals",
+                        "sheet"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              79,
+                              216
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Rhyolite (GNIS)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  220
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  79,
+                                  216
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  34,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 20,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": false,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": true,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 30,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                255,
+                                79,
+                                216
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 5
+                            }
+                          },
+                          "id": "rhyolite",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Animals recorded",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Aves",
+                                    "#5794F2"
+                                  ],
+                                  [
+                                    "Squamata",
+                                    "#F2495C"
+                                  ],
+                                  [
+                                    "Mammalia",
+                                    "#B877D9"
+                                  ],
+                                  [
+                                    "Insecta",
+                                    "#73BF69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5794F2",
+                                  "#F2495C",
+                                  "#B877D9",
+                                  "#73BF69"
+                                ],
+                                "name": "Animals",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 9,
+                              "radiusRange": [
+                                4.5,
+                                27.3
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "animals",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "group",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-A-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "The sheet",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 1
+                            }
+                          },
+                          "id": "sheet",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "The map the size of the town",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Rhyolite at 1:1.** The 1987 sheet, enlarged until it matches the ground point by point, laid over the town: a sheet of 2.85 by 2.22 km. The generations that followed, the story goes, found such a map useless and left it to the sun and the winters.\n\nPress play: from 1987 the paper tears and bleaches, five years at a time, until a fifth of it is left. The animals recorded in the town move into its ruins: side-blotched lizards, ravens, rock wrens, zebra-tailed lizards.\n\n\u003e «Ruinas despedazadas del Mapa, habitadas por Animales y por Mendigos»\n\u003e\n\u003e Jorge Luis Borges, *Del rigor en la ciencia*, 1946\n\nThe tears are drawn, not observed. The animals are real records.\n\n[← Back to the Empire](/d/borges-empire)",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 21,
+              "width": 16,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-year"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 16,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-paper"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 20,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-animals"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 16,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-kinds"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 20,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-story"
+              },
+              "height": 13,
+              "width": 8,
+              "x": 16,
+              "y": 11
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 24
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "1 · The Empire, 1908",
+        "tooltip": "The map of the Empire: Furnace Creek, 1908, at 1:250,000",
+        "type": "link",
+        "url": "/d/borges-empire"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "2 · A province, 1942",
+        "tooltip": "The map of a province: Bullfrog, 1942, at 1:125,000",
+        "type": "link",
+        "url": "/d/borges-province"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "3 · A district, 1954",
+        "tooltip": "The map of a district: Bullfrog, 1954, at 1:62,500",
+        "type": "link",
+        "url": "/d/borges-district"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "4 · A town, 1987",
+        "tooltip": "The map of a town: Beatty, 1987, at 1:24,000",
+        "type": "link",
+        "url": "/d/borges-town"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "5 · The town at 1:1",
+        "tooltip": "The map the size of the town: Rhyolite at 1:1",
+        "type": "link",
+        "url": "/d/borges-one-to-one"
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "cartography",
+      "chaski",
+      "duckdb",
+      "kepler",
+      "plus",
+      "wildlife"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "1987-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "2027-01-01T00:00:00.000Z"
+    },
+    "title": "The map the size of the town: Rhyolite at 1:1",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The four USGS sheets and the 1:1 map: level, quadrangle, year, scale, neatline, sizes on the ground and on paper.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Sheets",
+          "multi": false,
+          "name": "sheets",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sheets",
+              "refId": "sheets",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the sheets of the ladder (datasets/borges/build.sh).\nSELECT * FROM 'http://feeds/datasets/borges/sheets.parquet' ORDER BY scale DESC",
+                  "refId": "reactors"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The eight stages of the 1:1 map: the years each covers and the paper left.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Stages",
+          "multi": false,
+          "name": "stages",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "stages",
+              "refId": "stages",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the stages of the paper's ruin (datasets/borges/build.sh).\nSELECT * FROM 'http://feeds/datasets/borges/stages.parquet' ORDER BY stage",
+                  "refId": "reactors"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "GBIF's animal occurrences in the town of Rhyolite under CC0 or CC BY 4.0, with their year.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Animals",
+          "multi": false,
+          "name": "animals",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "animals",
+              "refId": "animals",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the animals recorded in the town (datasets/borges/build.sh).\nSELECT * FROM 'http://feeds/datasets/borges/animals.parquet'",
+                  "refId": "reactors"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-01-01T00:00:00.000Z",
+            "value": "2026-01-01T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "t_lo",
+          "query": "2026-01-01T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2027-01-01T00:00:00.000Z",
+            "value": "2027-01-01T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "t_hi",
+          "query": "2027-01-01T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

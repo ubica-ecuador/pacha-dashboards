@@ -1,0 +1,1438 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "borges-district"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Borges' ladder, step 3 of 5: Bullfrog, 1954, at 1:62,500. The map now says it: the railway grade abandoned and dismantled, Bullfrog in ruins.",
+    "editable": true,
+    "elements": {
+      "card-ground": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT printf('%.0f × %.0f km', ground_w_km, ground_h_km) AS \"At 1:1\" FROM $sheets WHERE level = 'district'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The ground inside the neatline: a map of it at 1:1 would be this size.",
+          "id": 5,
+          "links": [],
+          "title": "At 1:1 it would cover",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FADE2A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-paper": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT printf('%.0f × %.0f cm', paper_w_cm, paper_h_cm) AS \"The sheet on paper\" FROM $sheets WHERE level = 'district'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Its neatline, from the ground it covers divided by the scale: what the printed map measures inside its margins.",
+          "id": 4,
+          "links": [],
+          "title": "The sheet on paper",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFFFFF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-scale": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT '1:' || format('{:,}', scale::BIGINT) AS \"Scale\" FROM $sheets WHERE level = 'district'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The sheet's scale: one centimetre on it is this many centimetres on the ground.",
+          "id": 2,
+          "links": [],
+          "title": "Scale",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FADE2A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-year": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT year::INTEGER::VARCHAR AS \"Published\" FROM $sheets WHERE level = 'district'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The year the USGS printed this edition of the sheet.",
+          "id": 3,
+          "links": [],
+          "title": "Published",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFFFFF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "About the data",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "| | |\n|---|---|\n| Maps | The [USGS Historical Topographic Map Collection](https://www.usgs.gov/programs/national-geospatial-program/historical-topographic-maps-preserving-past) (public domain): Furnace Creek at 1:250,000 (1908), Bullfrog at 1:125,000 (1942), Bullfrog at 1:62,500 (1954) and Beatty at 1:24,000 (1987), the USGS's georeferenced GeoTIFF scans |\n| Placing | Each sheet clipped at its neatline and moved from NAD27 to WGS 84 with NOAA's grids, in Web Mercator. A scan's own georeferencing can be off by a few tens of metres |\n| The 1:1 map | The 1987 sheet over the town of Rhyolite at 2.5 m a pixel, 2.85 by 2.22 km, in eight stages of five years from 1987: torn along a fractal field (seeded 1946, the year of the story) and bleached toward the sand. Drawn, not observed |\n| Animals | [GBIF](https://www.gbif.org) occurrences of animals in the town with coordinates and a year, under CC0 or CC BY 4.0 (CC BY-NC records left out): 537 records of 76 kinds, from 1913 to 2026, named after the GBIF backbone. Each record's dataset is in its tooltip |\n| Rhyolite | The magenta ring on every map: Rhyolite where the USGS's [Geographic Names Information System](https://www.usgs.gov/tools/geographic-names-information-system-gnis) puts it (feature 845627), 36.90384° N, 116.82924° W |\n| Satellite | The satellite base map, credited on the map |\n| The story | Jorge Luis Borges, *Del rigor en la ciencia* (On Exactitude in Science), 1946 |\n| Built by | `datasets/borges/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards) |",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The sheet itself: the USGS scan clipped at its neatline, drawn by Pacha's tile server over the satellite.\nSELECT 'http://feeds/datasets/borges/district-1954.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Where the next, more detailed map lies on this one: its neatline, a quarter of this sheet.\nSELECT '{\"type\":\"Polygon\",\"coordinates\":[[[' || west || ',' || south || '],[' || east || ',' || south || '],['\n         || east || ',' || north || '],[' || west || ',' || north || '],[' || west || ',' || south || ']]]}' AS geojson\nFROM $sheets WHERE level = 'town'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Rhyolite where the USGS's Geographic Names Information System puts it (feature 845627): the same mark on every map.\nSELECT 36.90384 AS latitude, -116.82924 AS longitude, 'Rhyolite' AS label"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The next map's name, at the north-west corner of its frame.\nSELECT north AS latitude, west AS longitude,\n       quadrangle || ', ' || year::INTEGER || '  ·  1:' || format('{:,}', scale::BIGINT) AS label\nFROM $sheets WHERE level = 'town'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The USGS sheet clipped at its neatline over the satellite base map. The yellow frame is the next sheet of the ladder, a quarter of this one. The magenta ring is Rhyolite, at the same spot on every map of the ladder.",
+          "id": 1,
+          "links": [],
+          "title": "Bullfrog, 1954: the sheet, at its place",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "grafana-satellite",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "gazetteer": "",
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 36.8751,
+                      "longitude": -116.875,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 10.63
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "grafana-satellite",
+                      "threeDBuildingColor": [
+                        9.311499150948377,
+                        9.311499150948377,
+                        9.311499150948377
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "label": true,
+                        "road": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-C": [
+                              {
+                                "name": "label"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "subtractive",
+                      "layerOrder": [
+                        "rhyolite",
+                        "nextlabel",
+                        "next",
+                        "sheet"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              79,
+                              216
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Rhyolite (GNIS)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  220
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  79,
+                                  216
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  34,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 20,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": false,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": true,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 30,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                255,
+                                79,
+                                216
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 5
+                            }
+                          },
+                          "id": "rhyolite",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              222,
+                              42
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The next map, named",
+                            "textLabel": [
+                              {
+                                "alignment": "bottom",
+                                "anchor": "start",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  220
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  250,
+                                  222,
+                                  42
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -6
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 0.1,
+                              "radiusRange": [
+                                0,
+                                1
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "nextlabel",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              222,
+                              42
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The next map",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                250,
+                                222,
+                                42
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 1,
+                              "stroked": true,
+                              "thickness": 3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "next",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-A-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "The sheet",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 1
+                            }
+                          },
+                          "id": "sheet",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "The map of a district",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Bullfrog, 1954.** Now the map says it: the old railway grade is marked *ABANDONED* and *DISMANTLED*, and Bullfrog, Rhyolite's twin town, is *(Ruins)*.\n\nThe more detail the map gains, the more ruin it shows.\n\n### [Unfold the map of a town →](/d/borges-town)\n\n[← A province](/d/borges-province)",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 22,
+              "width": 16,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-scale"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-year"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 20,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-paper"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 16,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-ground"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 20,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-story"
+              },
+              "height": 14,
+              "width": 8,
+              "x": 16,
+              "y": 8
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 22
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "1 · The Empire, 1908",
+        "tooltip": "The map of the Empire: Furnace Creek, 1908, at 1:250,000",
+        "type": "link",
+        "url": "/d/borges-empire"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "2 · A province, 1942",
+        "tooltip": "The map of a province: Bullfrog, 1942, at 1:125,000",
+        "type": "link",
+        "url": "/d/borges-province"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "3 · A district, 1954",
+        "tooltip": "The map of a district: Bullfrog, 1954, at 1:62,500",
+        "type": "link",
+        "url": "/d/borges-district"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "4 · A town, 1987",
+        "tooltip": "The map of a town: Beatty, 1987, at 1:24,000",
+        "type": "link",
+        "url": "/d/borges-town"
+      },
+      {
+        "asDropdown": false,
+        "icon": "dashboard",
+        "includeVars": false,
+        "keepTime": false,
+        "tags": [],
+        "targetBlank": false,
+        "title": "5 · The town at 1:1",
+        "tooltip": "The map the size of the town: Rhyolite at 1:1",
+        "type": "link",
+        "url": "/d/borges-one-to-one"
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "cartography",
+      "chaski",
+      "duckdb",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1y",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "The map of a district: Bullfrog, 1954, at 1:62,500",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The four USGS sheets and the 1:1 map: level, quadrangle, year, scale, neatline, sizes on the ground and on paper.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Sheets",
+          "multi": false,
+          "name": "sheets",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "sheets",
+              "refId": "sheets",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the sheets of the ladder (datasets/borges/build.sh).\nSELECT * FROM 'http://feeds/datasets/borges/sheets.parquet' ORDER BY scale DESC",
+                  "refId": "reactors"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
