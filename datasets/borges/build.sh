@@ -1,8 +1,8 @@
 #!/bin/sh
-# Builds what the five Borges dashboards draw (borges-empire, borges-province, borges-district,
-# borges-town, borges-one-to-one): the country around Rhyolite, Nevada, a mining town of 1905 left
-# in ruins by 1920, on four sheets of the USGS Historical Topographic Map Collection (public
-# domain), each a quarter of the one before, and the last one laid at 1:1 over the town:
+# Builds what borges-map-of-the-empire draws in its five tabs: the country around Rhyolite,
+# Nevada, a mining town of 1905 left in ruins by 1920, on four sheets of the USGS Historical
+# Topographic Map Collection (public domain), each a quarter of the one before, and the last
+# one laid at 1:1 over the town:
 #
 #   empire-1908.tif     Furnace Creek, 1:250,000, 1908 (1° × 1°)
 #   province-1942.tif   Bullfrog, 1:125,000, 1942 (30')

@@ -1,4 +1,4 @@
-"""The maps of the Borges ladder (borges-*.json): four USGS sheets around Rhyolite, Nevada, from 1:250,000
+"""The maps of borges-map-of-the-empire, the Borges ladder: four USGS sheets around Rhyolite, Nevada, from 1:250,000
 to 1:24,000, the last one laid at 1:1 over the town and torn by the years, and the animals recorded there.
 
 Run by build.sh: python3 build.py <out dir> <work dir> <duckdb cli>. Needs GDAL's command-line tools
