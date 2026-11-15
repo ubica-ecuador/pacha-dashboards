@@ -1,0 +1,1430 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "paris-ride"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "A camera crossing Paris, one picture a second, and what it has in sight at each: the street ahead worked out against the buildings, beside the picture it took, the landmarks on the ground it sees, and everything it has seen so far.",
+    "editable": true,
+    "elements": {
+      "card-now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Where the camera is at the Time Brush's instant.\nSELECT epoch_ms(time) AS \"Time\", distance_m / 1000 AS \"Ridden\", speed_kmh AS \"Speed\"\nFROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet')\nWHERE time \u003c= coalesce(nullif($t1, ''), '2025-05-13T12:41:45.000Z')::TIMESTAMP\nORDER BY time DESC\nLIMIT 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Where the camera is at the Time Brush's instant: the clock in Paris, how far it has gone from Port-Royal and how fast it goes.",
+          "id": 5,
+          "links": [],
+          "title": "At the instant",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:HH:mm:ss"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ridden"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "lengthkm"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Speed"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "velocitykmh"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-sight": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Overture's places on the ground the camera sees now ($visible, written by the map's Viewshed\n-- layer), widened by about 10 m: a shop's point lies inside its building, never seen itself.\nSELECT count(*) AS \"Places in sight\",\n       count(*) FILTER (WHERE category IN ('monument', 'historic_site', 'christian_place_of_worship', 'religious_organization', 'museum', 'theatre_venue', 'movie_theater', 'public_plaza', 'park', 'bridge', 'public_fountain', 'sculpture_statue', 'library', 'college_university', 'science_attraction') AND confidence \u003e= 0.9) AS \"Landmarks in sight\"\nFROM read_parquet('http://feeds/datasets/paris-ride/places.parquet')\nWHERE confidence \u003e= 0.6\n  AND nullif($visible, '') IS NOT NULL\n  AND ST_Within(ST_Point(longitude, latitude),\n                ST_Buffer(ST_GeomFromText(coalesce(nullif($visible, ''), 'MULTIPOLYGON EMPTY')), 0.0001))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Overture's places on the ground the camera sees now, within a few metres; the landmarks among them are listed below.",
+          "id": 6,
+          "links": [],
+          "title": "In sight now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FACC15",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Where it comes from.** A camera on its way across Paris on 13 May 2025, from Port-Royal to Strasbourg-Saint-Denis by Boulevard Saint-Michel, Pont Saint-Michel, the Île de la Cité, Pont au Change, Châtelet and Boulevard de Sébastopol: 626 pictures in 15 minutes, one a second, each with its time, its place, the way the camera looked and its speed. Pierre Beyssac took them and shared them on [Panoramax](https://panoramax.fr), the open street-level imagery of OpenStreetMap France and IGN (CC BY-SA 4.0); your browser reads each picture from Panoramax. The places are [Overture](https://overturemaps.org)'s (release 2026-10-21.0) within 300 m of the route. Pacha reads both into files once (`datasets/paris-ride/build.sh` in pacha-dashboards).\n\n**How a view is worked out.** By the Kepler Plus map's Viewshed layer, in the browser, at each picture: lines of sight from 1.5 m above the street over a grid of cells about two metres across, 300 m ahead in the camera's 76° field of view, turned the way it looked, against the buildings of the base map (OpenStreetMap's, as OpenFreeMap serves them, with their heights) on flat ground. A cell is coloured when the street there, at ground level, can be seen. The layer writes that ground to the dashboard (`$visible`), and the places in sight are Overture's places on it.\n\n**What it leaves out.** Trees, buses, parked vans and people in the way, which the picture shows; buildings OpenStreetMap draws without a height count as 15 m. A tower or a spire shows from farther than its foot.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The camera's speed, picture by picture: the Time Brush plays the ride.\nSELECT time, speed_kmh AS \"Speed (km/h)\"\nFROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet')\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The camera's speed through the ride. Press play: the window grows from the start, and the maps, the picture and the lists follow its end. Drag the end to go to a moment.",
+          "id": 4,
+          "links": [],
+          "title": "Play the ride: 15 minutes across Paris",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FACC15",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "mean",
+                    "context": false,
+                    "drawStyle": "area"
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "accentColor": "#FACC15",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "10s",
+                "cursorColor": "",
+                "cursorFollow": false,
+                "cursorPublish": false,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "drawStyle": "area",
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "t",
+                "loop": false,
+                "mosaicColumn": "time",
+                "mosaicSelection": "",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "never",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 500,
+                "publishWhileDragging": true,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": false,
+                "snapTo": "none",
+                "speed": 1,
+                "stepMs": 1000,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "incremental",
+                "zoomToExternal": false
+              }
+            }
+          }
+        }
+      },
+      "panel-landmarks": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The landmarks the camera has in sight now (monuments, churches, museums, theatres, squares,\n-- bridges, fountains, colleges) Overture is sure of (confidence 0.9 or more), nearest first: Overture's places on the ground it sees ($visible,\n-- written by the map's Viewshed layer), widened by about 10 m.\nWITH cam AS (\n  SELECT latitude AS clat, longitude AS clng FROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet') WHERE time \u003c= coalesce(nullif($t1, ''), '2025-05-13T12:41:45.000Z')::TIMESTAMP ORDER BY time DESC LIMIT 1\n)\nSELECT place AS \"Place\", replace(category, '_', ' ') AS \"Kind\",\n       round(2 * 6371000 * asin(sqrt(pow(sin(radians(latitude - clat) / 2), 2)\n             + cos(radians(latitude)) * cos(radians(clat)) * pow(sin(radians(longitude - clng) / 2), 2)))) AS \"Metres\"\nFROM read_parquet('http://feeds/datasets/paris-ride/places.parquet'), cam\nWHERE confidence \u003e= 0.9 AND category IN ('monument', 'historic_site', 'christian_place_of_worship', 'religious_organization', 'museum', 'theatre_venue', 'movie_theater', 'public_plaza', 'park', 'bridge', 'public_fountain', 'sculpture_statue', 'library', 'college_university', 'science_attraction')\n  AND nullif($visible, '') IS NOT NULL\n  AND ST_Within(ST_Point(longitude, latitude),\n                ST_Buffer(ST_GeomFromText(coalesce(nullif($visible, ''), 'MULTIPOLYGON EMPTY')), 0.0001))\nORDER BY \"Metres\"\nLIMIT 40"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The monuments, churches, museums, theatres, squares, bridges and fountains on the ground the camera sees now, nearest first (Overture's places, widened by about 10 m: a building's point lies inside it). A tall one, a tower or a spire, shows from farther than its ground: it is listed only once its foot is in sight.",
+          "id": 7,
+          "links": [],
+          "title": "Landmarks in sight",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Metres"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      },
+                      {
+                        "id": "unit",
+                        "value": "lengthm"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-photo": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The picture the camera took at the Time Brush's instant (its window's end), and where it was.\n-- The browser reads the picture from Panoramax: a small copy while the instant moves, the large one\n-- once it rests.\nSELECT picture_id, photo, replace(photo, '/sd.jpg', '/thumb.jpg') AS thumb,\n       strftime(time + INTERVAL 2 HOUR, '%H:%M:%S') AS clock,\n       round(speed_kmh) AS speed, heading, round(distance_m / 1000, 2) AS km\nFROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet')\nWHERE time \u003c= coalesce(nullif($t1, ''), '2025-05-13T12:41:45.000Z')::TIMESTAMP\nORDER BY time DESC\nLIMIT 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The picture the camera took at the Time Brush's instant, as Panoramax keeps it (faces and number plates blurred). Pierre Beyssac took the ride's 626 pictures on 13 May 2025 and shared them under CC BY-SA 4.0.",
+          "id": 3,
+          "links": [],
+          "title": "What the camera saw",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// Shows the picture the camera took at the instant, read from Panoramax: the small copy (about 45 KB)\n// while the instant moves, the large one (about 650 KB) once it has rested 800 ms. One picture loads at a\n// time; while it loads, only the latest wanted waits, so a fast play skips pictures instead of queueing them.\nconst row = context.data || {};\ncontext.element.style.height = '100%';\nconst box = context.element.querySelector('.ride-view');\nconst self = this;\nif (!box || !row.photo) {\n  return;\n}\nif (!self.img || self.box !== box || !self.img.isConnected) {\n  self.box = box;\n  self.img = document.createElement('img');\n  self.img.alt = 'The picture the camera took';\n  self.img.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;display:block';\n  box.replaceChildren(self.img);\n  self.shown = null;\n  self.loading = false;\n  self.next = null;\n  self.id = null;\n}\nif (self.id === row.picture_id) {\n  return;\n}\nself.id = row.picture_id;\nconst show = (url) =\u003e {\n  if (self.shown === url) {\n    return;\n  }\n  if (self.loading) {\n    self.next = url;\n    return;\n  }\n  self.loading = true;\n  const pre = new Image();\n  pre.onload = pre.onerror = () =\u003e {\n    self.loading = false;\n    if (pre.naturalWidth) {\n      self.img.src = url;\n      self.shown = url;\n    }\n    const next = self.next;\n    self.next = null;\n    if (next) {\n      show(next);\n    }\n  };\n  pre.src = url;\n};\nclearTimeout(self.sharp);\nshow(row.thumb);\nself.sharp = setTimeout(() =\u003e {\n  if (self.id === row.picture_id) {\n    show(row.photo);\n  }\n}, 800);",
+                "content": "\u003cdiv class=\"ride\"\u003e\u003cdiv class=\"ride-view\"\u003e\u003c/div\u003e\u003cdiv class=\"ride-caption\"\u003e{{clock}} in Paris · {{speed}} km/h · looking {{heading}}° · {{km}} km from Port-Royal · \u003ca href=\"https://api.panoramax.xyz/#focus=pic\u0026pic={{picture_id}}\" target=\"_blank\" rel=\"noopener\"\u003eon Panoramax\u003c/a\u003e · Pierre Beyssac, CC BY-SA 4.0\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "Play the ride in the Time Brush above.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": ".ride { display: flex; flex-direction: column; height: 100%; gap: 6px; }\n.ride-view { flex: 1; min-height: 0; background: #000; border-radius: 2px; overflow: hidden; }\n.ride-caption { font-size: 12px; line-height: 1.4; color: #9AA5B1; }\n.ride-caption a { color: inherit; text-decoration: underline; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      },
+      "panel-ride": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The camera's pictures, one a second: where it was, which way it looked and how fast it went.\n-- The Time Brush above moves the map's time window; the camera is where its last picture in the\n-- window was, gliding between two.\nSELECT camera, time, latitude, longitude, heading, speed_kmh\nFROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet')\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The whole route as one line, with no time: the map always draws it.\nSELECT 'Port-Royal to Strasbourg-Saint-Denis' AS route,\n       'LINESTRING (' || string_agg(longitude || ' ' || latitude, ', ' ORDER BY time) || ')' AS _geojson\nFROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The camera 1.5 m above the street, following it, and the ground it has in sight within 300 m ahead (yellow, fading with distance): its 76° field of view, turned the way it looked, against OpenStreetMap's buildings. The street ahead that it cannot see is shaded. Worked out in the browser at each picture, between two the camera glides. Play the ride in the Time Brush above.",
+          "id": 1,
+          "links": [],
+          "title": "What the camera sees",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-liberty",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 27,
+                      "dragRotate": true,
+                      "latitude": 48.8566,
+                      "longitude": 2.3466,
+                      "pitch": 55,
+                      "zoom": 17.2
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-liberty",
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "ride-window",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "Europe/Paris",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "time"
+                              },
+                              {
+                                "name": "speed_kmh"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "route"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              204,
+                              21
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The camera",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "camera",
+                              "fleetCard": false,
+                              "fleetCardField": "speed_kmh",
+                              "fleetCardMinutes": 5,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "S",
+                              "fleetCardUnit": "km/h",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "risingBad",
+                              "fleetCrossValue": false,
+                              "fleetCrosshair": false,
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "Camera",
+                              "fleetFollowMode": "chase",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "heading",
+                              "fleetHeadingFrom": "column",
+                              "fleetIcons": "{\"\": {\"preset\": \"bicycle\"}}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "original",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "none",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "off",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": true,
+                              "fleetSize": 60,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 1000,
+                              "fleetSpeedField": "speed_kmh",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 30,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": false,
+                              "fleetStopSpeed": 2,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "history",
+                              "fleetTrail": 1,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": false,
+                              "fleetTrailOpacity": 0.9,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "solid",
+                              "fleetTrailWidth": 3,
+                              "fleetTypeField": "none",
+                              "fleetZoomRate": 0.35,
+                              "fleetZoomRef": 16,
+                              "fleetZoomScale": true,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 20,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "thickness": 2
+                            }
+                          },
+                          "id": "camera",
+                          "type": "fleet",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              204,
+                              21
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "What it sees",
+                            "visConfig": {
+                              "opacity": 0.7,
+                              "radius": 6,
+                              "rowsAsset": "camera",
+                              "rowsPerPlace": "last",
+                              "viewshedAreaVariable": "visible",
+                              "viewshedAreaVertices": 300,
+                              "viewshedAzimuth": 0,
+                              "viewshedBeamwidth": 76,
+                              "viewshedBuildingDefault": 15,
+                              "viewshedBuildings": "__basemap__",
+                              "viewshedCurvature": false,
+                              "viewshedEye": 1.5,
+                              "viewshedEyeFrom": "ground",
+                              "viewshedGradient": true,
+                              "viewshedMarks": [],
+                              "viewshedObstacles": "buildings",
+                              "viewshedOutline": true,
+                              "viewshedRange": 300,
+                              "viewshedResolution": "medium",
+                              "viewshedRows": true,
+                              "viewshedShade": true,
+                              "viewshedSite": false,
+                              "viewshedTarget": 0
+                            }
+                          },
+                          "id": "view",
+                          "type": "viewshed",
+                          "visualChannels": {
+                            "azimuthField": {
+                              "name": "heading",
+                              "type": "real"
+                            },
+                            "azimuthScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              154,
+                              165,
+                              177
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "The route",
+                            "visConfig": {
+                              "filled": false,
+                              "opacity": 0.7,
+                              "strokeColor": [
+                                154,
+                                165,
+                                177
+                              ],
+                              "stroked": true,
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "route",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-seen": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every other picture, for what the camera has had in sight since the start: each one a view\n-- of its own, the ones in the time window together.\nSELECT camera, time, latitude, longitude, heading\nFROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet')\nQUALIFY row_number() OVER (ORDER BY time) % 2 = 1\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The whole route as one line, with no time: the map always draws it.\nSELECT 'Port-Royal to Strasbourg-Saint-Denis' AS route,\n       'LINESTRING (' || string_agg(longitude || ' ' || latitude, ', ' ORDER BY time) || ')' AS _geojson\nFROM read_parquet('http://feeds/datasets/paris-ride/ride.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every other picture from the start to the Time Brush's instant, each with its view: the union of the ground the camera has had in sight within 300 m on its way, in blue. Streets it crossed without looking down them stay blank.",
+          "id": 2,
+          "links": [],
+          "title": "Everything it has had in sight so far",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-positron",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -70,
+                      "dragRotate": true,
+                      "latitude": 48.8537,
+                      "longitude": 2.3462,
+                      "pitch": 0,
+                      "zoom": 13.4
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-positron",
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "ride-window",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "Europe/Paris",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "route"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              250,
+                              204,
+                              21
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The camera",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "camera",
+                              "fleetCard": false,
+                              "fleetCardField": "speed_kmh",
+                              "fleetCardMinutes": 5,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "S",
+                              "fleetCardUnit": "km/h",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "risingBad",
+                              "fleetCrossValue": false,
+                              "fleetCrosshair": false,
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "chase",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "heading",
+                              "fleetHeadingFrom": "column",
+                              "fleetIcons": "{\"\": {\"preset\": \"bicycle\"}}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "original",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "none",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "off",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": true,
+                              "fleetSize": 40,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 1000,
+                              "fleetSpeedField": "speed_kmh",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 30,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": false,
+                              "fleetStopSpeed": 2,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "history",
+                              "fleetTrail": 1,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": false,
+                              "fleetTrailOpacity": 0.9,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "solid",
+                              "fleetTrailWidth": 3,
+                              "fleetTypeField": "none",
+                              "fleetZoomRate": 0.35,
+                              "fleetZoomRef": 16,
+                              "fleetZoomScale": true,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 20,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "thickness": 2
+                            }
+                          },
+                          "id": "camera",
+                          "type": "fleet",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              61,
+                              143,
+                              224
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Seen so far",
+                            "visConfig": {
+                              "opacity": 0.55,
+                              "radius": 6,
+                              "rowsAsset": "none",
+                              "rowsPerPlace": "all",
+                              "viewshedAzimuth": 0,
+                              "viewshedBeamwidth": 76,
+                              "viewshedBuildingDefault": 15,
+                              "viewshedBuildings": "__basemap__",
+                              "viewshedCurvature": false,
+                              "viewshedEye": 1.5,
+                              "viewshedEyeFrom": "ground",
+                              "viewshedGradient": false,
+                              "viewshedMarks": [],
+                              "viewshedObstacles": "buildings",
+                              "viewshedOutline": false,
+                              "viewshedRange": 300,
+                              "viewshedResolution": "medium",
+                              "viewshedRows": true,
+                              "viewshedShade": false,
+                              "viewshedSite": false,
+                              "viewshedTarget": 0
+                            }
+                          },
+                          "id": "seen",
+                          "type": "viewshed",
+                          "visualChannels": {
+                            "azimuthField": {
+                              "name": "heading",
+                              "type": "real"
+                            },
+                            "azimuthScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              154,
+                              165,
+                              177
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "The route",
+                            "visConfig": {
+                              "filled": false,
+                              "opacity": 0.7,
+                              "strokeColor": [
+                                154,
+                                165,
+                                177
+                              ],
+                              "stroked": true,
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "route",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-ride"
+              },
+              "height": 18,
+              "width": 14,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-photo"
+              },
+              "height": 18,
+              "width": 10,
+              "x": 14,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-now"
+              },
+              "height": 3,
+              "width": 14,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-sight"
+              },
+              "height": 3,
+              "width": 10,
+              "x": 14,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-seen"
+              },
+              "height": 14,
+              "width": 14,
+              "x": 0,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-landmarks"
+              },
+              "height": 14,
+              "width": 10,
+              "x": 14,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 41
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "business-text",
+      "duckdb",
+      "kepler",
+      "mobility",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2025-05-13T12:31:20.000Z",
+      "hideTimepicker": true,
+      "timezone": "Europe/Paris",
+      "to": "2025-05-13T12:47:00.000Z"
+    },
+    "title": "Across Paris: what the camera sees",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2025-05-13T12:31:20.000Z",
+            "value": "2025-05-13T12:31:20.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "t0",
+          "query": "2025-05-13T12:31:20.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2025-05-13T12:41:45.000Z",
+            "value": "2025-05-13T12:41:45.000Z"
+          },
+          "hide": "hideVariable",
+          "name": "t1",
+          "query": "2025-05-13T12:41:45.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "visible",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
