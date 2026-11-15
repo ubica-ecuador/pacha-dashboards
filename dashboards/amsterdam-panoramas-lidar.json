@@ -1,0 +1,1229 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "amsterdam-panoramas-lidar"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Dam Square in Amsterdam as the city keeps it: its 360° street panoramas of every year since 2016, the national LiDAR survey as a point cloud, and its registers of buildings, monuments and trees, each placed in the others: click a panorama on the map and the viewer marks on it what the registers know of what it shows.",
+    "editable": true,
+    "elements": {
+      "card-panoramas": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every panorama in the box, all years.\nSELECT count(*) AS \"Panoramas\" FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every 360° panorama the City of Amsterdam has taken in the 450 m box round Dam Square since 2016, all years together (panoramas.parquet).",
+          "id": 2,
+          "links": [],
+          "title": "Panoramas",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-points": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The points the dataset's build wrote into the 3D tiles.\nSELECT lidar_points::DOUBLE AS \"Points\" FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/meta.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The AHN5 points in the box (the national airborne LiDAR survey, about 22 a square metre here), drawn on the map as a 3D Tiles point cloud coloured from the aerial photograph.",
+          "id": 6,
+          "links": [],
+          "title": "LiDAR points",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 1,
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-sight": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n), cam AS (\n  -- Metres round the camera (x east, y north), 2.5 m over the ground the LiDAR gives under it.\n  SELECT longitude AS lon0, latitude AS lat0, cos(radians(latitude)) * 111320 AS kx,\n         110574.0 AS ky, ground_nap + 2.5 AS z0\n  FROM shown\n), footprints AS (\n  SELECT b.*, ST_TransScale(ST_GeomFromText(b.geometry), -cam.lon0, -cam.lat0, cam.kx, cam.ky) AS g\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/buildings.parquet') b, cam\n), facades AS (\n  -- Buildings within 60 m, monuments within 150 m: the point of the façade nearest the camera.\n  SELECT *, ST_ClosestPoint(g, ST_Point(0, 0)) AS q\n  FROM footprints\n  WHERE (ST_DWithin(g, ST_Point(0, 0), 60) OR (monument IS NOT NULL AND ST_DWithin(g, ST_Point(0, 0), 150)))\n    AND NOT ST_Contains(g, ST_Point(0, 0))\n), candidates AS (\n  -- A façade aimed at half its height (at most 10 m up), a tree at 60 % of its height, a\n  -- monument at 70 %.\n  SELECT 'building' AS kind, building_id AS id, building_id AS own, ST_X(q) AS x, ST_Y(q) AS y,\n         ground_nap + least(coalesce(height_lidar, 12) * 0.5, 10) AS z,\n         coalesce(split_part(monument, ',', 1), built::VARCHAR) AS label,\n         concat_ws(' · ', monument, monument_status, 'built ' || built, 'architect ' || architect,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m') AS detail\n  FROM facades\n  UNION ALL\n  SELECT 'tree', tree_id, NULL, (longitude - lon0) * kx, (latitude - lat0) * ky,\n         ground_nap + 0.6 * coalesce(height_lidar, class_m, 8),\n         coalesce(split_part(species, ' ', 1), 'Tree'),\n         concat_ws(' · ', coalesce(species, 'a tree'), 'planted ' || planted,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m')\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/trees.parquet'), cam\n  WHERE ((longitude - lon0) * kx) ^ 2 + ((latitude - lat0) * ky) ^ 2 BETWEEN 1 AND 45 ^ 2\n  UNION ALL\n  SELECT 'monument', monument_id, NULL, (longitude - lon0) * kx, (latitude - lat0) * ky,\n         ground_nap + greatest(0.7 * height_lidar, 1.5),\n         name,\n         concat_ws(' · ', name, status, 'architect ' || architect,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m')\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/monuments.parquet'), cam\n  WHERE ((longitude - lon0) * kx) ^ 2 + ((latitude - lat0) * ky) ^ 2 BETWEEN 1 AND 150 ^ 2\n), measured AS (\n  SELECT c.*, sqrt(x * x + y * y) AS distance_m FROM candidates c\n), seen AS (\n  -- In sight: the line from the camera to it (stopped 0.5 m short) crosses no other footprint.\n  SELECT m.* FROM measured m\n  WHERE NOT EXISTS (\n    SELECT 1 FROM footprints f\n    WHERE f.building_id IS DISTINCT FROM m.own\n      AND ST_Intersects(f.g, ST_MakeLine(ST_Point(0, 0),\n            ST_Point(m.x * (1 - 0.5 / m.distance_m), m.y * (1 - 0.5 / m.distance_m))))\n  )\n)\nSELECT count(*) AS \"In sight\" FROM seen"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The buildings (within 60 m, monuments within 150 m), trees (45 m) and monuments the line from the camera reaches without crossing another building's footprint.",
+          "id": 5,
+          "links": [],
+          "title": "In sight from it",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-taken": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n)\nSELECT strftime(timezone('Europe/Amsterdam', taken), '%-d %b %Y, %H:%M') AS \"Taken\" FROM shown"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the panorama in the viewer was taken, Amsterdam time: of the year picked, the one nearest the panorama picked on the map.",
+          "id": 4,
+          "links": [],
+          "title": "Panorama shown, taken",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-years": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The missions in the box, by the year the city gives them.\nSELECT count(DISTINCT year) AS \"Years\" FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How many of the city's yearly missions drove through the box: each year a car with a 360° camera drives every street, a picture every 5 m.",
+          "id": 3,
+          "links": [],
+          "title": "Years",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**What it is.** Dam Square in Amsterdam and the streets round it, 450 m a side, as a city keeps it: the 360° panoramas its car takes of every street each year, the national LiDAR survey, and its registers of buildings, monuments and trees, each placed in the others. Click a panorama on the map to see it beside it; the viewer marks on the picture what the registers know of what it shows, and the map shows where it looks.\n\n**The panoramas.** Gemeente Amsterdam, *Panoramabeelden* ([api.data.amsterdam.nl/panorama](https://api.data.amsterdam.nl/panorama/panoramas/), CC BY 4.0): 11,597 in the box, from June 2016 to July 2025, one every 5 m along each street (the 2017 and 2021 missions also from the water), faces and number plates blurred by the city. Each picture is equirectangular with north in the middle and the horizon level, so a thing's place in it is its bearing and the angle up to it. The browser reads the 4,000 px picture from the city; nothing of it is stored here. The 2022 mission ran into April 2023, and there is no 2023 mission: the year is the city's.\n\n**The LiDAR.** AHN5, *Actueel Hoogtebestand Nederland* (CC0), flown in 2023: 4.5 million points in the box (about 22 a square metre), read from its 1 km cloud-optimised tile by ranges and written as 3D Tiles (`datasets/amsterdam-panoramas/build.sh`), the street level (+1.29 m NAP) at the map's ground. Coloured from the aerial photograph *Luchtfoto Actueel Ortho* of Beeldmateriaal Nederland / Kadaster (PDOK, [opendata.beeldmateriaal.nl](https://opendata.beeldmateriaal.nl), CC BY 4.0), as AHN's coloured clouds are: a wall takes the colour of the roof or street beside it seen from above. The LiDAR also gives every height here: a tree's is the highest vegetation return within 3 m of its trunk over the ground there, a building's the 90th percentile of its roof over the ground beside it, the ground under each panorama the mean of the ground returns within 1.5 m.\n\n**The registers.** Gemeente Amsterdam at [api.data.amsterdam.nl](https://api.data.amsterdam.nl/v1/), published as public data with no licence named beyond that: BAG buildings (year built, footprint), the monument register (name, Rijksmonument or Gemeentelijk monument, architect; a building takes the monument on most of its footprint), the tree register (species, year planted, height class). Read once by the dataset's build, in November 2026.\n\n**What is in sight.** From the camera, 2.5 m over the ground: buildings within 60 m (monuments within 150 m) at the point of their façade nearest it, trees within 45 m, monuments that are not a building within 150 m, kept when the straight line to them crosses no other building's footprint. Footprints only: a low wall or a tram shelter hides nothing, and a tree behind another tree is still marked.\n\n**Built** with the dataset's build on the instance; the panoramas grow by a mission a year: run the build again to follow them.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every panorama of the year picked, at the camera's height (2.5 m): click one to see it in\n-- 360° beside the map.\nSELECT p.pano_id, p.longitude, p.latitude, p.ground_nap - m.street_nap + 2.5 AS altitude,\n       'taken ' || strftime(timezone('Europe/Amsterdam', p.taken), '%-d %b %Y') AS taken_on\nFROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet') p, read_parquet('http://feeds/datasets/amsterdam-panoramas/meta.parquet') m\nWHERE p.year = CAST($year AS INTEGER)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n), cone AS (\n  SELECT s.longitude AS lon0, s.latitude AS lat0, cos(radians(s.latitude)) * 111320 AS kx,\n         round(s.ground_nap - m.street_nap + 2.5, 2) AS z,\n         coalesce(try_cast(nullif($look, '') AS DOUBLE), 0) AS look,\n         least(greatest(coalesce(try_cast(nullif($fov, '') AS DOUBLE), 100), 20), 140) AS fov\n  FROM shown s, read_parquet('http://feeds/datasets/amsterdam-panoramas/meta.parquet') m\n)\n-- Where the viewer looks from the panorama shown: a 30 m wedge as wide as its view and turned\n-- as it is ($look and $fov, which the viewer writes when it stops), at the camera's height\n-- (the square's ground rises, and its points would cover a wedge laid on it).\nSELECT '{\"type\":\"Polygon\",\"coordinates\":[[[' || lon0 || ',' || lat0 || ',' || z || '],' ||\n       array_to_string(list_transform(range(0, 25), lambda i:\n         '[' || (lon0 + 30 * sin(radians(look - fov / 2 + fov * i / 24)) / kx) || ',' ||\n         (lat0 + 30 * cos(radians(look - fov / 2 + fov * i / 24)) / 110574) || ',' || z || ']'), ',') ||\n       ',[' || lon0 || ',' || lat0 || ',' || z || ']]]}' AS geometry,\n       'looking ' || round(look)::INTEGER || '°' AS view\nFROM cone"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The city's trees, on top of their crowns (the height the LiDAR measures over the ground\n-- round the trunk, from the street level the point cloud stands on).\nSELECT t.longitude, t.latitude, coalesce(t.species, 'unknown') AS species, t.planted,\n       t.height_lidar AS height_m,\n       t.ground_nap - m.street_nap + coalesce(t.height_lidar, t.class_m, 8) AS altitude\nFROM read_parquet('http://feeds/datasets/amsterdam-panoramas/trees.parquet') t, read_parquet('http://feeds/datasets/amsterdam-panoramas/meta.parquet') m"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The national LiDAR survey (AHN5) of the 450 m round Dam Square as a point cloud, coloured from the aerial photograph, with the city's trees on their crowns (green) and every panorama of the year picked (blue, at the camera's height). Click one to see it beside the map; the orange wedge is where the viewer looks.",
+          "id": 7,
+          "links": [],
+          "title": "Dam Square in LiDAR: click a panorama",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -24,
+                      "dragRotate": true,
+                      "latitude": 52.37285,
+                      "longitude": 4.89255,
+                      "maxPitch": 85,
+                      "pitch": 50,
+                      "zoom": 16.4
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "taken_on"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "view"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "species"
+                              },
+                              {
+                                "name": "planted"
+                              },
+                              {
+                                "name": "height_m"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "ahn5-lidar",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "LiDAR (AHN5)",
+                            "visConfig": {
+                              "altitudeOffset": 0,
+                              "groundTileset": false,
+                              "opacity": 1,
+                              "pointSize": 2
+                            }
+                          },
+                          "id": "lidar",
+                          "type": "tile3d",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              166,
+                              0
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Where the viewer looks",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 0.5,
+                              "strokeColor": [
+                                255,
+                                166,
+                                0
+                              ],
+                              "stroked": true,
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "view",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              91,
+                              191,
+                              115
+                            ],
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "isVisible": true,
+                            "label": "Trees",
+                            "visConfig": {
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.9,
+                              "outline": true,
+                              "radius": 2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                20,
+                                60,
+                                30
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "trees",
+                          "type": "point",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              0,
+                              200,
+                              255
+                            ],
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Panoramas of the year",
+                            "visConfig": {
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "radius": 1.2,
+                              "radiusRange": [
+                                0,
+                                50
+                              ]
+                            }
+                          },
+                          "id": "panoramas",
+                          "type": "point",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [
+                    {
+                      "data": {
+                        "allData": [],
+                        "color": [
+                          0,
+                          92,
+                          255
+                        ],
+                        "disableDataOperation": true,
+                        "fields": [],
+                        "id": "ahn5-lidar",
+                        "label": "LiDAR (AHN5)",
+                        "metadata": {
+                          "tile3dUrl": "/datasets/amsterdam-panoramas/lidar/tileset.json"
+                        },
+                        "type": "tile-3d"
+                      },
+                      "version": "v1"
+                    }
+                  ],
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": [
+                  {
+                    "field": "pano_id",
+                    "keepOnDeselect": true,
+                    "source": "click",
+                    "variable": "pano"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-sight": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n), cam AS (\n  -- Metres round the camera (x east, y north), 2.5 m over the ground the LiDAR gives under it.\n  SELECT longitude AS lon0, latitude AS lat0, cos(radians(latitude)) * 111320 AS kx,\n         110574.0 AS ky, ground_nap + 2.5 AS z0\n  FROM shown\n), footprints AS (\n  SELECT b.*, ST_TransScale(ST_GeomFromText(b.geometry), -cam.lon0, -cam.lat0, cam.kx, cam.ky) AS g\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/buildings.parquet') b, cam\n), facades AS (\n  -- Buildings within 60 m, monuments within 150 m: the point of the façade nearest the camera.\n  SELECT *, ST_ClosestPoint(g, ST_Point(0, 0)) AS q\n  FROM footprints\n  WHERE (ST_DWithin(g, ST_Point(0, 0), 60) OR (monument IS NOT NULL AND ST_DWithin(g, ST_Point(0, 0), 150)))\n    AND NOT ST_Contains(g, ST_Point(0, 0))\n), candidates AS (\n  -- A façade aimed at half its height (at most 10 m up), a tree at 60 % of its height, a\n  -- monument at 70 %.\n  SELECT 'building' AS kind, building_id AS id, building_id AS own, ST_X(q) AS x, ST_Y(q) AS y,\n         ground_nap + least(coalesce(height_lidar, 12) * 0.5, 10) AS z,\n         coalesce(split_part(monument, ',', 1), built::VARCHAR) AS label,\n         concat_ws(' · ', monument, monument_status, 'built ' || built, 'architect ' || architect,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m') AS detail\n  FROM facades\n  UNION ALL\n  SELECT 'tree', tree_id, NULL, (longitude - lon0) * kx, (latitude - lat0) * ky,\n         ground_nap + 0.6 * coalesce(height_lidar, class_m, 8),\n         coalesce(split_part(species, ' ', 1), 'Tree'),\n         concat_ws(' · ', coalesce(species, 'a tree'), 'planted ' || planted,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m')\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/trees.parquet'), cam\n  WHERE ((longitude - lon0) * kx) ^ 2 + ((latitude - lat0) * ky) ^ 2 BETWEEN 1 AND 45 ^ 2\n  UNION ALL\n  SELECT 'monument', monument_id, NULL, (longitude - lon0) * kx, (latitude - lat0) * ky,\n         ground_nap + greatest(0.7 * height_lidar, 1.5),\n         name,\n         concat_ws(' · ', name, status, 'architect ' || architect,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m')\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/monuments.parquet'), cam\n  WHERE ((longitude - lon0) * kx) ^ 2 + ((latitude - lat0) * ky) ^ 2 BETWEEN 1 AND 150 ^ 2\n), measured AS (\n  SELECT c.*, sqrt(x * x + y * y) AS distance_m FROM candidates c\n), seen AS (\n  -- In sight: the line from the camera to it (stopped 0.5 m short) crosses no other footprint.\n  SELECT m.* FROM measured m\n  WHERE NOT EXISTS (\n    SELECT 1 FROM footprints f\n    WHERE f.building_id IS DISTINCT FROM m.own\n      AND ST_Intersects(f.g, ST_MakeLine(ST_Point(0, 0),\n            ST_Point(m.x * (1 - 0.5 / m.distance_m), m.y * (1 - 0.5 / m.distance_m))))\n  )\n)\nSELECT CASE kind WHEN 'building' THEN 'Building' WHEN 'tree' THEN 'Tree' ELSE 'Monument' END AS \"Kind\",\n       label AS \"Name\", round(distance_m)::INTEGER AS \"Metres\",\n       round((degrees(atan2(x, y)) + 360) % 360)::INTEGER AS \"Bearing\",\n       detail AS \"What the city's registers say\"\nFROM seen\nORDER BY distance_m"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What the viewer marks: the buildings, trees and monuments the line from the camera reaches without crossing another building's footprint, nearest first, with the bearing from north. From BAG (year built), the monument register (name, status, architect), the tree register (species, year planted) and AHN5 (heights over the ground beside them).",
+          "id": 9,
+          "links": [],
+          "title": "In sight from the panorama shown",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false,
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Name"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 230
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Metres"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      },
+                      {
+                        "id": "unit",
+                        "value": "lengthm"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Bearing"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      },
+                      {
+                        "id": "unit",
+                        "value": "degree"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-viewer": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n)\n-- The panorama shown, and the panorama picked it was found for (the viewer waits for rows that\n-- answer the variables of the moment).\nSELECT s.pano_id, $pano AS picked_id, s.year, s.url_4000, s.url_2000, s.mission,\n       strftime(timezone('Europe/Amsterdam', s.taken), '%-d %B %Y, %H:%M') AS taken_on,\n       round(sqrt(((s.longitude - p.longitude) * 0.61 * 111320) ^ 2 + ((s.latitude - p.latitude) * 110574) ^ 2), 1) AS from_pick_m\nFROM shown s, pick p"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "P"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n), cam AS (\n  -- Metres round the camera (x east, y north), 2.5 m over the ground the LiDAR gives under it.\n  SELECT longitude AS lon0, latitude AS lat0, cos(radians(latitude)) * 111320 AS kx,\n         110574.0 AS ky, ground_nap + 2.5 AS z0\n  FROM shown\n), footprints AS (\n  SELECT b.*, ST_TransScale(ST_GeomFromText(b.geometry), -cam.lon0, -cam.lat0, cam.kx, cam.ky) AS g\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/buildings.parquet') b, cam\n), facades AS (\n  -- Buildings within 60 m, monuments within 150 m: the point of the façade nearest the camera.\n  SELECT *, ST_ClosestPoint(g, ST_Point(0, 0)) AS q\n  FROM footprints\n  WHERE (ST_DWithin(g, ST_Point(0, 0), 60) OR (monument IS NOT NULL AND ST_DWithin(g, ST_Point(0, 0), 150)))\n    AND NOT ST_Contains(g, ST_Point(0, 0))\n), candidates AS (\n  -- A façade aimed at half its height (at most 10 m up), a tree at 60 % of its height, a\n  -- monument at 70 %.\n  SELECT 'building' AS kind, building_id AS id, building_id AS own, ST_X(q) AS x, ST_Y(q) AS y,\n         ground_nap + least(coalesce(height_lidar, 12) * 0.5, 10) AS z,\n         coalesce(split_part(monument, ',', 1), built::VARCHAR) AS label,\n         concat_ws(' · ', monument, monument_status, 'built ' || built, 'architect ' || architect,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m') AS detail\n  FROM facades\n  UNION ALL\n  SELECT 'tree', tree_id, NULL, (longitude - lon0) * kx, (latitude - lat0) * ky,\n         ground_nap + 0.6 * coalesce(height_lidar, class_m, 8),\n         coalesce(split_part(species, ' ', 1), 'Tree'),\n         concat_ws(' · ', coalesce(species, 'a tree'), 'planted ' || planted,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m')\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/trees.parquet'), cam\n  WHERE ((longitude - lon0) * kx) ^ 2 + ((latitude - lat0) * ky) ^ 2 BETWEEN 1 AND 45 ^ 2\n  UNION ALL\n  SELECT 'monument', monument_id, NULL, (longitude - lon0) * kx, (latitude - lat0) * ky,\n         ground_nap + greatest(0.7 * height_lidar, 1.5),\n         name,\n         concat_ws(' · ', name, status, 'architect ' || architect,\n                   'LiDAR height ' || round(height_lidar)::INTEGER || ' m')\n  FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/monuments.parquet'), cam\n  WHERE ((longitude - lon0) * kx) ^ 2 + ((latitude - lat0) * ky) ^ 2 BETWEEN 1 AND 150 ^ 2\n), measured AS (\n  SELECT c.*, sqrt(x * x + y * y) AS distance_m FROM candidates c\n), seen AS (\n  -- In sight: the line from the camera to it (stopped 0.5 m short) crosses no other footprint.\n  SELECT m.* FROM measured m\n  WHERE NOT EXISTS (\n    SELECT 1 FROM footprints f\n    WHERE f.building_id IS DISTINCT FROM m.own\n      AND ST_Intersects(f.g, ST_MakeLine(ST_Point(0, 0),\n            ST_Point(m.x * (1 - 0.5 / m.distance_m), m.y * (1 - 0.5 / m.distance_m))))\n  )\n)\nSELECT kind, id, label, detail, round(distance_m, 1) AS distance_m,\n       round(degrees(atan2(x, y)), 2) AS yaw, round(degrees(atan2(z - z0, distance_m)), 2) AS pitch\nFROM seen, cam\nORDER BY distance_m DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "M"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n), near AS (\n  SELECT p.pano_id, (p.longitude - s.longitude) * cos(radians(s.latitude)) * 111320 AS x,\n         (p.latitude - s.latitude) * 110574 AS y\n  FROM pano p, shown s\n  WHERE p.year = s.year AND p.pano_id \u003c\u003e s.pano_id\n    AND abs(p.latitude - s.latitude) \u003c 0.0003 AND abs(p.longitude - s.longitude) \u003c 0.0005\n), measured AS (\n  SELECT *, sqrt(x * x + y * y) AS distance_m, degrees(atan2(x, y)) AS yaw FROM near\n)\n-- The steps on: the nearest panorama of the same year 2 to 25 m away in each eighth of the\n-- compass.\nSELECT pano_id, round(yaw, 1) AS yaw, round(distance_m, 1) AS distance_m\nFROM measured\nWHERE distance_m BETWEEN 2 AND 25\nQUALIFY row_number() OVER (PARTITION BY floor(((yaw + 382.5) % 360) / 45) ORDER BY distance_m) = 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "N"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH pano AS (\n  SELECT * FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet')\n), pick AS (\n  -- The panorama picked on the map (of any year), or the middle of Dam.\n  SELECT longitude, latitude FROM (\n    SELECT longitude, latitude, 0 AS rank FROM pano WHERE pano_id = $pano\n    UNION ALL SELECT 4.893095, 52.372970, 1\n  ) ORDER BY rank LIMIT 1\n), shown AS (\n  -- Of the year picked, the panorama nearest it: a change of year stays on the spot.\n  SELECT pano.* FROM pano, pick\n  WHERE pano.year = CAST($year AS INTEGER)\n  ORDER BY ((pano.longitude - pick.longitude) * 0.61) ^ 2 + (pano.latitude - pick.latitude) ^ 2\n  LIMIT 1\n)\n-- The same spot in other years: each year's panorama nearest the one shown, within 25 m.\nSELECT p.year, p.pano_id,\n       strftime(timezone('Europe/Amsterdam', p.taken), '%b %Y') AS taken_on,\n       round(sqrt(((p.longitude - s.longitude) * 0.61 * 111320) ^ 2 + ((p.latitude - s.latitude) * 110574) ^ 2), 1) AS distance_m\nFROM pano p, shown s\nWHERE abs(p.latitude - s.latitude) \u003c 0.00025 AND abs(p.longitude - s.longitude) \u003c 0.0004\nQUALIFY row_number() OVER (PARTITION BY p.year ORDER BY distance_m) = 1 AND distance_m \u003c= 25\nORDER BY p.year"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "Y"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The city's 360° panorama nearest the one picked, of the year picked, read by the browser from the city (4,000 px, faces and plates blurred): drag to look round, scroll to zoom. On it, what is in sight from the camera, placed by bearing and height: monuments and buildings with the year they were built, trees with their species, each with the height the LiDAR measures (hover for the rest). The white circles on the street step to the next panorama; the years under it show the same spot in another year.",
+          "id": 8,
+          "links": [],
+          "title": "The panorama in 360°, with what the city knows of what it shows",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// The panorama shown, in 360°, with Pannellum (loaded once from jsdelivr) on the picture the browser\n// reads from the city. Query P is the panorama shown, M what is in sight from it (yaw and pitch: the\n// picture has north in the middle and a level horizon, so a thing's place on it is its bearing and the\n// angle up to it), N the steps to the next panoramas, Y the same spot in other years.\n// A new panorama keeps the way the viewer looks. When the viewer stops turning or zooming it writes\n// where it looks to $look and $fov (the map's wedge); a step writes $pano, a year $year.\nconst PANNELLUM = 'https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/';\nconst self = this;\ncontext.element.style.height = '100%';\nconst box = context.element.querySelector('.pano-view');\nconst strip = context.element.querySelector('.pano-years');\nconst caption = context.element.querySelector('.pano-caption');\nif (!box) {\n  return;\n}\n\nconst rowsOf = (refId) =\u003e {\n  const frame = (context.panelData?.series ?? []).find((f) =\u003e f.refId === refId);\n  if (!frame) {\n    return [];\n  }\n  const n = frame.length ?? frame.fields[0]?.values.length ?? 0;\n  return Array.from({ length: n }, (_, i) =\u003e\n    Object.fromEntries(frame.fields.map((f) =\u003e [f.name, f.values[i] ?? f.values.get?.(i)])),\n  );\n};\nconst setVars = (vars) =\u003e context.grafana.locationService.partial(vars, true);\nconst variable = (name) =\u003e context.grafana.replaceVariables('${' + name + '}');\n\n// While a query runs again the panel can be handed a frame without its fields: only whole rows.\nconst shown = rowsOf('P').find((r) =\u003e r.pano_id \u0026\u0026 r.url_4000);\nif (!shown) {\n  if (!self.viewer) {\n    box.textContent = 'No panorama of this year here.';\n  }\n  return;\n}\nconst marks = rowsOf('M').filter((r) =\u003e r.kind \u0026\u0026 Number.isFinite(r.yaw) \u0026\u0026 Number.isFinite(r.pitch));\nconst steps = rowsOf('N').filter((r) =\u003e r.pano_id \u0026\u0026 Number.isFinite(r.yaw));\nconst years = rowsOf('Y').filter((r) =\u003e r.pano_id \u0026\u0026 r.year);\n\n// Right after a step or a click, the panel draws once more with the rows of the panorama before:\n// wait for the rows found for the panorama picked now.\nif (shown.picked_id !== variable('pano') || String(shown.year) !== variable('year')) {\n  return;\n}\n// The map rings the panorama picked: after a change of year, the one shown is the one picked.\nif (shown.pano_id !== shown.picked_id) {\n  setVars({ 'var-pano': shown.pano_id });\n}\n\nconst load = () =\u003e {\n  if (window.pannellum) {\n    return Promise.resolve();\n  }\n  if (!window.__pannellumLoading) {\n    window.__pannellumLoading = new Promise((resolve, reject) =\u003e {\n      const css = document.createElement('link');\n      css.rel = 'stylesheet';\n      css.href = PANNELLUM + 'pannellum.css';\n      document.head.appendChild(css);\n      const script = document.createElement('script');\n      script.src = PANNELLUM + 'pannellum.js';\n      script.onload = resolve;\n      script.onerror = () =\u003e {\n        window.__pannellumLoading = null;\n        reject(new Error('Pannellum did not load'));\n      };\n      document.head.appendChild(script);\n    });\n  }\n  return window.__pannellumLoading;\n};\n\nconst pin = (div, m) =\u003e {\n  div.classList.add('pano-pin', 'pano-' + m.kind);\n  div.dataset.distance = String(m.distance_m);\n  const dot = document.createElement('i');\n  const label = document.createElement('span');\n  label.textContent = m.label;\n  div.append(dot, label);\n  div.title = `${m.detail} · ${Math.round(m.distance_m)} m away`;\n};\nconst step = (div, s) =\u003e {\n  div.classList.add('pano-step');\n  div.title = `${Math.round(s.distance_m)} m on`;\n};\nconst spots = [\n  ...marks.map((m) =\u003e ({\n    id: `m-${m.kind}-${m.id}`, pitch: m.pitch, yaw: m.yaw, cssClass: 'pano-spot',\n    createTooltipFunc: pin, createTooltipArgs: m,\n  })),\n  ...steps.map((s) =\u003e ({\n    id: `s-${s.pano_id}`, pitch: -24, yaw: s.yaw, cssClass: 'pano-spot',\n    createTooltipFunc: step, createTooltipArgs: s,\n    clickHandlerFunc: (_e, a) =\u003e setVars({ 'var-pano': a.pano_id }), clickHandlerArgs: s,\n  })),\n];\nconst scene = {\n  type: 'equirectangular', panorama: shown.url_4000, crossOrigin: 'anonymous',\n  haov: 360, vaov: 180, northOffset: 0, hotSpots: spots,\n};\nconst key = `${shown.pano_id}|${marks.length}|${steps.length}`;\n\n// Labels that would cover a nearer one's keep their dot only (the label shows on hover): checked\n// whenever the view rests.\nconst declutter = () =\u003e {\n  const pins = [...box.querySelectorAll('.pano-pin')].sort((a, b) =\u003e a.dataset.distance - b.dataset.distance);\n  const kept = [];\n  for (const p of pins) {\n    p.classList.remove('crowded');\n    const r = p.querySelector('span').getBoundingClientRect();\n    if (!r.width) {\n      continue;\n    }\n    if (kept.some((k) =\u003e r.left \u003c k.right + 2 \u0026\u0026 r.right \u003e k.left - 2 \u0026\u0026 r.top \u003c k.bottom + 1 \u0026\u0026 r.bottom \u003e k.top - 1)) {\n      p.classList.add('crowded');\n    } else {\n      kept.push(r);\n    }\n  }\n};\n\n// Where the viewer looks, to the map, once it rests.\nconst publish = () =\u003e {\n  setTimeout(declutter, 50);\n  clearTimeout(self.lookTimer);\n  self.lookTimer = setTimeout(() =\u003e {\n    const v = self.viewer;\n    if (!v) {\n      return;\n    }\n    const look = String(Math.round(((v.getYaw() % 360) + 360) % 360));\n    const fov = String(Math.round(v.getHfov()));\n    if (look !== variable('look') || fov !== variable('fov')) {\n      setVars({ 'var-look': look, 'var-fov': fov });\n    }\n  }, 400);\n};\n\nload()\n  .then(() =\u003e {\n    if (!self.viewer || self.box !== box || !box.isConnected || !box.querySelector('.pnlm-render-container')) {\n      self.viewer?.destroy?.();\n      self.box = box;\n      box.replaceChildren();\n      const look = Number(variable('look'));\n      const fov = Number(variable('fov'));\n      self.viewer = window.pannellum.viewer(box, {\n        default: {\n          firstScene: key, sceneFadeDuration: 500, autoLoad: true, compass: true,\n          yaw: Number.isFinite(look) ? (look \u003e 180 ? look - 360 : look) : 0, pitch: 4,\n          hfov: Number.isFinite(fov) \u0026\u0026 fov \u003e= 30 ? fov : 100, minHfov: 30, maxHfov: 120,\n          showFullscreenCtrl: true, keyboardZoom: true, mouseZoom: true,\n        },\n        scenes: { [key]: scene },\n      });\n      for (const event of ['mouseup', 'touchend', 'zoomchange', 'animatefinished']) {\n        self.viewer.on(event, publish);\n      }\n      self.viewer.on('load', () =\u003e setTimeout(declutter, 100));\n      self.viewer.on('error', (message) =\u003e {\n        caption.textContent = `The panorama did not load: ${message}`;\n      });\n      self.key = key;\n    } else if (self.key !== key) {\n      self.viewer.addScene(key, scene);\n      self.viewer.loadScene(key, 'same', 'same', 'same');\n      const old = self.key;\n      self.key = key;\n      setTimeout(() =\u003e {\n        if (old !== self.key) {\n          self.viewer?.removeScene?.(old);\n        }\n      }, 2000);\n    }\n  })\n  .catch((e) =\u003e {\n    box.textContent = e.message;\n  });\n\n// The same spot in other years.\nstrip.replaceChildren(\n  ...years.map((y) =\u003e {\n    const b = document.createElement('a');\n    b.className = 'pano-year' + (Number(y.year) === Number(shown.year) ? ' picked' : '');\n    b.textContent = String(y.year);\n    b.title = `${y.taken_on}, ${Math.round(y.distance_m)} m from here`;\n    b.onclick = () =\u003e setVars({ 'var-year': String(y.year), 'var-pano': y.pano_id });\n    return b;\n  }),\n);\nconst away = shown.from_pick_m \u003e 3 ? ` · ${Math.round(shown.from_pick_m)} m from the panorama picked` : '';\ncaption.textContent =\n  `${shown.taken_on}${away} · ${marks.length} things in sight marked · Panorama: Gemeente Amsterdam, CC BY 4.0`;\n",
+                "content": "\u003cdiv class=\"pano\"\u003e\u003cdiv class=\"pano-view\"\u003e\u003c/div\u003e\u003cdiv class=\"pano-years\"\u003e\u003c/div\u003e\u003cdiv class=\"pano-caption\"\u003e\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "No panorama here.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "data",
+                "status": "",
+                "styles": ".pano { display: flex; flex-direction: column; height: 100%; gap: 6px; }\n.pano-view { flex: 1; min-height: 0; background: #000; border-radius: 2px; overflow: hidden; color: #9AA5B1; }\n.pano-years { display: flex; flex-wrap: wrap; gap: 4px; }\n.pano-year { font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid #5A6672; color: #C7D0D9; cursor: pointer; text-decoration: none; }\n.pano-year:hover { border-color: #FFA600; }\n.pano-year.picked { background: #FFA600; border-color: #FFA600; color: #111; font-weight: 600; }\n.pano-caption { font-size: 12px; line-height: 1.4; color: #9AA5B1; }\n.pano-spot { width: 0; height: 0; }\n.pano-pin i { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 3px #000; }\n.pano-pin span { position: absolute; left: 0; bottom: 8px; transform: translateX(-50%); white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; padding: 1px 7px; border-radius: 9px; font: 600 11px/1.4 Inter, Helvetica, Arial, sans-serif; color: #fff; background: rgba(17, 20, 26, 0.78); border: 1px solid rgba(255, 255, 255, 0.35); cursor: default; }\n.pano-building i { background: #FFA600; }\n.pano-building span { border-color: #FFA600; }\n.pano-monument i { background: #F2495C; }\n.pano-monument span { border-color: #F2495C; }\n.pano-tree i { background: #5BBF73; }\n.pano-tree span { border-color: #5BBF73; font-weight: 400; font-style: italic; }\n.pano-pin.crowded span { visibility: hidden; }\n.pano-pin:hover { z-index: 10; }\n.pano-pin:hover span { visibility: visible; max-width: none; background: rgba(17, 20, 26, 0.95); }\n.pano-step { width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, 0.82); box-shadow: 0 0 6px rgba(0, 0, 0, 0.6); cursor: pointer; }\n.pano-step::after { content: ''; position: absolute; left: 10px; top: 5px; border: 7px solid transparent; border-bottom: 11px solid #111; pointer-events: none; }\n.pano-step:hover { background: #FFA600; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-panoramas"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-years"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 4,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-taken"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-sight"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 14,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-points"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 19,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 21,
+              "width": 11,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-viewer"
+              },
+              "height": 21,
+              "width": 13,
+              "x": 11,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-sight"
+              },
+              "height": 14,
+              "width": 14,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 14,
+              "width": 10,
+              "x": 14,
+              "y": 24
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "business-text",
+      "city",
+      "duckdb",
+      "kepler"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2016-06-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "Europe/Amsterdam",
+      "to": "2025-07-31T00:00:00.000Z"
+    },
+    "title": "Dam Square in 360°: panoramas, LiDAR and the city's registers",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "2025",
+            "value": "2025"
+          },
+          "definition": "-- The years the city's panorama car drove through the box, newest first.\nSELECT DISTINCT year::VARCHAR AS year FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet') ORDER BY year DESC",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Year of the panoramas",
+          "multi": false,
+          "name": "year",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The years the city's panorama car drove through the box, newest first.\nSELECT DISTINCT year::VARCHAR AS year FROM read_parquet('http://feeds/datasets/amsterdam-panoramas/panoramas.parquet') ORDER BY year DESC"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "recording_2025-06-16_06-42-40_02337",
+            "value": "recording_2025-06-16_06-42-40_02337"
+          },
+          "hide": "hideVariable",
+          "name": "pano",
+          "query": "recording_2025-06-16_06-42-40_02337",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "280",
+            "value": "280"
+          },
+          "hide": "hideVariable",
+          "name": "look",
+          "query": "280",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "100",
+            "value": "100"
+          },
+          "hide": "hideVariable",
+          "name": "fov",
+          "query": "100",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

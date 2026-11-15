@@ -4,3 +4,6 @@ CLAUDE.local.md
 datasets/*/*.parquet
 datasets/*/*.glb
 datasets/*/*.tif
+# 3D Tiles a build writes in a folder of its own (datasets/<name>/<folder>/).
+datasets/*/*/*.pnts
+datasets/*/*/tileset.json
