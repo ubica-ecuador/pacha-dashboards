@@ -1,0 +1,1850 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "ecuador-from-inside"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "The earthquakes under the northern Andes since 1904, from the USGS catalog, each at its depth on a 3D map seen through the ground: the Nazca plate sinking under Ecuador, Colombia and Peru, drawn by the quakes inside it. A profile of depth by longitude, a timeline that grows the catalog year by year, and the map turned inside out at a click.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "| | |\n|---|---|\n| Earthquakes | The USGS's [ANSS Comprehensive Catalog](https://earthquake.usgs.gov/data/comcat/) (ComCat, public domain): every earthquake between 12° S and 8° N, 84° W and 66° W with a depth and a magnitude, 12,053 from 1904 to 13 November 2026 |\n| How complete | Outside the United States ComCat lists what the world's networks report: about complete from M4.5 since the 1970s, sparser and coarser before (96% of the rows are from 1973 on). A depth of exactly 10 or 33 km is often one a network fixed, not one it measured |\n| Heights | Turned inside out, an earthquake stands as high as it is deep, at true scale; under the ground, it sits at its depth below a see-through ground. The stems join each earthquake deeper than 70 km of M4.5 or more to the surface above it |\n| Colours | Depth: less than 35 km (the crust), 35 to 70, 70 to 150, 150 to 300, 300 km or more. Size: magnitude |\n| Ground | [Natural Earth](https://www.naturalearthdata.com/)'s 1:50m countries (public domain); base map © OpenStreetMap contributors © CARTO |\n| Built by | `datasets/andes-quakes/build.sh` in [pacha-dashboards](https://github.com/ubica-ecuador/pacha-dashboards) |",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "count": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*)::DOUBLE AS \"Earthquakes\" FROM $quakes WHERE $__crossfilter($quakeFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The earthquakes the timeline, the profile and the map leave.",
+          "id": 3,
+          "links": [],
+          "title": "Earthquakes",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "deep": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT 100.0 * count(*) FILTER (WHERE depth_km \u003e 70) / nullif(count(*), 0) AS \"Below 70 km\" FROM $quakes WHERE $__crossfilter($quakeFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of them that broke inside the plate as it sinks, more than 70 km down.",
+          "id": 4,
+          "links": [],
+          "title": "Below 70 km",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "deepest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(depth_km) AS \"Deepest\" FROM $quakes WHERE $__crossfilter($quakeFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The deepest of them, in km.",
+          "id": 5,
+          "links": [],
+          "title": "Deepest",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "suffix: km"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every earthquake at its depth: kepler lifts a point by its altitude in metres, so a depth goes down\n-- (or up, turned inside out). Each row also carries its stem, from the surface to the earthquake when it\n-- is deeper than 70 km and of magnitude 4.5 or more, of no length otherwise: one dataset, so the filters\n-- of the shared selection reach the stems too. The profile's box (longitude by depth) is one clause over two\n-- columns, which the map's link to the selection leaves out: it comes in here, from the variables it writes.\nSELECT id, time, place, latitude, longitude, depth_km, mag, depth_km * 1000 * $side::DOUBLE AS altitude,\n  latitude AS lat0, longitude AS lng0, latitude AS lat1, longitude AS lng1,\n  CASE WHEN depth_km \u003e 70 AND mag \u003e= 4.5 THEN 0 ELSE depth_km * 1000 * $side::DOUBLE END AS alt0,\n  depth_km * 1000 * $side::DOUBLE AS alt1\nFROM $quakes\nWHERE $__crossfilter($quakeFilters, -time, -area)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Cities on the ground, to know where you are.\nSELECT * FROM (VALUES ('Quito', -0.2201, -78.5123), ('Guayaquil', -2.1962, -79.8862), ('Cuenca', -2.9006, -79.0045), ('Bogotá', 4.711, -74.0721), ('Medellín', 6.2442, -75.5812), ('Cali', 3.4516, -76.532), ('Iquitos', -3.7437, -73.2516), ('Trujillo', -8.1116, -79.0288)) AS c(label, latitude, longitude)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The ground: the countries' land, drawn see-through over what lies under it.\nSELECT country, geometry FROM $land"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The earthquakes of the USGS catalog since 1904, each at its depth under the ground (or above it, turned inside out), coloured by depth and sized by magnitude. The ground is drawn see-through. Drag with the right button to turn the map.",
+          "id": 2,
+          "links": [],
+          "title": "Under the northern Andes: every earthquake at its depth",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "quakeArea",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "gazetteer": "",
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -25,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -3.2,
+                      "longitude": -75.9,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 66,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 5.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        9,
+                        9,
+                        9
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": true,
+                        "label": false,
+                        "land": true,
+                        "road": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "place"
+                              },
+                              {
+                                "name": "time"
+                              },
+                              {
+                                "name": "depth_km"
+                              },
+                              {
+                                "name": "mag"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "label"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "country"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "cities",
+                        "ground",
+                        "quakes",
+                        "stems"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              26,
+                              34,
+                              48
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The ground, seen through",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    0.5,
+                                    "#08306B"
+                                  ],
+                                  [
+                                    1,
+                                    "#1F6FB5"
+                                  ],
+                                  [
+                                    1.5,
+                                    "#2FA9D6"
+                                  ],
+                                  [
+                                    2,
+                                    "#4FD0C0"
+                                  ],
+                                  [
+                                    2.5,
+                                    "#8FDC6B"
+                                  ],
+                                  [
+                                    3,
+                                    "#F2C94C"
+                                  ],
+                                  [
+                                    4,
+                                    "#E2523B"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#08306B",
+                                  "#1F6FB5",
+                                  "#2FA9D6",
+                                  "#4FD0C0",
+                                  "#8FDC6B",
+                                  "#F2C94C",
+                                  "#E2523B"
+                                ],
+                                "name": "Altura significativa (m)",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "filled": true,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 0.42,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                120,
+                                132,
+                                150
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    0.5,
+                                    "#08306B"
+                                  ],
+                                  [
+                                    1,
+                                    "#1F6FB5"
+                                  ],
+                                  [
+                                    1.5,
+                                    "#2FA9D6"
+                                  ],
+                                  [
+                                    2,
+                                    "#4FD0C0"
+                                  ],
+                                  [
+                                    2.5,
+                                    "#8FDC6B"
+                                  ],
+                                  [
+                                    3,
+                                    "#F2C94C"
+                                  ],
+                                  [
+                                    4,
+                                    "#E2523B"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#08306B",
+                                  "#1F6FB5",
+                                  "#2FA9D6",
+                                  "#4FD0C0",
+                                  "#8FDC6B",
+                                  "#F2C94C",
+                                  "#E2523B"
+                                ],
+                                "name": "Altura significativa (m)",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 0.9,
+                              "stroked": true,
+                              "thickness": 0.6,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "ground",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "heightField": null,
+                            "heightScale": "linear",
+                            "radiusField": null,
+                            "radiusScale": "linear",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Cities, on the ground",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  200
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  235,
+                                  238,
+                                  245
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  10,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 16,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colorMap": [
+                                  [
+                                    2,
+                                    "#4C0035"
+                                  ],
+                                  [
+                                    5,
+                                    "#880030"
+                                  ],
+                                  [
+                                    10,
+                                    "#B72F15"
+                                  ],
+                                  [
+                                    20,
+                                    "#D6610A"
+                                  ],
+                                  [
+                                    35,
+                                    "#EF9100"
+                                  ],
+                                  [
+                                    null,
+                                    "#FFC300"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 1,
+                              "outline": true,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                20,
+                                22,
+                                28
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "cities",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Earthquakes, at their depth",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    35,
+                                    "#FFE08A"
+                                  ],
+                                  [
+                                    70,
+                                    "#FFB357"
+                                  ],
+                                  [
+                                    150,
+                                    "#FF7043"
+                                  ],
+                                  [
+                                    300,
+                                    "#E0457B"
+                                  ],
+                                  [
+                                    null,
+                                    "#9B6BFF"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FFE08A",
+                                  "#FFB357",
+                                  "#FF7043",
+                                  "#E0457B",
+                                  "#9B6BFF"
+                                ],
+                                "name": "Depth (km)",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.6,
+                              "opacity": 0.75,
+                              "outline": false,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 2,
+                              "radiusRange": [
+                                1,
+                                9
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                255,
+                                79,
+                                216
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 5
+                            }
+                          },
+                          "id": "quakes",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "depth_km",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": {
+                              "name": "mag",
+                              "type": "real"
+                            },
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              112,
+                              67
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "alt0": "alt0",
+                              "alt1": "alt1",
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "From the surface down to each deep earthquake",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    35,
+                                    "#FFE08A"
+                                  ],
+                                  [
+                                    70,
+                                    "#FFB357"
+                                  ],
+                                  [
+                                    150,
+                                    "#FF7043"
+                                  ],
+                                  [
+                                    300,
+                                    "#E0457B"
+                                  ],
+                                  [
+                                    null,
+                                    "#9B6BFF"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FFE08A",
+                                  "#FFB357",
+                                  "#FF7043",
+                                  "#E0457B",
+                                  "#9B6BFF"
+                                ],
+                                "name": "Depth (km)",
+                                "type": "custom"
+                              },
+                              "elevationScale": 1,
+                              "opacity": 0.22,
+                              "sizeRange": [
+                                0.5,
+                                2
+                              ],
+                              "targetColor": null,
+                              "thickness": 0.8
+                            }
+                          },
+                          "id": "stems",
+                          "type": "line",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "depth_km",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicColumns": "",
+                "mosaicSelection": "quakeFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "rasterServerUrl": "",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "profile": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every earthquake the filters leave, by longitude and depth, from the Pacific (left) to the Amazon (right): the dipping band is the Nazca plate. Drag a box to keep part of it; the map and the cards follow.",
+          "id": 7,
+          "links": [],
+          "title": "The plate in profile: depth by longitude",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  quakeFilters: { select: crossfilter }\nplot:\n  - mark: dot\n    data: { from: quakes, filterBy: $quakeFilters }\n    x: longitude\n    y: depth_km\n    r: 1.5\n    fill: depth_km\n    fillOpacity: 0.6\n    stroke: none\n  - select: intervalXY\n    as: $quakeFilters\nxDomain: [-84, -66]\nyDomain: [0, 700]\nyReverse: true\ncolorScale: threshold\ncolorDomain: [35, 70, 150, 300]\ncolorRange: [\"#FFE08A\", \"#FFB357\", \"#FF7043\", \"#E0457B\", \"#9B6BFF\"]\nxTicks: [-84, -81, -78, -75, -72, -69, -66]\nxTickFormat: 'd'\nyTicks: [0, 70, 150, 300, 450, 600]\nxLabel: Longitude (°) →\nyLabel: ↓ Depth (km)\nmarginLeft: 44\nmarginBottom: 34\n",
+                "variables": "- param: quakeFilters\n  column: [longitude, depth_km]\n  from: [lon_lo, depth_lo]\n  to: [lon_hi, depth_hi]\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Ecuador from the inside\n\nSomething on this map is not quite right: it is **turned inside out**. Each dot is an earthquake under the northern Andes since 1904, and its height is how deep it broke. What stands in the sky is the inside of the Earth: the Nazca plate, sinking under South America, drawn by the earthquakes inside it.\n\nUnder the coast of Ecuador they break about 40 km down, under the Andes 110, under the Amazon near Palora and Macas 170, where the strongest of them struck: M7.5 in 2019. Under the border of Colombia and Peru, one broke 645 km down: M8.0 in 1970.\n\nSwitch **Seen** to *Under the ground* to put them back. Press play on the timeline; drag a box on the profile.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "strongest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(mag) AS \"Strongest\" FROM $quakes WHERE $__crossfilter($quakeFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The largest magnitude among them.",
+          "id": 6,
+          "links": [],
+          "title": "Strongest",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "prefix:M "
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The earthquakes by year, with every other filter as a pill. Press play: the catalog grows from 1904 to today and the plate draws itself. Drag across it to keep a span of years.",
+          "id": 8,
+          "links": [],
+          "title": "Timeline",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 61,
+                "filters": "quakeFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "earthquakes",
+                "playMode": "grow",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 1500,
+                "timeColumn": "time",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map"
+              },
+              "height": 23,
+              "width": 16,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "story"
+              },
+              "height": 9,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "count"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "deep"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "deepest"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 16,
+              "y": 12
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "strongest"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 12
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "profile"
+              },
+              "height": 8,
+              "width": 8,
+              "x": 16,
+              "y": 15
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "timeline"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "about"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 28
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus",
+      "seismic"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "1900-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Ecuador from the inside: the Nazca plate drawn by its earthquakes",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The USGS catalog's earthquakes between 12° S and 8° N, 84° W and 66° W, with a depth and a magnitude.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Quakes",
+          "multi": false,
+          "name": "quakes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "quakes",
+              "refId": "quakes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the earthquakes under the northern Andes since 1904 (datasets/andes-quakes/build.sh).\nSELECT id, time, place, latitude, longitude, depth_km, mag, mag_type, net FROM 'http://feeds/datasets/andes-quakes/quakes.parquet'",
+                  "refId": "quakes"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Natural Earth's countries clipped to the map's box.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Land",
+          "multi": false,
+          "name": "land",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "land",
+              "refId": "land",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the countries' land in the same box (Natural Earth), as GeoJSON.\nSELECT country, geometry::VARCHAR AS geometry FROM 'http://feeds/datasets/andes-quakes/land.parquet'",
+                  "refId": "land"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "From",
+          "name": "qFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "To",
+          "name": "qTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Depth from",
+          "name": "depth_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Depth to",
+          "name": "depth_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Longitude from",
+          "name": "lon_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Longitude to",
+          "name": "lon_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Area",
+          "name": "quakeArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "quakeFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$quakes",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$qFrom",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$qTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "depth_km",
+                  "from": "$depth_lo",
+                  "label": "Depth (km)",
+                  "name": "depth",
+                  "to": "$depth_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "longitude",
+                  "from": "$lon_lo",
+                  "label": "Longitude",
+                  "name": "longitude",
+                  "to": "$lon_hi",
+                  "type": "range"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$quakeArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "quakeFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Turned inside out",
+            "value": "1"
+          },
+          "description": "Turned inside out, each earthquake stands as high as it is deep; under the ground, it sits at its depth below a see-through ground.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Seen",
+          "multi": false,
+          "name": "side",
+          "options": [
+            {
+              "selected": true,
+              "text": "Turned inside out",
+              "value": "1"
+            },
+            {
+              "selected": false,
+              "text": "Under the ground",
+              "value": "-1"
+            }
+          ],
+          "query": "Turned inside out : 1, Under the ground : -1",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
