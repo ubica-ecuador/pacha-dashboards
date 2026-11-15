@@ -1,0 +1,910 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "madrid-traffic-cameras"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "What each of Madrid's 357 traffic cameras can see of the street, worked out against OpenStreetMap's buildings and the terrain: the 74 round Puerta del Sol together, the streets none of them sees, and any camera close up beside the picture it took minutes ago.",
+    "editable": true,
+    "elements": {
+      "card-cameras": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- How many cameras the city lists, how many of them watch the centre, and when the list was read.\nSELECT count(*) AS \"Cameras in Madrid\",\n       count(*) FILTER (WHERE 2 * 6371000 * asin(sqrt(pow(sin(radians(latitude - 40.41665) / 2), 2) + cos(radians(latitude)) * cos(radians(40.41665)) * pow(sin(radians(longitude - (-3.70379)) / 2), 2))) \u003c= 2500 AND setting \u003c\u003e 'tunnel') AS \"Watching the centre\",\n       max(listed_at) AS \"Camera list read\"\nFROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every traffic camera the City Council lists, with its picture.",
+          "id": 5,
+          "links": [],
+          "title": "Cameras in Madrid",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Cameras in Madrid$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-centre": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- How many cameras the city lists, how many of them watch the centre, and when the list was read.\nSELECT count(*) AS \"Cameras in Madrid\",\n       count(*) FILTER (WHERE 2 * 6371000 * asin(sqrt(pow(sin(radians(latitude - 40.41665) / 2), 2) + cos(radians(latitude)) * cos(radians(40.41665)) * pow(sin(radians(longitude - (-3.70379)) / 2), 2))) \u003c= 2500 AND setting \u003c\u003e 'tunnel') AS \"Watching the centre\",\n       max(listed_at) AS \"Camera list read\"\nFROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The cameras within 2.5 km of Puerta del Sol, on the map below (the four in the Bailén tunnel left out).",
+          "id": 6,
+          "links": [],
+          "title": "Watching the centre",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#3D8FE0",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Watching the centre$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-listed": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- How many cameras the city lists, how many of them watch the centre, and when the list was read.\nSELECT count(*) AS \"Cameras in Madrid\",\n       count(*) FILTER (WHERE 2 * 6371000 * asin(sqrt(pow(sin(radians(latitude - 40.41665) / 2), 2) + cos(radians(latitude)) * cos(radians(40.41665)) * pow(sin(radians(longitude - (-3.70379)) / 2), 2))) \u003c= 2500 AND setting \u003c\u003e 'tunnel') AS \"Watching the centre\",\n       max(listed_at) AS \"Camera list read\"\nFROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "When the list of cameras was last read from the city: it changes when a camera is added or moved. The pictures are live.",
+          "id": 7,
+          "links": [],
+          "title": "Camera list read",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Camera list read$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Where it comes from.** The City Council of Madrid's traffic cameras, as its traffic site [informo.madrid.es](https://informo.madrid.es) lists them in `CCTV.kml`: each camera's number, name, place and the address of the picture it last took (\"Tráfico. Cámaras\", [datos.madrid.es](https://datos.madrid.es/portal/site/egob), dataset 202088, CC BY 4.0, Ayuntamiento de Madrid). Pacha reads the list into a file once (`datasets/madrid-traffic-cameras/build.sh` in pacha-dashboards); the pictures are read by your browser straight from the city, which replaces them every few minutes.\n\n**How a view is worked out.** By the Kepler Plus map's Viewshed layer, in the browser: from each camera, lines of sight over a grid of cells about a metre or two across, 250 m in every direction, against the buildings of the base map (OpenStreetMap's, as OpenFreeMap serves them, with their heights) and the terrain (Mapterhorn). A cell is coloured when the street there, at ground level, can be seen. **10 m up** is the height the city's file gives every camera, a placeholder rather than each one's; **all round**, because the city does not say which way a camera points, and most of them turn. So a view is what a camera *could* see from there, not what it is showing now: the picture beside it says that.\n\n**What it leaves out.** Trees, kiosks, buses and the lamp posts in the way; buildings OpenStreetMap draws without a height count as about 8 m. The M-30's cameras stand over a road that is partly in tunnels the map cannot show, and the four in the Bailén tunnel have no view at all.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-camera": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The camera picked, on the map above or in Camera, with a ring 250 m round it: as far as its\n-- view is worked out. One row for both, so the map frames them together when another camera is\n-- picked. A camera in a tunnel has its picture but no view: it looks along the tunnel, not at the\n-- street over it.\nSELECT camera, camera_id, latitude, longitude, 'Up to 250 m' AS ring,\n       'POLYGON ((' || string_agg(round(longitude + 250 * sin(radians(a)) / (111320 * cos(radians(latitude))), 7)\n                                  || ' ' || round(latitude + 250 * cos(radians(a)) / 110574, 7), ', ' ORDER BY a) || '))' AS _geojson\nFROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet'), range(0, 361, 6) t(a)\nWHERE camera = $camera AND setting \u003c\u003e 'tunnel'\nGROUP BY ALL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The camera picked, 10 m above the street, and what it has in sight within 250 m (orange, fading with distance); the street it cannot see is shaded. The ring is how far the view is worked out. Pick another camera on the map above or in Camera: this map goes to it.",
+          "id": 3,
+          "links": [],
+          "title": "${camera}: what it sees",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-liberty",
+                "fitOnVariables": [
+                  "camera"
+                ],
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -60,
+                      "dragRotate": true,
+                      "latitude": 40.4187,
+                      "longitude": -3.6961,
+                      "pitch": 55,
+                      "zoom": 16.9
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-liberty",
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "camera"
+                              },
+                              {
+                                "name": "ring"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              166,
+                              90
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "What it sees",
+                            "visConfig": {
+                              "opacity": 0.7,
+                              "radius": 6,
+                              "viewshedBeamwidth": 360,
+                              "viewshedBuildingDefault": 8,
+                              "viewshedBuildings": "__basemap__",
+                              "viewshedCurvature": false,
+                              "viewshedDrawn": false,
+                              "viewshedEye": 10,
+                              "viewshedEyeFrom": "ground",
+                              "viewshedGradient": true,
+                              "viewshedObstacles": "both",
+                              "viewshedOutline": true,
+                              "viewshedRange": 250,
+                              "viewshedResolution": "high",
+                              "viewshedRows": true,
+                              "viewshedShade": true,
+                              "viewshedSite": true,
+                              "viewshedTarget": 0
+                            }
+                          },
+                          "id": "view",
+                          "type": "viewshed",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              154,
+                              165,
+                              177
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Up to 250 m",
+                            "visConfig": {
+                              "filled": false,
+                              "opacity": 0.8,
+                              "strokeColor": [
+                                154,
+                                165,
+                                177
+                              ],
+                              "stroked": true,
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "ring",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-centre": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every camera within 2.5 km of Puerta del Sol's Kilometre Zero, but the ones in a tunnel\n-- (Bailén's four), which see no street. Each one's view is worked out in the browser by the map's\n-- Viewshed layer, against OpenStreetMap's buildings and the terrain.\nSELECT camera, camera_id, latitude, longitude, round(metres) AS metres_from_sol\nFROM (SELECT *, 2 * 6371000 * asin(sqrt(pow(sin(radians(latitude - 40.41665) / 2), 2) + cos(radians(latitude)) * cos(radians(40.41665)) * pow(sin(radians(longitude - (-3.70379)) / 2), 2))) AS metres FROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet'))\nWHERE metres \u003c= 2500 AND setting \u003c\u003e 'tunnel'\nORDER BY camera"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every traffic camera within 2.5 km of Puerta del Sol (but the tunnels'), each with the street it has in sight within 250 m: worked out in the browser from 10 m up, against OpenStreetMap's buildings and the terrain, all round, as the city does not say which way a camera looks. Blank streets are the ones no camera sees. Hover a view to read how high a point there must stand to be seen; click a camera to see it close up below with the picture it took.",
+          "id": 2,
+          "links": [],
+          "title": "What the traffic cameras see of central Madrid: click one",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-positron",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 40.417649999999995,
+                      "longitude": -3.7017900000000004,
+                      "pitch": 0,
+                      "zoom": 14.1
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-positron",
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "camera"
+                              },
+                              {
+                                "name": "metres_from_sol"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Cameras",
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 5,
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "cameras",
+                          "type": "point",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              61,
+                              143,
+                              224
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "What each camera sees",
+                            "visConfig": {
+                              "opacity": 0.55,
+                              "radius": 6,
+                              "viewshedBeamwidth": 360,
+                              "viewshedBuildingDefault": 8,
+                              "viewshedBuildings": "__basemap__",
+                              "viewshedCurvature": false,
+                              "viewshedDrawn": false,
+                              "viewshedEye": 10,
+                              "viewshedEyeFrom": "ground",
+                              "viewshedGradient": false,
+                              "viewshedObstacles": "both",
+                              "viewshedOutline": false,
+                              "viewshedRange": 250,
+                              "viewshedResolution": "medium",
+                              "viewshedRows": true,
+                              "viewshedShade": false,
+                              "viewshedSite": false,
+                              "viewshedTarget": 0
+                            }
+                          },
+                          "id": "views",
+                          "type": "viewshed",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": [
+                  {
+                    "field": "camera",
+                    "source": "click",
+                    "variable": "camera"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-picture": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The camera picked and the address of its picture, which the browser reads straight from the\n-- city (informo.madrid.es) and reloads every minute: nothing is stored here.\nSELECT camera, camera_id, picture_url,\n       CASE setting WHEN 'tunnel' THEN ' · in a tunnel: no view on the map' ELSE '' END AS note\nFROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet')\nWHERE camera = $camera"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The picture the camera picked last took, straight from the City Council's traffic site, reloaded every minute. The city replaces it every few minutes and blurs faces and number plates.",
+          "id": 4,
+          "links": [],
+          "title": "${camera} now",
+          "vizConfig": {
+            "group": "marcusolsson-dynamictext-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "afterRender": "// Shows the picture the camera picked last took, read straight from the city and reloaded every\n// minute, and says when the city published it (the file's Last-Modified; the camera's own clock is on the picture).\nconst row = context.data || {};\ncontext.element.style.height = '100%';\nconst box = context.element.querySelector('.cam-view');\nconst age = context.element.querySelector('.cam-age');\nconst self = this;\nconst cleanup = () =\u003e setTimeout(() =\u003e {\n  if (self.box \u0026\u0026 !self.box.isConnected \u0026\u0026 self.timer) {\n    clearInterval(self.timer);\n    self.timer = null;\n    self.key = null;\n  }\n}, 0);\nif (!box || !row.picture_url) {\n  return cleanup;\n}\nif (self.key === row.picture_url \u0026\u0026 self.box === box \u0026\u0026 box.isConnected) {\n  return cleanup;\n}\nclearInterval(self.timer);\nself.key = row.picture_url;\nself.box = box;\nconst img = document.createElement('img');\nimg.alt = row.camera || '';\nimg.style.cssText = 'width:100%;height:100%;object-fit:contain;background:#000;display:block';\nimg.addEventListener('error', () =\u003e {\n  if (age) {\n    age.textContent = 'no picture from the city right now';\n  }\n});\nbox.replaceChildren(img);\nconst when = (date) =\u003e {\n  const minutes = Math.round((Date.now() - date.getTime()) / 60000);\n  const clock = date.toLocaleTimeString('en-GB', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' });\n  return 'published at ' + clock + ' Madrid time' + (minutes \u003e 1 ? ', ' + minutes + ' min ago' : ', just now');\n};\nconst load = () =\u003e {\n  const url = row.picture_url + '?t=' + Date.now();\n  img.src = url;\n  fetch(url, { method: 'HEAD', credentials: 'omit' })\n    .then((r) =\u003e r.headers.get('last-modified'))\n    .then((lm) =\u003e {\n      if (age \u0026\u0026 lm) {\n        age.textContent = when(new Date(lm));\n      }\n    })\n    .catch(() =\u003e {});\n};\nload();\nself.timer = setInterval(load, 60000);\nreturn cleanup;",
+                "content": "\u003cdiv class=\"cam\"\u003e\u003cdiv class=\"cam-view\"\u003e\u003c/div\u003e\u003cdiv class=\"cam-caption\"\u003e\u003cstrong\u003e{{camera}}\u003c/strong\u003e · camera {{camera_id}}{{note}} · \u003cspan class=\"cam-age\"\u003e\u003c/span\u003e\u003c/div\u003e\u003c/div\u003e",
+                "contentPartials": [],
+                "defaultContent": "Click a camera on the map, or pick one in Camera above.",
+                "editor": {
+                  "format": "auto",
+                  "language": "html"
+                },
+                "editors": [
+                  "styles",
+                  "afterRender"
+                ],
+                "externalStyles": [],
+                "helpers": "",
+                "renderMode": "everyRow",
+                "status": "",
+                "styles": ".cam { display: flex; flex-direction: column; height: 100%; gap: 6px; }\n.cam-view { flex: 1; min-height: 0; background: #000; border-radius: 2px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #9AA5B1; }\n.cam-caption { font-size: 12px; line-height: 1.4; color: #9AA5B1; }\n.cam-caption strong { color: inherit; }",
+                "wrap": false
+              }
+            },
+            "version": "6.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-cameras"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-centre"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-listed"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-centre"
+              },
+              "height": 18,
+              "width": 24,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-camera"
+              },
+              "height": 16,
+              "width": 14,
+              "x": 0,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-picture"
+              },
+              "height": 16,
+              "width": 10,
+              "x": 14,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 37
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "business-text",
+      "city",
+      "duckdb",
+      "kepler",
+      "live",
+      "mobility",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1h",
+      "hideTimepicker": true,
+      "timezone": "Europe/Madrid",
+      "to": "now"
+    },
+    "title": "Madrid's traffic cameras: what each one sees",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "GRAN VIA - ALCALA",
+            "value": "GRAN VIA - ALCALA"
+          },
+          "definition": "-- Every camera by name, as the city writes it.\nSELECT camera FROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet') ORDER BY camera",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Camera",
+          "multi": false,
+          "name": "camera",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Every camera by name, as the city writes it.\nSELECT camera FROM read_parquet('http://feeds/datasets/madrid-traffic-cameras/cameras.parquet') ORDER BY camera"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
