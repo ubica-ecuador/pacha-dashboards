@@ -1,0 +1,1570 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "nyc-street-heat"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "enable": true,
+          "filter": {
+            "ids": [
+              5
+            ]
+          },
+          "hide": true,
+          "iconColor": "rgba(244, 109, 67, 0.2)",
+          "name": "Hours on the map",
+          "query": {
+            "datasource": {
+              "name": "infinity"
+            },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "columns": [
+                {
+                  "selector": "time",
+                  "text": "time",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "timeEnd",
+                  "text": "timeEnd",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "text",
+                  "text": "text",
+                  "type": "string"
+                }
+              ],
+              "data": "[{\"time\":\"${t0}\",\"timeEnd\":\"${t1}\",\"text\":\"Hours on the map\"}]",
+              "format": "table",
+              "parser": "backend",
+              "refId": "Window",
+              "source": "inline",
+              "type": "json"
+            },
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "The July 2019 heat wave on New York's streets, hour by hour, from 354 sensors on street trees and light poles in the neighbourhoods most at risk; every building coloured by the air around it (Kepler Plus Buildings layer).",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Where the data comes from\n\nIn the summers of 2018 and 2019, as part of the [Cool Neighborhoods NYC](https://www.nyc.gov/site/orr/challenges/cool-neighborhoods.page) initiative, NYC Parks, the Mayor's Office of Resilience and the Department of Health hung small temperature sensors on street trees and light poles, block by block, in the neighbourhoods with the highest heat mortality risk: East Harlem, the South Bronx, Brownsville and others. Their hourly means are published as [Hyperlocal Temperature Monitoring](https://data.cityofnewyork.us/Environment/Hyperlocal-Temperature-Monitoring/qdq3-9eqn) on NYC Open Data. This dashboard keeps the ten days around the July 2019 heat wave, 15 to 24 July (354 sensors, 84,595 hours), in °C; the neighbourhoods are the city's 2010 Neighborhood Tabulation Areas.\n\n### How to read the map\n\n- The buildings are OpenStreetMap's, from the base map's own tiles, at their mapped height (5 m where none is mapped). Each is coloured by the air temperature **estimated at its centre** from the closest sensors (inverse distance weighting, power 2, the 12 closest), the same estimate a Surface layer draws between sensors.\n- It is the **street air around the building**, not the building itself: the sensors hang about 3 m up in the street. Its roof and its rooms can be far hotter or cooler.\n- A building more than 250 m from every sensor is grey: no estimate is made that far out.\n- The classes are the same for every hour and every neighbourhood, in °C: below 24, then every 2 degrees, then 40 and above. The heat wave's nights stayed at 28 to 30 °C in East Harlem.\n\n### The two maps below\n\n- **Heat vulnerability**: the Health Department's [Heat Vulnerability Index](https://data.cityofnewyork.us/Health/Heat-Vulnerability-Index-Rankings/4mhf-duep) by ZIP code, from 1 (lowest risk) to 5 (highest), on every building of the ZIP code. East Harlem's ZIP codes are at 4 and 5; the Upper East Side's, just south of them, at 1.\n- **By hexagon**: the sensors averaged per H3 hexagon (resolution 9, about 0.1 km²) by DuckDB on the server, and each building given its hexagon's mean. The same data as the first map, binned instead of interpolated.\n\n### What the sensors say\n\nOver the ten days' afternoons (12 to 17 h), the 102 sensors on light poles read 1.8 °C more than the 252 in street trees (33.1 against 31.3 °C on average; 40.2 against 37.6 °C at 15:00 on the 21st); at night the two are within half a degree. Part of it is a tree's shade, part where each kind of sensor stands: the table and the map show which blocks.\n\nThe hottest hour in East Harlem was 15:00 on Sunday 21 July 2019: a mean of 37.1 °C over its sensors, and 34.8 to 44.6 °C from one block to another.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The neighbourhood hour by hour: the mean of its sensors in bars, the hottest one as a line.\n-- A picture to brush over: the window it writes (t0, t1) is the hour the map shows.\nSELECT time, round(avg(temp_c), 1) AS \"Mean of the sensors\", max(temp_c) AS \"Hottest sensor\"\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring}\nGROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The hour the map shows: bars are the neighbourhood's mean, the line its hottest sensor. Drag the window, step it hour by hour or press play: the buildings, the cards and the table follow. Scrolled out of view, it stays at the top.",
+          "id": 2,
+          "links": [],
+          "title": "Hours on the map",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F46D43",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "mean",
+                    "drawStyle": "bars"
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Hottest sensor"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "line"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "max"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#A50026",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "domain": "data",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.6
+                },
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "loop": false,
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1500,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "windowMode": "interval"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-cells": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The neighbourhood's sensors in the brushed window, averaged per H3 hexagon (resolution 9, about 0.1 km²).\n-- The Buildings layer gives every building its hexagon's mean; a hexagon with no sensor gives none.\nSELECT h3_h3_to_string(h3_latlng_to_cell(latitude, longitude, 9)) AS h3,\n       round(avg(temp_c), 1) AS temp_c, count(DISTINCT sensor) AS sensors\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring} AND time \u003e= (${t0:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC') AND time \u003c (${t1:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC')\nGROUP BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The same sensors as the map above, averaged per H3 hexagon of about 0.1 km² on the server, and every building coloured by its hexagon's mean: blocky where the map above is smooth. A building in a hexagon with no sensor stays grey. Hover a building for its hexagon.",
+          "id": 8,
+          "links": [],
+          "title": "The sensors by hexagon, in the brushed hour",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "clickArea": false,
+                "fitOnVariables": [
+                  "nta"
+                ],
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -29,
+                      "dragRotate": true,
+                      "pitch": 50
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": []
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "cells"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              109,
+                              67
+                            ],
+                            "columnMode": "h3",
+                            "columns": {
+                              "hex_id": "h3"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Air temperature, mean of the hexagon's sensors (°C)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "buildingsEmpty": "grey",
+                              "buildingsHeightScale": 1,
+                              "buildingsHideBasemap": true,
+                              "buildingsReduce": "last",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    24,
+                                    "#313695"
+                                  ],
+                                  [
+                                    26,
+                                    "#4575B4"
+                                  ],
+                                  [
+                                    28,
+                                    "#74ADD1"
+                                  ],
+                                  [
+                                    30,
+                                    "#ABD9E9"
+                                  ],
+                                  [
+                                    32,
+                                    "#FFFFBF"
+                                  ],
+                                  [
+                                    34,
+                                    "#FEE090"
+                                  ],
+                                  [
+                                    36,
+                                    "#FDAE61"
+                                  ],
+                                  [
+                                    38,
+                                    "#F46D43"
+                                  ],
+                                  [
+                                    40,
+                                    "#D73027"
+                                  ],
+                                  [
+                                    50,
+                                    "#A50026"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#313695",
+                                  "#4575B4",
+                                  "#74ADD1",
+                                  "#ABD9E9",
+                                  "#FFFFBF",
+                                  "#FEE090",
+                                  "#FDAE61",
+                                  "#F46D43",
+                                  "#D73027",
+                                  "#A50026"
+                                ],
+                                "name": "Air temperature, °C",
+                                "type": "custom"
+                              },
+                              "opacity": 0.92
+                            }
+                          },
+                          "id": "cells",
+                          "type": "buildings",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "temp_c",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "places": {},
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-hvi": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The ZIP codes round the neighbourhood's sensors, each with its Heat Vulnerability Index (DOHMH: 1 lowest\n-- risk, 5 highest). The Buildings layer gives every building the index of the ZIP code it stands in.\nWITH s AS (\n  SELECT min(latitude) AS s, max(latitude) AS n, min(longitude) AS w, max(longitude) AS e\n  FROM 'http://feeds/datasets/nyc-street-heat/readings.parquet' WHERE nta = ${nta:sqlstring}\n)\nSELECT z.zcta, z.hvi, z.geometry\nFROM 'http://feeds/datasets/nyc-street-heat/zcta.parquet' z, s\nWHERE z.hvi IS NOT NULL\n  AND z.south \u003c s.n + 0.005 AND z.north \u003e s.s - 0.005 AND z.west \u003c s.e + 0.005 AND z.east \u003e s.w - 0.005"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every building coloured by the Heat Vulnerability Index of the ZIP code it stands in (DOHMH, 1 lowest risk to 5 highest): surface temperature, green space, home air conditioning and the share of residents who are low-income or non-Latinx Black. One value per ZIP code: the street air above is what changes from block to block.",
+          "id": 7,
+          "links": [],
+          "title": "Heat vulnerability, building by building",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "clickArea": false,
+                "fitOnVariables": [
+                  "nta"
+                ],
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -29,
+                      "dragRotate": true,
+                      "pitch": 50
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": []
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "hvi"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              109,
+                              67
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Heat Vulnerability Index of the ZIP code",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "buildingsEmpty": "hide",
+                              "buildingsHeightScale": 1,
+                              "buildingsHideBasemap": true,
+                              "buildingsReduce": "last",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    1.5,
+                                    "#DADAEB"
+                                  ],
+                                  [
+                                    2.5,
+                                    "#BCBDDC"
+                                  ],
+                                  [
+                                    3.5,
+                                    "#9E9AC8"
+                                  ],
+                                  [
+                                    4.5,
+                                    "#756BB1"
+                                  ],
+                                  [
+                                    9,
+                                    "#54278F"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#DADAEB",
+                                  "#BCBDDC",
+                                  "#9E9AC8",
+                                  "#756BB1",
+                                  "#54278F"
+                                ],
+                                "name": "Heat Vulnerability Index",
+                                "type": "custom"
+                              },
+                              "opacity": 0.92
+                            }
+                          },
+                          "id": "hvi",
+                          "type": "buildings",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "hvi",
+                              "type": "integer"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "places": {},
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The neighbourhood's sensors in the brushed window: each one's mean air temperature over\n-- it (one hour as the dashboard opens). The Buildings layer colours every building from them.\nSELECT sensor, mount, neighbourhood, latitude, longitude,\n       max(time) AS time, round(avg(temp_c), 1) AS temp_c\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring} AND time \u003e= (${t0:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC') AND time \u003c (${t1:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC')\nGROUP BY ALL\nORDER BY sensor"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "OpenStreetMap's buildings, each coloured by the air temperature estimated at its centre from the closest street sensors (inverse distance weighting), in the brushed hour. A building more than 250 m from every sensor stays grey. The dots are the sensors, in the colour of their own reading. Hover a building for its estimate and how far its closest sensor is; pick another neighbourhood above and the map moves there.",
+          "id": 1,
+          "links": [],
+          "title": "Every building, by the street air around it",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "clickArea": false,
+                "fitOnVariables": [
+                  "nta"
+                ],
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -29,
+                      "dragRotate": true,
+                      "pitch": 50
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "sensor"
+                              },
+                              {
+                                "name": "mount"
+                              },
+                              {
+                                "name": "temp_c"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "heat"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              109,
+                              67
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Air temperature around each building (°C)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "buildingsEmpty": "grey",
+                              "buildingsHeightScale": 1,
+                              "buildingsHideBasemap": true,
+                              "buildingsMaxDistance": 250,
+                              "buildingsMode": "interpolate",
+                              "buildingsNeighbours": "auto",
+                              "buildingsPower": 2,
+                              "buildingsReduce": "last",
+                              "buildingsSensorRadius": 5,
+                              "buildingsSensors": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    24,
+                                    "#313695"
+                                  ],
+                                  [
+                                    26,
+                                    "#4575B4"
+                                  ],
+                                  [
+                                    28,
+                                    "#74ADD1"
+                                  ],
+                                  [
+                                    30,
+                                    "#ABD9E9"
+                                  ],
+                                  [
+                                    32,
+                                    "#FFFFBF"
+                                  ],
+                                  [
+                                    34,
+                                    "#FEE090"
+                                  ],
+                                  [
+                                    36,
+                                    "#FDAE61"
+                                  ],
+                                  [
+                                    38,
+                                    "#F46D43"
+                                  ],
+                                  [
+                                    40,
+                                    "#D73027"
+                                  ],
+                                  [
+                                    50,
+                                    "#A50026"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#313695",
+                                  "#4575B4",
+                                  "#74ADD1",
+                                  "#ABD9E9",
+                                  "#FFFFBF",
+                                  "#FEE090",
+                                  "#FDAE61",
+                                  "#F46D43",
+                                  "#D73027",
+                                  "#A50026"
+                                ],
+                                "name": "Air temperature, °C",
+                                "type": "custom"
+                              },
+                              "opacity": 0.92
+                            }
+                          },
+                          "id": "heat",
+                          "type": "buildings",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "temp_c",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "places": {},
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-series": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every hour of the ten days in the neighbourhood: its coolest, mean and hottest sensor.\nSELECT time, min(temp_c) AS \"Coolest sensor\", round(avg(temp_c), 1) AS \"Mean\",\n       max(temp_c) AS \"Hottest sensor\"\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring}\nGROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The neighbourhood's coolest, mean and hottest sensor every hour from 15 to 24 July 2019 (New York time). The band is the brushed window. The heat wave peaked on Saturday 20 and Sunday 21 July.",
+          "id": 5,
+          "links": [],
+          "title": "The ten days, hour by hour",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F46D43",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "lineWidth": 1,
+                    "showPoints": "never",
+                    "spanNulls": false
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Coolest sensor"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#4575B4",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Mean"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FDAE61",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 2
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Hottest sensor"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#A50026",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-stats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The window's sensors in the neighbourhood: the hottest and the coolest, their mean,\n-- and how many reported (each sensor's mean over the window).\nWITH s AS (\n  SELECT sensor, avg(temp_c) AS t FROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\n  WHERE nta = ${nta:sqlstring} AND time \u003e= (${t0:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC') AND time \u003c (${t1:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC')\n  GROUP BY sensor\n)\nSELECT round(max(t), 1) AS \"Hottest\", round(min(t), 1) AS \"Coolest\",\n       round(max(t) - min(t), 1) AS \"Spread\", count(*) AS \"Sensors\"\nFROM s"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The neighbourhood's hottest and coolest sensor over the brushed window, the spread between them (how much one block differs from the next), and how many sensors reported.",
+          "id": 3,
+          "links": [],
+          "title": "Sensors in the hour",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#313695",
+                        "value": null
+                      },
+                      {
+                        "color": "#4575B4",
+                        "value": 24
+                      },
+                      {
+                        "color": "#74ADD1",
+                        "value": 26
+                      },
+                      {
+                        "color": "#ABD9E9",
+                        "value": 28
+                      },
+                      {
+                        "color": "#FFFFBF",
+                        "value": 30
+                      },
+                      {
+                        "color": "#FEE090",
+                        "value": 32
+                      },
+                      {
+                        "color": "#FDAE61",
+                        "value": 34
+                      },
+                      {
+                        "color": "#F46D43",
+                        "value": 36
+                      },
+                      {
+                        "color": "#D73027",
+                        "value": 38
+                      },
+                      {
+                        "color": "#A50026",
+                        "value": 40
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Spread"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "text",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Sensors"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "text",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-table": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The neighbourhood's sensors over the window, the hottest first.\nSELECT sensor AS \"Sensor\", mount AS \"On a\", round(avg(temp_c), 1) AS \"°C\",\n       round(avg(temp_f), 1) AS \"°F\"\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring} AND time \u003e= (${t0:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC') AND time \u003c (${t1:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC')\nGROUP BY sensor, mount\nORDER BY \"°C\" DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The neighbourhood's sensors over the brushed window, the hottest first: on a street tree or a light pole.",
+          "id": 4,
+          "links": [],
+          "title": "Each sensor in the hour",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "°C"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "#313695",
+                              "value": null
+                            },
+                            {
+                              "color": "#4575B4",
+                              "value": 24
+                            },
+                            {
+                              "color": "#74ADD1",
+                              "value": 26
+                            },
+                            {
+                              "color": "#ABD9E9",
+                              "value": 28
+                            },
+                            {
+                              "color": "#FFFFBF",
+                              "value": 30
+                            },
+                            {
+                              "color": "#FEE090",
+                              "value": 32
+                            },
+                            {
+                              "color": "#FDAE61",
+                              "value": 34
+                            },
+                            {
+                              "color": "#F46D43",
+                              "value": 36
+                            },
+                            {
+                              "color": "#D73027",
+                              "value": 38
+                            },
+                            {
+                              "color": "#A50026",
+                              "value": 40
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 72
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "°F"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 64
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Sensor"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 128
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "On a"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 92
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "°C"
+                  }
+                ]
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 20,
+              "width": 16,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-stats"
+              },
+              "height": 5,
+              "width": 8,
+              "x": 16,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-table"
+              },
+              "height": 15,
+              "width": 8,
+              "x": 16,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-series"
+              },
+              "height": 13,
+              "width": 16,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 13,
+              "width": 8,
+              "x": 16,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-hvi"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 37
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-cells"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 12,
+              "y": 37
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "city",
+      "duckdb",
+      "kepler",
+      "plus",
+      "weather"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2019-07-15T04:00:00.000Z",
+      "hideTimepicker": false,
+      "timezone": "America/New_York",
+      "to": "2019-07-25T04:00:00.000Z"
+    },
+    "title": "New York's street heat, block by block — the July 2019 heat wave",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "East Harlem South (43 sensors)",
+            "value": "MN33"
+          },
+          "definition": "-- The study's neighbourhoods with five sensors or more, the most first.\nSELECT neighbourhood || ' (' || count(DISTINCT sensor) || ' sensors)' AS __text, nta AS __value\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nGROUP BY nta, neighbourhood\nHAVING count(DISTINCT sensor) \u003e= 5\nORDER BY count(DISTINCT sensor) DESC",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Neighbourhood",
+          "multi": false,
+          "name": "nta",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The study's neighbourhoods with five sensors or more, the most first.\nSELECT neighbourhood || ' (' || count(DISTINCT sensor) || ' sensors)' AS __text, nta AS __value\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nGROUP BY nta, neighbourhood\nHAVING count(DISTINCT sensor) \u003e= 5\nORDER BY count(DISTINCT sensor) DESC"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2019-07-21T19:00:00.000Z",
+            "value": "2019-07-21T19:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Window from (brush)",
+          "name": "t0",
+          "query": "2019-07-21T19:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2019-07-21T20:00:00.000Z",
+            "value": "2019-07-21T20:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Window to (brush)",
+          "name": "t1",
+          "query": "2019-07-21T20:00:00.000Z",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
