@@ -123,7 +123,8 @@ test('opens with no panel in error', { timeout: 300_000 }, async (t) => {
   if (!built()) return t.skip('no datasets/nyc-street-heat on this instance');
   const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
   if (provisioned.status === 404) return t.skip('not on this instance: it needs Kepler Plus with the Buildings layer');
-  const view = await openDashboard(`/d/${UID}`, { timeoutMs: 120_000 });
+  // No Chaski here: every query runs on the server's DuckDB.
+  const view = await openDashboard(`/d/${UID}`, { timeoutMs: 120_000, chaski: false });
   try {
     await (await view.panel('Sensors in the hour')).getByText('Hottest').waitFor();
     assert.equal(await view.panelErrors(), 0);
