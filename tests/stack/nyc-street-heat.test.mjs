@@ -24,6 +24,8 @@ const opened = (sql) =>
     .replaceAll('${nta:sqlstring}', "'MN33'")
     .replaceAll('${t0:sqlstring}', "'2019-07-21T19:00:00.000Z'")
     .replaceAll('${t1:sqlstring}', "'2019-07-21T20:00:00.000Z'");
+// The maps read every hour, each mean at the middle of its hour: the one their time filter keeps as the dashboard opens.
+const atOpening = (sql) => `SELECT * FROM (${sql}) WHERE time = TIMESTAMP '2019-07-21 19:30:00'`;
 const built = () =>
   compose(['exec', '-T', 'grafana', 'curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', `${FEEDS}/readings.parquet`]) ===
   '200';
@@ -49,6 +51,14 @@ test('follows the dashboards conventions', () => {
   assert.equal(layer.config.visConfig.buildingsMode, 'interpolate');
   assert.equal(layer.config.visConfig.buildingsMaxDistance, 250);
   assert.deepEqual(map.vizConfig.spec.options.fitOnVariables, ['nta']);
+  // The temperature maps keep the brushed window with a time filter synced to t0/t1, and give a building a card on hover.
+  for (const panel of [map, cellsMap]) {
+    const options = panel.vizConfig.spec.options;
+    assert.equal(options.timeSync, 'variables');
+    assert.deepEqual(options.timeVariables, { from: 't0', to: 't1' });
+    assert.deepEqual(options.mapConfig.config.visState.filters.map((f) => f.name), [['time']]);
+    assert.equal(layerOf(panel).config.visConfig.cardShow, 'hover');
+  }
   // The two maps below: polygons and H3 cells, by the columns the panel hands kepler (`_geojson`, `h3`).
   assert.equal(layerOf(hviMap).type, 'buildings');
   assert.equal(layerOf(hviMap).config.columnMode, 'geojson');
@@ -100,7 +110,7 @@ test("the ZIP codes carry the Health Department's Heat Vulnerability Index", { t
 
 test('the sensors average into H3 hexagons on the server', { timeout: 120_000 }, async (t) => {
   if (!built()) return t.skip('no datasets/nyc-street-heat on this instance');
-  const cells = await duckdb(STACK_URL, opened(sqlOf(cellsMap)));
+  const cells = await duckdb(STACK_URL, atOpening(opened(sqlOf(cellsMap))));
   assert.ok(cells.length >= 8 && cells.length <= 20, `${cells.length} hexagons`);
   assert.equal(cells.reduce((a, c) => a + Number(c.sensors), 0), 43);
   for (const c of cells) assert.match(c.h3, /^89[0-9a-f]{13}$/);
@@ -108,8 +118,11 @@ test('the sensors average into H3 hexagons on the server', { timeout: 120_000 },
 
 test('the map opens on East Harlem at its hottest hour', { timeout: 120_000 }, async (t) => {
   if (!built()) return t.skip('no datasets/nyc-street-heat on this instance');
-  const rows = await duckdb(STACK_URL, opened(sqlOf(map)));
+  const rows = await duckdb(STACK_URL, atOpening(opened(sqlOf(map))));
   assert.equal(rows.length, 43);
+  // The ten days for the cards: 43 sensors, about 240 hours each.
+  const [all] = await duckdb(STACK_URL, `SELECT count(*) AS n FROM (${opened(sqlOf(map))})`);
+  assert.ok(Number(all.n) > 9000, `${all.n} readings`);
   const temps = rows.map((r) => r.temp_c);
   // NYC Open Data: a mean of 98.8 °F (37.1 °C), from 94.6 to 112.4 °F, at 15:00 on 21 July 2019 in MN33.
   const mean = temps.reduce((a, b) => a + b, 0) / temps.length;

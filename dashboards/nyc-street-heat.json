@@ -106,7 +106,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### Where the data comes from\n\nIn the summers of 2018 and 2019, as part of the [Cool Neighborhoods NYC](https://www.nyc.gov/site/orr/challenges/cool-neighborhoods.page) initiative, NYC Parks, the Mayor's Office of Resilience and the Department of Health hung small temperature sensors on street trees and light poles, block by block, in the neighbourhoods with the highest heat mortality risk: East Harlem, the South Bronx, Brownsville and others. Their hourly means are published as [Hyperlocal Temperature Monitoring](https://data.cityofnewyork.us/Environment/Hyperlocal-Temperature-Monitoring/qdq3-9eqn) on NYC Open Data. This dashboard keeps the ten days around the July 2019 heat wave, 15 to 24 July (354 sensors, 84,595 hours), in °C; the neighbourhoods are the city's 2010 Neighborhood Tabulation Areas.\n\n### How to read the map\n\n- The buildings are OpenStreetMap's, from the base map's own tiles, at their mapped height (5 m where none is mapped). Each is coloured by the air temperature **estimated at its centre** from the closest sensors (inverse distance weighting, power 2, the 12 closest), the same estimate a Surface layer draws between sensors.\n- It is the **street air around the building**, not the building itself: the sensors hang about 3 m up in the street. Its roof and its rooms can be far hotter or cooler.\n- A building more than 250 m from every sensor is grey: no estimate is made that far out.\n- The classes are the same for every hour and every neighbourhood, in °C: below 24, then every 2 degrees, then 40 and above. The heat wave's nights stayed at 28 to 30 °C in East Harlem.\n\n### The two maps below\n\n- **Heat vulnerability**: the Health Department's [Heat Vulnerability Index](https://data.cityofnewyork.us/Health/Heat-Vulnerability-Index-Rankings/4mhf-duep) by ZIP code, from 1 (lowest risk) to 5 (highest), on every building of the ZIP code. East Harlem's ZIP codes are at 4 and 5; the Upper East Side's, just south of them, at 1.\n- **By hexagon**: the sensors averaged per H3 hexagon (resolution 9, about 0.1 km²) by DuckDB on the server, and each building given its hexagon's mean. The same data as the first map, binned instead of interpolated.\n\n### What the sensors say\n\nOver the ten days' afternoons (12 to 17 h), the 102 sensors on light poles read 1.8 °C more than the 252 in street trees (33.1 against 31.3 °C on average; 40.2 against 37.6 °C at 15:00 on the 21st); at night the two are within half a degree. Part of it is a tree's shade, part where each kind of sensor stands: the table and the map show which blocks.\n\nThe hottest hour in East Harlem was 15:00 on Sunday 21 July 2019: a mean of 37.1 °C over its sensors, and 34.8 to 44.6 °C from one block to another.",
+                "content": "### Where the data comes from\n\nIn the summers of 2018 and 2019, as part of the [Cool Neighborhoods NYC](https://www.nyc.gov/site/orr/challenges/cool-neighborhoods.page) initiative, NYC Parks, the Mayor's Office of Resilience and the Department of Health hung small temperature sensors on street trees and light poles, block by block, in the neighbourhoods with the highest heat mortality risk: East Harlem, the South Bronx, Brownsville and others. Their hourly means are published as [Hyperlocal Temperature Monitoring](https://data.cityofnewyork.us/Environment/Hyperlocal-Temperature-Monitoring/qdq3-9eqn) on NYC Open Data. This dashboard keeps the ten days around the July 2019 heat wave, 15 to 24 July (354 sensors, 84,595 hours), in °C; the neighbourhoods are the city's 2010 Neighborhood Tabulation Areas.\n\n### How to read the map\n\n- The buildings are OpenStreetMap's, from the base map's own tiles, at their mapped height (5 m where none is mapped). Each is coloured by the air temperature **estimated at its centre** from the closest sensors (inverse distance weighting, power 2, the 12 closest), the same estimate a Surface layer draws between sensors.\n- It is the **street air around the building**, not the building itself: the sensors hang about 3 m up in the street. Its roof and its rooms can be far hotter or cooler.\n- A building more than 250 m from every sensor is grey: no estimate is made that far out.\n- Hover a building for its card: the same estimate at that building, hour by hour over the ten days, the brushed hour as its value. A click on the card's pin keeps it while you look at another.\n- The classes are the same for every hour and every neighbourhood, in °C: below 24, then every 2 degrees, then 40 and above. The heat wave's nights stayed at 28 to 30 °C in East Harlem.\n\n### The two maps below\n\n- **Heat vulnerability**: the Health Department's [Heat Vulnerability Index](https://data.cityofnewyork.us/Health/Heat-Vulnerability-Index-Rankings/4mhf-duep) by ZIP code, from 1 (lowest risk) to 5 (highest), on every building of the ZIP code. East Harlem's ZIP codes are at 4 and 5; the Upper East Side's, just south of them, at 1.\n- **By hexagon**: the sensors averaged per H3 hexagon (resolution 9, about 0.1 km²) by DuckDB on the server, and each building given its hexagon's mean. The same data as the first map, binned instead of interpolated.\n\n### What the sensors say\n\nOver the ten days' afternoons (12 to 17 h), the 102 sensors on light poles read 1.8 °C more than the 252 in street trees (33.1 against 31.3 °C on average; 40.2 against 37.6 °C at 15:00 on the 21st); at night the two are within half a degree. Part of it is a tree's shade, part where each kind of sensor stands: the table and the map show which blocks.\n\nThe hottest hour in East Harlem was 15:00 on Sunday 21 July 2019: a mean of 37.1 °C over its sensors, and 34.8 to 44.6 °C from one block to another.",
                 "mode": "markdown"
               }
             },
@@ -260,7 +260,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- The neighbourhood's sensors in the brushed window, averaged per H3 hexagon (resolution 9, about 0.1 km²).\n-- The Buildings layer gives every building its hexagon's mean; a hexagon with no sensor gives none.\nSELECT h3_h3_to_string(h3_latlng_to_cell(latitude, longitude, 9)) AS h3,\n       round(avg(temp_c), 1) AS temp_c, count(DISTINCT sensor) AS sensors\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring} AND time \u003e= (${t0:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC') AND time \u003c (${t1:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC')\nGROUP BY 1"
+                        "rawSql": "-- The neighbourhood's sensors averaged per H3 hexagon (resolution 9, about 0.1 km²) for every hour, each mean at\n-- the middle of its hour. The map's time filter keeps the brushed window; a building's card charts its hexagon's\n-- ten days.\nSELECT h3_h3_to_string(h3_latlng_to_cell(latitude, longitude, 9)) AS h3,\n       time + INTERVAL 30 MINUTE AS time,\n       round(avg(temp_c), 1) AS temp_c, count(DISTINCT sensor) AS sensors\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring}\nGROUP BY 1, 2\nORDER BY 2"
                       },
                       "version": "v0"
                     },
@@ -272,7 +272,7 @@
               "transformations": []
             }
           },
-          "description": "The same sensors as the map above, averaged per H3 hexagon of about 0.1 km² on the server, and every building coloured by its hexagon's mean: blocky where the map above is smooth. A building in a hexagon with no sensor stays grey. Hover a building for its hexagon.",
+          "description": "The same sensors as the map above, averaged per H3 hexagon of about 0.1 km² on the server, and every building coloured by its hexagon's mean in the brushed hour: blocky where the map above is smooth. A building in a hexagon with no sensor stays grey. Hover a building for its hexagon's ten days.",
           "id": 8,
           "links": [],
           "title": "The sensors by hexagon, in the brushed hour",
@@ -334,7 +334,30 @@
                       }
                     },
                     "visState": {
-                      "filters": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1563735600000,
+                            1563739200000
+                          ],
+                          "view": "side"
+                        }
+                      ],
                       "interactionConfig": {
                         "tooltip": {
                           "enabled": true,
@@ -375,6 +398,13 @@
                               "buildingsHeightScale": 1,
                               "buildingsHideBasemap": true,
                               "buildingsReduce": "last",
+                              "cardMax": 45,
+                              "cardMin": 20,
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardShow": "hover",
+                              "cardSize": "M",
+                              "cardUnit": " °C",
                               "colorRange": {
                                 "category": "Custom",
                                 "colorLegends": {},
@@ -455,7 +485,11 @@
                 },
                 "places": {},
                 "showSidePanel": false,
-                "timeSync": "off",
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
                 "variableMappings": []
               }
             },
@@ -681,7 +715,7 @@
                       "spec": {
                         "format": 1,
                         "rawQuery": true,
-                        "rawSql": "-- The neighbourhood's sensors in the brushed window: each one's mean air temperature over\n-- it (one hour as the dashboard opens). The Buildings layer colours every building from them.\nSELECT sensor, mount, neighbourhood, latitude, longitude,\n       max(time) AS time, round(avg(temp_c), 1) AS temp_c\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring} AND time \u003e= (${t0:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC') AND time \u003c (${t1:sqlstring}::TIMESTAMPTZ AT TIME ZONE 'UTC')\nGROUP BY ALL\nORDER BY sensor"
+                        "rawSql": "-- The neighbourhood's sensors over the ten days, hour by hour. The map's time filter keeps the brushed window\n-- (t0, t1): each sensor's reading in it colours the buildings, and a building's card charts the whole range. Each\n-- hourly mean stands at the middle of its hour, so a one-hour window holds exactly one.\nSELECT sensor, mount, neighbourhood, latitude, longitude,\n       time + INTERVAL 30 MINUTE AS time, temp_c\nFROM 'http://feeds/datasets/nyc-street-heat/readings.parquet'\nWHERE nta = ${nta:sqlstring}\nORDER BY time, sensor"
                       },
                       "version": "v0"
                     },
@@ -693,7 +727,7 @@
               "transformations": []
             }
           },
-          "description": "OpenStreetMap's buildings, each coloured by the air temperature estimated at its centre from the closest street sensors (inverse distance weighting), in the brushed hour. A building more than 250 m from every sensor stays grey. The dots are the sensors, in the colour of their own reading. Hover a building for its estimate and how far its closest sensor is; pick another neighbourhood above and the map moves there.",
+          "description": "OpenStreetMap's buildings, each coloured by the air temperature estimated at its centre from the closest street sensors (inverse distance weighting), in the brushed hour. A building more than 250 m from every sensor stays grey. The dots are the sensors, in the colour of their own reading. Hover a building for its card: the estimate at that building over the ten days, the brushed hour as its value; pin the card to keep it. Pick another neighbourhood above and the map moves there.",
           "id": 1,
           "links": [],
           "title": "Every building, by the street air around it",
@@ -755,7 +789,30 @@
                       }
                     },
                     "visState": {
-                      "filters": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1563735600000,
+                            1563739200000
+                          ],
+                          "view": "side"
+                        }
+                      ],
                       "interactionConfig": {
                         "tooltip": {
                           "enabled": true,
@@ -813,6 +870,13 @@
                               "buildingsReduce": "last",
                               "buildingsSensorRadius": 5,
                               "buildingsSensors": true,
+                              "cardMax": 45,
+                              "cardMin": 20,
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardShow": "hover",
+                              "cardSize": "M",
+                              "cardUnit": " °C",
                               "colorRange": {
                                 "category": "Custom",
                                 "colorLegends": {},
@@ -893,7 +957,11 @@
                 },
                 "places": {},
                 "showSidePanel": false,
-                "timeSync": "off",
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
                 "variableMappings": []
               }
             },
