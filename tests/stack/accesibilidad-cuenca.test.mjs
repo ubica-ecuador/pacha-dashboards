@@ -35,10 +35,12 @@ test('follows the dashboards conventions', () => {
   const [map] = panelsByType(dashboard, 'ubica-keplergl-panel');
   const options = map.vizConfig.spec.options;
   assert.equal(options.rasterServerUrl, '/titiler');
-  // YlGnBu as it runs: kepler alpha.21 refuses a reversed (negative) rescale, so
-  // pale is near and dark blue no access, and the legend and bars say the same.
+  // YlGnBu the other way round, dark blue near and pale for no access, as the
+  // legend and bars say. Since kepler alpha.21 the shader's offset is in pixel
+  // units: [1, 0] gives (max - v) / range. The bench's [-1, -1.5] now puts every
+  // pixel below 0, one flat pale colour.
   const raster = options.mapConfig.config.visState.layers.find((l) => l.type === 'rasterTile');
-  assert.deepEqual(raster.config.visConfig.linearRescalingFactor, [0, 1]);
+  assert.deepEqual(raster.config.visConfig.linearRescalingFactor, [1, 0]);
   assert.equal(raster.config.visConfig.colormapId, 'ylgnbu');
   // Every URL a query reads is this repo's dataset or Pacha's tile server.
   for (const q of findAll(dashboard, (n) => typeof n.rawSql === 'string')) {

@@ -66,7 +66,7 @@
               "transformations": []
             }
           },
-          "description": "Minutos hasta la oportunidad más cercana de la categoría elegida (P50). Amarillo claro = cerca; azul oscuro = 120 min o más, sin acceso.",
+          "description": "Minutos hasta la oportunidad más cercana de la categoría elegida (P50). Azul oscuro = cerca; amarillo claro = 120 min o más, sin acceso.",
           "id": 2,
           "links": [],
           "title": "Accesibilidad dual · ${categoria:text}",
@@ -335,8 +335,8 @@
                               ],
                               "gammaContrastFactor": 1,
                               "linearRescalingFactor": [
-                                0,
-                                1
+                                1,
+                                0
                               ],
                               "nonLinearRescaling": false,
                               "opacity": 0.8,
@@ -417,7 +417,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "\u003cdiv style=\"font-size:13px;line-height:1.5\"\u003e\n\u003cp style=\"margin:0 0 6px\"\u003e\u003cb\u003eMinutos hasta la oportunidad más cercana\u003c/b\u003e\u003c/p\u003e\n\u003cdiv style=\"height:14px;border-radius:3px;background:linear-gradient(to right,#ffffd9,#ecf7b1,#c6e8b4,#7eccbb,#40b5c3,#1d91c0,#215ea8,#243494,#081d58)\"\u003e\u003c/div\u003e\n\u003cdiv style=\"display:flex;justify-content:space-between;font-size:12px;opacity:.85;margin-top:2px\"\u003e\n\u003cspan\u003e0\u003c/span\u003e\u003cspan\u003e30\u003c/span\u003e\u003cspan\u003e60\u003c/span\u003e\u003cspan\u003e90\u003c/span\u003e\u003cspan\u003e120+\u003c/span\u003e\n\u003c/div\u003e\n\u003cp style=\"margin:12px 0 0\"\u003eCada píxel (≈76 m) dice cuánto se tarda desde ahí hasta la \u003cb\u003eoportunidad más cercana\u003c/b\u003e de la categoría: la \u003ci\u003eaccesibilidad dual\u003c/i\u003e. Tiempo en su mediana (P50); el tope es 120 min, «no se llega en dos horas». La escala es la misma en todas las categorías.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003e\u003cb\u003eMedir una zona:\u003c/b\u003e en el mapa, herramienta de dibujo → \u003ci\u003eRectangle\u003c/i\u003e (o \u003ci\u003ePolygon\u003c/i\u003e) y dibuja. El resumen y el ranking pasan a medir solo dentro. Para volver a todo el ráster: clic derecho sobre la figura → \u003ci\u003eDelete\u003c/i\u003e.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003e\u003cb\u003eDesde un punto:\u003c/b\u003e haz clic en el mapa o arrastra el marcador rojo «Punto»; el panel \u003ci\u003eDesde el punto\u003c/i\u003e da los minutos desde ahí a cada categoría.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003eLos porcentajes son de \u003cb\u003eárea\u003c/b\u003e, no de población; sin dibujo incluyen la zona rural.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0;opacity:.8\"\u003e\u003cb\u003eLos datos:\u003c/b\u003e 37 rásters de un estudio de accesibilidad dual de Cuenca (entrega de septiembre de 2026), uno por categoría, en minutos hasta la oportunidad más cercana; servidos por el tile server de Pacha.\u003c/p\u003e\n\u003c/div\u003e",
+                "content": "\u003cdiv style=\"font-size:13px;line-height:1.5\"\u003e\n\u003cp style=\"margin:0 0 6px\"\u003e\u003cb\u003eMinutos hasta la oportunidad más cercana\u003c/b\u003e\u003c/p\u003e\n\u003cdiv style=\"height:14px;border-radius:3px;background:linear-gradient(to right,#081d58,#243494,#215ea8,#1d91c0,#40b5c3,#7eccbb,#c6e8b4,#ecf7b1,#ffffd9)\"\u003e\u003c/div\u003e\n\u003cdiv style=\"display:flex;justify-content:space-between;font-size:12px;opacity:.85;margin-top:2px\"\u003e\n\u003cspan\u003e0\u003c/span\u003e\u003cspan\u003e30\u003c/span\u003e\u003cspan\u003e60\u003c/span\u003e\u003cspan\u003e90\u003c/span\u003e\u003cspan\u003e120+\u003c/span\u003e\n\u003c/div\u003e\n\u003cp style=\"margin:12px 0 0\"\u003eCada píxel (≈76 m) dice cuánto se tarda desde ahí hasta la \u003cb\u003eoportunidad más cercana\u003c/b\u003e de la categoría: la \u003ci\u003eaccesibilidad dual\u003c/i\u003e. Tiempo en su mediana (P50); el tope es 120 min, «no se llega en dos horas». La escala es la misma en todas las categorías.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003e\u003cb\u003eMedir una zona:\u003c/b\u003e en el mapa, herramienta de dibujo → \u003ci\u003eRectangle\u003c/i\u003e (o \u003ci\u003ePolygon\u003c/i\u003e) y dibuja. El resumen y el ranking pasan a medir solo dentro. Para volver a todo el ráster: clic derecho sobre la figura → \u003ci\u003eDelete\u003c/i\u003e.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003e\u003cb\u003eDesde un punto:\u003c/b\u003e haz clic en el mapa o arrastra el marcador rojo «Punto»; el panel \u003ci\u003eDesde el punto\u003c/i\u003e da los minutos desde ahí a cada categoría.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003eLos porcentajes son de \u003cb\u003eárea\u003c/b\u003e, no de población; sin dibujo incluyen la zona rural.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0;opacity:.8\"\u003e\u003cb\u003eLos datos:\u003c/b\u003e 37 rásters de un estudio de accesibilidad dual de Cuenca (entrega de septiembre de 2026), uno por categoría, en minutos hasta la oportunidad más cercana; servidos por el tile server de Pacha.\u003c/p\u003e\n\u003c/div\u003e",
                 "mode": "html"
               }
             },
@@ -668,7 +668,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#f7fbc7",
+                          "fixedColor": "#162876",
                           "mode": "fixed"
                         }
                       }
@@ -683,7 +683,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#dcf1b2",
+                          "fixedColor": "#23499e",
                           "mode": "fixed"
                         }
                       }
@@ -698,7 +698,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#82ceba",
+                          "fixedColor": "#1d91c0",
                           "mode": "fixed"
                         }
                       }
@@ -713,7 +713,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#215ea8",
+                          "fixedColor": "#c6e8b4",
                           "mode": "fixed"
                         }
                       }
@@ -728,7 +728,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#081d58",
+                          "fixedColor": "#ffffd9",
                           "mode": "fixed"
                         }
                       }
@@ -871,7 +871,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#f7fbc7",
+                          "fixedColor": "#162876",
                           "mode": "fixed"
                         }
                       }
@@ -886,7 +886,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#dcf1b2",
+                          "fixedColor": "#23499e",
                           "mode": "fixed"
                         }
                       }
@@ -901,7 +901,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#82ceba",
+                          "fixedColor": "#1d91c0",
                           "mode": "fixed"
                         }
                       }
@@ -916,7 +916,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#215ea8",
+                          "fixedColor": "#c6e8b4",
                           "mode": "fixed"
                         }
                       }
@@ -931,7 +931,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "fixedColor": "#081d58",
+                          "fixedColor": "#ffffd9",
                           "mode": "fixed"
                         }
                       }
@@ -1063,23 +1063,23 @@
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "#f7fbc7",
+                        "color": "#162876",
                         "value": 0
                       },
                       {
-                        "color": "#dcf1b2",
+                        "color": "#23499e",
                         "value": 15
                       },
                       {
-                        "color": "#82ceba",
+                        "color": "#1d91c0",
                         "value": 30
                       },
                       {
-                        "color": "#215ea8",
+                        "color": "#c6e8b4",
                         "value": 60
                       },
                       {
-                        "color": "#081d58",
+                        "color": "#ffffd9",
                         "value": 120
                       }
                     ]
