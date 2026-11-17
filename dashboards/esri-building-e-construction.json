@@ -1,0 +1,892 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "esri-building-e-construction"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Esri's Building E in Redlands, California, going up from bare ground to a finished office building, in eight drone captures from May 2019 to March 2022, each a Gaussian splat scan served by Esri as 3D Tiles and streamed in the browser by Kepler Plus's Gaussian Splats layer: two side by side from the same viewpoint, picked by month, and a table of every capture with what it shows.",
+    "editable": true,
+    "elements": {
+      "card-captures": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The captures in one row: how many, over how long, and their sizes on Esri.\nWITH captures(capture, month, captured, shows, made, splat_url, item, images, camera) AS (VALUES\n  ('2019-05', 'May 2019', DATE '2019-05-01', 'The site cleared and graded, the building''s outline marked out on the bare ground', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_052019_GaussianSplatLayer_1780797891/3DTilesServer/tileset.json', '4c52c462cd20421fa4ce7164e34328d4', NULL, NULL),\n  ('2019-08', 'August 2019', DATE '2019-08-01', 'The foundations poured: the ground floor slab, its edge walls and the courtyard left open', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_082019_GaussianSplatLayer_1780746258/3DTilesServer/tileset.json', '08e86213c68142088d82aa29f2c55717', NULL, NULL),\n  ('2019-09', 'September 2019', DATE '2019-09-19', 'The steel frame going up over the slab, a yard of materials beside it', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20190919_Gaussian_Splat/3DTilesServer/tileset.json', '5cd49045be9a4a28a46ea74ce268a4d2', 178, 'DJI drone, Zenmuse X4S'),\n  ('2019-12', 'December 2019', DATE '2019-12-01', 'The steel frame topped out over three floors, its floor decks laid', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_122019_GaussianSplatLayer_1780750077/3DTilesServer/tileset.json', '6e4cf60592e24fa888f8c7fe7dd427e2', NULL, NULL),\n  ('2020-04', 'April 2020', DATE '2020-04-01', 'Under its white roof, the facade going on behind lifts; site cabins and materials in the yard', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_042020_GaussianSplatLayer_1780746319/3DTilesServer/tileset.json', '5649c56195d240b9887838bd5d007f64', NULL, NULL),\n  ('2020-11', 'November 2020', DATE '2020-11-01', 'Finished: solar panels on the roof, the facade''s white fins, new planting and paths', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_112020_GaussianSplatLayer_1780753484/3DTilesServer/tileset.json', '206b7bbdc5144c8bbc67f59d9726df11', NULL, NULL),\n  ('2021-02', 'February 2021', DATE '2021-02-21', 'Finished, the planting filling in round the paths and the courtyard', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20210221_Gaussian_Splat/3DTilesServer/tileset.json', 'e611bf9097f24c40a6925d5e388a523a', 664, 'Freefly Astro, Sony A7R II'),\n  ('2022-03', 'March 2022', DATE '2022-03-01', 'In use, with rows of solar canopies over the car park beside it', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_032022_GaussianSplatLayer_1780746493/3DTilesServer/tileset.json', '0b8016c61d01471e986dcfe5e7bd7a68', NULL, NULL)\n)\nSELECT count(*) AS \"Captures\", min(captured) AS first, max(captured) AS last,\n       date_diff('month', min(captured), max(captured)) AS \"Months covered\",\n       round(sum(i.size) / 1e9, 2) AS \"Splats on Esri\"\nFROM captures c\nJOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/4c52c462cd20421fa4ce7164e34328d4?f=json', 'https://www.arcgis.com/sharing/rest/content/items/08e86213c68142088d82aa29f2c55717?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5cd49045be9a4a28a46ea74ce268a4d2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/6e4cf60592e24fa888f8c7fe7dd427e2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5649c56195d240b9887838bd5d007f64?f=json', 'https://www.arcgis.com/sharing/rest/content/items/206b7bbdc5144c8bbc67f59d9726df11?f=json', 'https://www.arcgis.com/sharing/rest/content/items/e611bf9097f24c40a6925d5e388a523a?f=json', 'https://www.arcgis.com/sharing/rest/content/items/0b8016c61d01471e986dcfe5e7bd7a68?f=json']) i ON i.id = c.item"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Flights over Building E that Esri publishes as Gaussian splats.",
+          "id": 1,
+          "links": [],
+          "title": "Drone captures",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Captures$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-months": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The captures in one row: how many, over how long, and their sizes on Esri.\nWITH captures(capture, month, captured, shows, made, splat_url, item, images, camera) AS (VALUES\n  ('2019-05', 'May 2019', DATE '2019-05-01', 'The site cleared and graded, the building''s outline marked out on the bare ground', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_052019_GaussianSplatLayer_1780797891/3DTilesServer/tileset.json', '4c52c462cd20421fa4ce7164e34328d4', NULL, NULL),\n  ('2019-08', 'August 2019', DATE '2019-08-01', 'The foundations poured: the ground floor slab, its edge walls and the courtyard left open', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_082019_GaussianSplatLayer_1780746258/3DTilesServer/tileset.json', '08e86213c68142088d82aa29f2c55717', NULL, NULL),\n  ('2019-09', 'September 2019', DATE '2019-09-19', 'The steel frame going up over the slab, a yard of materials beside it', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20190919_Gaussian_Splat/3DTilesServer/tileset.json', '5cd49045be9a4a28a46ea74ce268a4d2', 178, 'DJI drone, Zenmuse X4S'),\n  ('2019-12', 'December 2019', DATE '2019-12-01', 'The steel frame topped out over three floors, its floor decks laid', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_122019_GaussianSplatLayer_1780750077/3DTilesServer/tileset.json', '6e4cf60592e24fa888f8c7fe7dd427e2', NULL, NULL),\n  ('2020-04', 'April 2020', DATE '2020-04-01', 'Under its white roof, the facade going on behind lifts; site cabins and materials in the yard', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_042020_GaussianSplatLayer_1780746319/3DTilesServer/tileset.json', '5649c56195d240b9887838bd5d007f64', NULL, NULL),\n  ('2020-11', 'November 2020', DATE '2020-11-01', 'Finished: solar panels on the roof, the facade''s white fins, new planting and paths', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_112020_GaussianSplatLayer_1780753484/3DTilesServer/tileset.json', '206b7bbdc5144c8bbc67f59d9726df11', NULL, NULL),\n  ('2021-02', 'February 2021', DATE '2021-02-21', 'Finished, the planting filling in round the paths and the courtyard', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20210221_Gaussian_Splat/3DTilesServer/tileset.json', 'e611bf9097f24c40a6925d5e388a523a', 664, 'Freefly Astro, Sony A7R II'),\n  ('2022-03', 'March 2022', DATE '2022-03-01', 'In use, with rows of solar canopies over the car park beside it', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_032022_GaussianSplatLayer_1780746493/3DTilesServer/tileset.json', '0b8016c61d01471e986dcfe5e7bd7a68', NULL, NULL)\n)\nSELECT count(*) AS \"Captures\", min(captured) AS first, max(captured) AS last,\n       date_diff('month', min(captured), max(captured)) AS \"Months covered\",\n       round(sum(i.size) / 1e9, 2) AS \"Splats on Esri\"\nFROM captures c\nJOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/4c52c462cd20421fa4ce7164e34328d4?f=json', 'https://www.arcgis.com/sharing/rest/content/items/08e86213c68142088d82aa29f2c55717?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5cd49045be9a4a28a46ea74ce268a4d2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/6e4cf60592e24fa888f8c7fe7dd427e2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5649c56195d240b9887838bd5d007f64?f=json', 'https://www.arcgis.com/sharing/rest/content/items/206b7bbdc5144c8bbc67f59d9726df11?f=json', 'https://www.arcgis.com/sharing/rest/content/items/e611bf9097f24c40a6925d5e388a523a?f=json', 'https://www.arcgis.com/sharing/rest/content/items/0b8016c61d01471e986dcfe5e7bd7a68?f=json']) i ON i.id = c.item"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From the first capture, the site cleared, to the last, the building in use.",
+          "id": 2,
+          "links": [],
+          "title": "Months covered",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Months covered$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-size": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The captures in one row: how many, over how long, and their sizes on Esri.\nWITH captures(capture, month, captured, shows, made, splat_url, item, images, camera) AS (VALUES\n  ('2019-05', 'May 2019', DATE '2019-05-01', 'The site cleared and graded, the building''s outline marked out on the bare ground', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_052019_GaussianSplatLayer_1780797891/3DTilesServer/tileset.json', '4c52c462cd20421fa4ce7164e34328d4', NULL, NULL),\n  ('2019-08', 'August 2019', DATE '2019-08-01', 'The foundations poured: the ground floor slab, its edge walls and the courtyard left open', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_082019_GaussianSplatLayer_1780746258/3DTilesServer/tileset.json', '08e86213c68142088d82aa29f2c55717', NULL, NULL),\n  ('2019-09', 'September 2019', DATE '2019-09-19', 'The steel frame going up over the slab, a yard of materials beside it', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20190919_Gaussian_Splat/3DTilesServer/tileset.json', '5cd49045be9a4a28a46ea74ce268a4d2', 178, 'DJI drone, Zenmuse X4S'),\n  ('2019-12', 'December 2019', DATE '2019-12-01', 'The steel frame topped out over three floors, its floor decks laid', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_122019_GaussianSplatLayer_1780750077/3DTilesServer/tileset.json', '6e4cf60592e24fa888f8c7fe7dd427e2', NULL, NULL),\n  ('2020-04', 'April 2020', DATE '2020-04-01', 'Under its white roof, the facade going on behind lifts; site cabins and materials in the yard', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_042020_GaussianSplatLayer_1780746319/3DTilesServer/tileset.json', '5649c56195d240b9887838bd5d007f64', NULL, NULL),\n  ('2020-11', 'November 2020', DATE '2020-11-01', 'Finished: solar panels on the roof, the facade''s white fins, new planting and paths', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_112020_GaussianSplatLayer_1780753484/3DTilesServer/tileset.json', '206b7bbdc5144c8bbc67f59d9726df11', NULL, NULL),\n  ('2021-02', 'February 2021', DATE '2021-02-21', 'Finished, the planting filling in round the paths and the courtyard', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20210221_Gaussian_Splat/3DTilesServer/tileset.json', 'e611bf9097f24c40a6925d5e388a523a', 664, 'Freefly Astro, Sony A7R II'),\n  ('2022-03', 'March 2022', DATE '2022-03-01', 'In use, with rows of solar canopies over the car park beside it', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_032022_GaussianSplatLayer_1780746493/3DTilesServer/tileset.json', '0b8016c61d01471e986dcfe5e7bd7a68', NULL, NULL)\n)\nSELECT count(*) AS \"Captures\", min(captured) AS first, max(captured) AS last,\n       date_diff('month', min(captured), max(captured)) AS \"Months covered\",\n       round(sum(i.size) / 1e9, 2) AS \"Splats on Esri\"\nFROM captures c\nJOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/4c52c462cd20421fa4ce7164e34328d4?f=json', 'https://www.arcgis.com/sharing/rest/content/items/08e86213c68142088d82aa29f2c55717?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5cd49045be9a4a28a46ea74ce268a4d2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/6e4cf60592e24fa888f8c7fe7dd427e2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5649c56195d240b9887838bd5d007f64?f=json', 'https://www.arcgis.com/sharing/rest/content/items/206b7bbdc5144c8bbc67f59d9726df11?f=json', 'https://www.arcgis.com/sharing/rest/content/items/e611bf9097f24c40a6925d5e388a523a?f=json', 'https://www.arcgis.com/sharing/rest/content/items/0b8016c61d01471e986dcfe5e7bd7a68?f=json']) i ON i.id = c.item"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "All the captures at their finest, as Esri stores them. A browser reads only the tiles in view.",
+          "id": 3,
+          "links": [],
+          "title": "Splats on Esri",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "unit": "decgbytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Splats on Esri$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**What it shows.** Building E, an office building on Esri's campus in Redlands, California, as it went up: eight drone flights over its site, from May 2019, the ground cleared, to March 2022, the building in use, each turned into a Gaussian splat scan. Two of them stand side by side from the same viewpoint: pick a month in Capture for the left map and in Compare with for the right one, or click a month in the table (Compare puts it on the right). Each map has its own camera: drag with the right button (or Ctrl and drag) to tilt and turn it; the maps let you come as close as about 10 m.\n\n**What a Gaussian splat is.** A photographic 3D scene made of millions of small coloured ellipsoids, each with its own size, turn and opacity, fitted to a drone's photographs so that, drawn together from any side, they look like the photographs. Thin things (a steel frame, a fence, a lift's boom) come out as they are seen, where a mesh would have to model them as surfaces.\n\n**Where they come from.** Esri publishes every capture on ArcGIS Online as OGC 3D Tiles 1.1: glTF tiles with the Khronos extension `KHR_gaussian_splatting`, their splats compressed with SPZ, at several levels of detail, 80 to 170 MB each at their finest; your browser reads from Esri only the tiles in view. Two were made by Esri's drone team with Drone2Map 2025.2 and published with \"Public demo + Distribution Rights\" (\"This dataset can be demoed and shared publicly\"): [19 September 2019](https://www.arcgis.com/home/item.html?id=5cd49045be9a4a28a46ea74ce268a4d2), 178 photographs from a DJI drone with a Zenmuse X4S, and [21 February 2021](https://www.arcgis.com/home/item.html?id=e611bf9097f24c40a6925d5e388a523a), 664 photographs from a Freefly Astro with a Sony A7R II. The six others come from Esri's public web scene [Building E Gaussian Splats](https://www.arcgis.com/home/item.html?id=ca04bb941f9941739bf8075fe8d503ac), made with Site Scan for ArcGIS; their items name the month only and no licence (that scene has a September 2019 capture too: the one shown here is the drone team's). What each capture shows, in the table, is our reading of the scans.\n\n**How it is drawn.** By Kepler Plus's Gaussian Splats layer, in the browser with WebGL: each splat as the ellipse it covers on the screen, fading from its centre, sorted from far to near and blended. Each scan is set on the map's ground by its own lowest splats: the site stands some 350 m above sea level, and until its first tiles arrive a scan is held by the middle of its bounds, so it can come into view at all.\n\n**What to expect.** A drone looks down: roofs, slabs and the yard are sharp, walls under eaves less so, the steel frame a little soft where its members are thinner than the photographs could resolve. The first view of a month takes a few seconds while its coarse tiles arrive; the finer ones follow as you come closer. The satellite picture under the scans is today's.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-left": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The capture picked above (the dashboard quotes it): one row, Building E as that drone flight saw it, streamed from Esri's 3D Tiles.\nWITH captures(capture, month, captured, shows, made, splat_url, item, images, camera) AS (VALUES\n  ('2019-05', 'May 2019', DATE '2019-05-01', 'The site cleared and graded, the building''s outline marked out on the bare ground', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_052019_GaussianSplatLayer_1780797891/3DTilesServer/tileset.json', '4c52c462cd20421fa4ce7164e34328d4', NULL, NULL),\n  ('2019-08', 'August 2019', DATE '2019-08-01', 'The foundations poured: the ground floor slab, its edge walls and the courtyard left open', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_082019_GaussianSplatLayer_1780746258/3DTilesServer/tileset.json', '08e86213c68142088d82aa29f2c55717', NULL, NULL),\n  ('2019-09', 'September 2019', DATE '2019-09-19', 'The steel frame going up over the slab, a yard of materials beside it', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20190919_Gaussian_Splat/3DTilesServer/tileset.json', '5cd49045be9a4a28a46ea74ce268a4d2', 178, 'DJI drone, Zenmuse X4S'),\n  ('2019-12', 'December 2019', DATE '2019-12-01', 'The steel frame topped out over three floors, its floor decks laid', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_122019_GaussianSplatLayer_1780750077/3DTilesServer/tileset.json', '6e4cf60592e24fa888f8c7fe7dd427e2', NULL, NULL),\n  ('2020-04', 'April 2020', DATE '2020-04-01', 'Under its white roof, the facade going on behind lifts; site cabins and materials in the yard', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_042020_GaussianSplatLayer_1780746319/3DTilesServer/tileset.json', '5649c56195d240b9887838bd5d007f64', NULL, NULL),\n  ('2020-11', 'November 2020', DATE '2020-11-01', 'Finished: solar panels on the roof, the facade''s white fins, new planting and paths', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_112020_GaussianSplatLayer_1780753484/3DTilesServer/tileset.json', '206b7bbdc5144c8bbc67f59d9726df11', NULL, NULL),\n  ('2021-02', 'February 2021', DATE '2021-02-21', 'Finished, the planting filling in round the paths and the courtyard', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20210221_Gaussian_Splat/3DTilesServer/tileset.json', 'e611bf9097f24c40a6925d5e388a523a', 664, 'Freefly Astro, Sony A7R II'),\n  ('2022-03', 'March 2022', DATE '2022-03-01', 'In use, with rows of solar canopies over the car park beside it', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_032022_GaussianSplatLayer_1780746493/3DTilesServer/tileset.json', '0b8016c61d01471e986dcfe5e7bd7a68', NULL, NULL)\n)\nSELECT 'Building E, ' || month AS label, month, captured, shows, 34.05853 AS latitude, -117.19745 AS longitude, splat_url\nFROM captures WHERE month = ${capture}"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The capture picked in Capture, streamed from Esri's 3D Tiles and drawn by Kepler Plus's Gaussian Splats layer. Pick another month above, or one in the table below.",
+          "id": 4,
+          "links": [],
+          "title": "Building E in ${capture:text}",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "grafana-satellite",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 33,
+                      "dragRotate": true,
+                      "latitude": 34.0587,
+                      "longitude": -117.19724,
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "zoom": 18.3
+                    },
+                    "mapStyle": {
+                      "styleType": "grafana-satellite"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              },
+                              {
+                                "name": "shows"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Building E (Gaussian splats)",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 1,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "building-e-capture",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [],
+                  "version": "v1"
+                },
+                "maxZoom": 24,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-right": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The capture picked above (the dashboard quotes it): one row, Building E as that drone flight saw it, streamed from Esri's 3D Tiles.\nWITH captures(capture, month, captured, shows, made, splat_url, item, images, camera) AS (VALUES\n  ('2019-05', 'May 2019', DATE '2019-05-01', 'The site cleared and graded, the building''s outline marked out on the bare ground', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_052019_GaussianSplatLayer_1780797891/3DTilesServer/tileset.json', '4c52c462cd20421fa4ce7164e34328d4', NULL, NULL),\n  ('2019-08', 'August 2019', DATE '2019-08-01', 'The foundations poured: the ground floor slab, its edge walls and the courtyard left open', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_082019_GaussianSplatLayer_1780746258/3DTilesServer/tileset.json', '08e86213c68142088d82aa29f2c55717', NULL, NULL),\n  ('2019-09', 'September 2019', DATE '2019-09-19', 'The steel frame going up over the slab, a yard of materials beside it', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20190919_Gaussian_Splat/3DTilesServer/tileset.json', '5cd49045be9a4a28a46ea74ce268a4d2', 178, 'DJI drone, Zenmuse X4S'),\n  ('2019-12', 'December 2019', DATE '2019-12-01', 'The steel frame topped out over three floors, its floor decks laid', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_122019_GaussianSplatLayer_1780750077/3DTilesServer/tileset.json', '6e4cf60592e24fa888f8c7fe7dd427e2', NULL, NULL),\n  ('2020-04', 'April 2020', DATE '2020-04-01', 'Under its white roof, the facade going on behind lifts; site cabins and materials in the yard', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_042020_GaussianSplatLayer_1780746319/3DTilesServer/tileset.json', '5649c56195d240b9887838bd5d007f64', NULL, NULL),\n  ('2020-11', 'November 2020', DATE '2020-11-01', 'Finished: solar panels on the roof, the facade''s white fins, new planting and paths', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_112020_GaussianSplatLayer_1780753484/3DTilesServer/tileset.json', '206b7bbdc5144c8bbc67f59d9726df11', NULL, NULL),\n  ('2021-02', 'February 2021', DATE '2021-02-21', 'Finished, the planting filling in round the paths and the courtyard', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20210221_Gaussian_Splat/3DTilesServer/tileset.json', 'e611bf9097f24c40a6925d5e388a523a', 664, 'Freefly Astro, Sony A7R II'),\n  ('2022-03', 'March 2022', DATE '2022-03-01', 'In use, with rows of solar canopies over the car park beside it', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_032022_GaussianSplatLayer_1780746493/3DTilesServer/tileset.json', '0b8016c61d01471e986dcfe5e7bd7a68', NULL, NULL)\n)\nSELECT 'Building E, ' || month AS label, month, captured, shows, 34.05853 AS latitude, -117.19745 AS longitude, splat_url\nFROM captures WHERE month = ${compare}"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The capture picked in Compare with, from the same viewpoint, to set two stages of the works side by side.",
+          "id": 5,
+          "links": [],
+          "title": "Building E in ${compare:text}",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "grafana-satellite",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 33,
+                      "dragRotate": true,
+                      "latitude": 34.0587,
+                      "longitude": -117.19724,
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "zoom": 18.3
+                    },
+                    "mapStyle": {
+                      "styleType": "grafana-satellite"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              },
+                              {
+                                "name": "shows"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Building E (Gaussian splats)",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 1,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "building-e-compare",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [],
+                  "version": "v1"
+                },
+                "maxZoom": 24,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-table": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every capture of Building E that Esri publishes as Gaussian splats, oldest first, with its size on Esri\n-- (read from each one's ArcGIS item). A month's links put it on either map.\nWITH captures(capture, month, captured, shows, made, splat_url, item, images, camera) AS (VALUES\n  ('2019-05', 'May 2019', DATE '2019-05-01', 'The site cleared and graded, the building''s outline marked out on the bare ground', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_052019_GaussianSplatLayer_1780797891/3DTilesServer/tileset.json', '4c52c462cd20421fa4ce7164e34328d4', NULL, NULL),\n  ('2019-08', 'August 2019', DATE '2019-08-01', 'The foundations poured: the ground floor slab, its edge walls and the courtyard left open', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_082019_GaussianSplatLayer_1780746258/3DTilesServer/tileset.json', '08e86213c68142088d82aa29f2c55717', NULL, NULL),\n  ('2019-09', 'September 2019', DATE '2019-09-19', 'The steel frame going up over the slab, a yard of materials beside it', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20190919_Gaussian_Splat/3DTilesServer/tileset.json', '5cd49045be9a4a28a46ea74ce268a4d2', 178, 'DJI drone, Zenmuse X4S'),\n  ('2019-12', 'December 2019', DATE '2019-12-01', 'The steel frame topped out over three floors, its floor decks laid', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_122019_GaussianSplatLayer_1780750077/3DTilesServer/tileset.json', '6e4cf60592e24fa888f8c7fe7dd427e2', NULL, NULL),\n  ('2020-04', 'April 2020', DATE '2020-04-01', 'Under its white roof, the facade going on behind lifts; site cabins and materials in the yard', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_042020_GaussianSplatLayer_1780746319/3DTilesServer/tileset.json', '5649c56195d240b9887838bd5d007f64', NULL, NULL),\n  ('2020-11', 'November 2020', DATE '2020-11-01', 'Finished: solar panels on the roof, the facade''s white fins, new planting and paths', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_112020_GaussianSplatLayer_1780753484/3DTilesServer/tileset.json', '206b7bbdc5144c8bbc67f59d9726df11', NULL, NULL),\n  ('2021-02', 'February 2021', DATE '2021-02-21', 'Finished, the planting filling in round the paths and the courtyard', 'Drone2Map 2025.2', 'https://tiles.arcgis.com/tiles/uujCiiEZAflDbdxE/arcgis/rest/services/Building_E_20210221_Gaussian_Splat/3DTilesServer/tileset.json', 'e611bf9097f24c40a6925d5e388a523a', 664, 'Freefly Astro, Sony A7R II'),\n  ('2022-03', 'March 2022', DATE '2022-03-01', 'In use, with rows of solar canopies over the car park beside it', 'Site Scan for ArcGIS', 'https://tiles.arcgis.com/tiles/tgUWep3BZhLoHKNh/arcgis/rest/services/BuildingE_032022_GaussianSplatLayer_1780746493/3DTilesServer/tileset.json', '0b8016c61d01471e986dcfe5e7bd7a68', NULL, NULL)\n)\nSELECT c.month AS \"Month\", c.shows AS \"What it shows\", c.made AS \"Made with\", c.images AS \"Photographs\",\n       round(i.size / 1e6) AS \"Size on Esri\", 'Compare' AS \"Right map\"\nFROM captures c\nJOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/4c52c462cd20421fa4ce7164e34328d4?f=json', 'https://www.arcgis.com/sharing/rest/content/items/08e86213c68142088d82aa29f2c55717?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5cd49045be9a4a28a46ea74ce268a4d2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/6e4cf60592e24fa888f8c7fe7dd427e2?f=json', 'https://www.arcgis.com/sharing/rest/content/items/5649c56195d240b9887838bd5d007f64?f=json', 'https://www.arcgis.com/sharing/rest/content/items/206b7bbdc5144c8bbc67f59d9726df11?f=json', 'https://www.arcgis.com/sharing/rest/content/items/e611bf9097f24c40a6925d5e388a523a?f=json', 'https://www.arcgis.com/sharing/rest/content/items/0b8016c61d01471e986dcfe5e7bd7a68?f=json']) i ON i.id = c.item\nORDER BY c.captured"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The drone flights over Building E, oldest first, with what each shows. Click a month to show it on the left map, Compare to show it on the right one.",
+          "id": 6,
+          "links": [],
+          "title": "Every capture",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Month"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "targetBlank": false,
+                            "title": "Show on the left",
+                            "url": "/d/esri-building-e-construction?var-capture=${__data.fields.Month:percentencode}\u0026var-compare=${compare:percentencode}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Right map"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "targetBlank": false,
+                            "title": "Show on the right",
+                            "url": "/d/esri-building-e-construction?var-compare=${__data.fields.Month:percentencode}\u0026var-capture=${capture:percentencode}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Size on Esri"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "decmbytes"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Month"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Right map"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Made with"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 170
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Photographs"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "What it shows"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.wrapText",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "fields": "",
+                  "reducer": [],
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-captures"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-months"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-size"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-left"
+              },
+              "height": 20,
+              "width": 12,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-right"
+              },
+              "height": 20,
+              "width": 12,
+              "x": 12,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-table"
+              },
+              "height": 13,
+              "width": 24,
+              "x": 0,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 15,
+              "width": 24,
+              "x": 0,
+              "y": 36
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "duckdb",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": true,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "Gaussian splats: a building from bare ground to finished, in eight drone captures",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "September 2019",
+            "value": "September 2019"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Capture",
+          "multi": false,
+          "name": "capture",
+          "options": [],
+          "query": "May 2019,August 2019,September 2019,December 2019,April 2020,November 2020,February 2021,March 2022",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "February 2021",
+            "value": "February 2021"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Compare with",
+          "multi": false,
+          "name": "compare",
+          "options": [],
+          "query": "May 2019,August 2019,September 2019,December 2019,April 2020,November 2020,February 2021,March 2022",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      }
+    ]
+  }
+}
