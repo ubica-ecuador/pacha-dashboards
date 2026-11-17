@@ -7,3 +7,5 @@ datasets/*/*.tif
 # 3D Tiles a build writes in a folder of its own (datasets/<name>/<folder>/).
 datasets/*/*/*.pnts
 datasets/*/*/tileset.json
+# CityJSON a build writes for the City Model layer (datasets/<name>/cityjson/).
+datasets/*/cityjson/

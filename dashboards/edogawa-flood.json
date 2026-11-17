@@ -1,0 +1,1635 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "edogawa-flood"
+  },
+  "spec": {
+    "annotations": [],
+    "cursorSync": "Off",
+    "description": "Edogawa, Tokyo, building by building: PLATEAU's 3D city model (CityGML) of the ward's 144,788 buildings, each coloured by the water PLATEAU's river and storm surge studies expect there, with linked charts of depth, days under water, storeys and use that filter the map in the browser, and the shelters.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### What this shows\n\nEdogawa is the easternmost of Tokyo's 23 wards, home to about 680,000 people between the Arakawa, the Nakagawa,\nthe Edogawa and Tokyo Bay. Much of it lies below sea level, sunk by groundwater pumping in the last century, and\nheld dry by levees and sea walls. If the Tone or the Edogawa broke through in the worst rain thought possible,\nor the largest typhoon assumed pushed Tokyo Bay over the walls, almost every building in the ward would stand in\nwater, in many places for two weeks or more. The ward's own hazard map says it plainly: in such a flood, leave\nthe ward.\n\nThe map draws each of PLATEAU's 144,788 buildings as the city model has it and colours it by the deepest water\nthe study picked expects there. The charts beside it are of the same buildings, held in your browser: drag across\none, or click a use, and the map, the figures and the other charts keep only those buildings.\n\n### Where the data comes from\n\n- **[PLATEAU](https://www.mlit.go.jp/plateau/)**, Japan's 3D city models by the Ministry of Land, Infrastructure,\n  Transport and Tourism: [Edogawa-ku, FY2023](https://www.geospatial.jp/ckan/dataset/plateau-13123-edogawa-ku-2023),\n  CityGML v4 (free for any use with credit, compatible with CC BY 4.0). Each building carries the flood studies\n  that reach it: the national and Tokyo governments' river studies (depth, band and, for the largest assumed\n  floods, how long water of 0.5 m or more stays) and Tokyo's storm surge study of March 2018 (depth and band).\n  The shelters are PLATEAU's related data.\n- **[Flateau](https://source.coop/pacificspatial/flateau)** by Pacific Spatial Solutions (CC BY 4.0): PLATEAU's\n  attributes as tables, with the same building ids. The 3D files (converted with citygml-tools) carry the\n  geometry; Flateau the attributes, which citygml-tools leaves out.\n\n### How to read it\n\n- **Study.** Largest river flood (L2): the worst rain thought possible, about once in 1,000 years, for every\n  river PLATEAU has. Planned river flood (L1): the flood the river works are designed for, about once in 200\n  years, studied only for the Tone and the Edogawa: their water comes from the north and stops at the\n  Shin-Nakagawa, the canal across the ward, so the south-west stays grey. Storm surge: Tokyo Bay.\n- **Source.** Each river study floods the ward from one river's broken levee. \"Any\" takes the worst of them at\n  each building, which no single flood would do at once.\n- **Colours** are PLATEAU's depth bands, those of Japan's hazard maps: under 0.5 m, 0.5 to 3 m (the ground\n  floor), 3 to 5 m (the first floor up), 5 m or more; grey, no water there in that study, or left out by a brush.\n- **Storeys** are PLATEAU's (106,142 buildings have them); \"no floor above the water\" assumes 3 m a floor.\n- Not in these studies: the Arakawa, the largest river on the ward's west side.\n- Most buildings are drawn as blocks of their measured height (LoD 1); PLATEAU has detailed roofs (LoD 2) for\n  3,990. On another Pacha, set the hidden variable `site` to its https address: the 3D files are served there.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-compare": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Buildings by PLATEAU's depth band in each study (the deepest of its rivers), side by side.\nWITH b AS (\n  SELECT key, scenario, max(band) AS band FROM 'http://feeds/datasets/edogawa-flood/flood.parquet' GROUP BY key, scenario\n)\nSELECT ['under 0.5 m', '0.5 to 3 m', '3 to 5 m', '5 m or more'][band] AS \"Water\",\n       count(*) FILTER (WHERE scenario = 'L1') AS \"River, planned scale (L1)\",\n       count(*) FILTER (WHERE scenario = 'L2') AS \"River, largest assumed (L2)\",\n       count(*) FILTER (WHERE scenario = 'Surge') AS \"Storm surge\"\nFROM b GROUP BY band ORDER BY band"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings by PLATEAU's depth band in each study, any river. The planned scale (L1) is the flood the river works are designed for, studied only for the Tone and the Edogawa (about once in 200 years); the largest assumed (L2) is the worst rain thought possible (about once in 1,000 years), for every river PLATEAU has; the storm surge is Tokyo's 2018 study of the largest typhoon assumed over Tokyo Bay.",
+          "id": 8,
+          "links": [],
+          "title": "The three studies side by side",
+          "vizConfig": {
+            "group": "barchart",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "axisSoftMin": 0,
+                    "fillOpacity": 90,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 0,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "min": 0,
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "River, planned scale (L1)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8AB8FF",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "River, largest assumed (L2)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E4505B",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Storm surge"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#A3266F",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.9,
+                "fullHighlight": false,
+                "groupWidth": 0.8,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "orientation": "vertical",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                },
+                "xField": "Water",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-days": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings by the days water of 0.5 m or more stays round them. PLATEAU has a duration only for the largest assumed river floods (L2), and not for every river: empty for the planned scale and the storm surge.",
+          "id": 4,
+          "links": [],
+          "title": "How long the water stays",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fb: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: bld, filterBy: $fb }\n    x: { bin: days, step: 1 }\n    y: { count: }\n    fill: '#8AB8FF'\n    inset: 0.5\n  - select: intervalX\n    as: $fb\nxDomain: Fixed\nyTickFormat: '~s'\nxLabel: Days under water (0.5 m or more) →\nyLabel: null\nmarginLeft: 40\n",
+                "variables": "- param: fb\n  column: days\n  from: days_lo\n  to: days_hi\n"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-depth": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings under water by the depth PLATEAU expects at them, in its bands' colours. Drag across to keep a range: the map, the figures and the other charts follow; click outside the range to clear it.",
+          "id": 3,
+          "links": [],
+          "title": "How deep",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fb: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: bld, filterBy: $fb }\n    x: { bin: depth_m, step: 0.25 }\n    y: { count: }\n    fill: band\n    inset: 0.5\n  - select: intervalX\n    as: $fb\nxDomain: Fixed\ncolorDomain: ['under 0.5 m', '0.5 to 3 m', '3 to 5 m', '5 m or more']\ncolorRange: ['#F2E15B', '#F59E5B', '#E4505B', '#A3266F']\nyTickFormat: '~s'\nxLabel: Water (m) →\nyLabel: null\nmarginLeft: 40\n",
+                "variables": "- param: fb\n  column: depth_m\n  from: depth_lo\n  to: depth_hi\n"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The tiles (box and CityJSON), then one row per building under water that the brushes keep:\n-- the City Model layer colours those by key and leaves the others grey.\nSELECT city_url, west, south, east, north, NULL::DOUBLE AS key, NULL::DOUBLE AS depth_m FROM $tiles\nUNION ALL\nSELECT NULL, NULL, NULL, NULL, NULL, key, depth_m FROM $bld WHERE $__crossfilter($bldFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT name, kind, height_m, water_l2_m, latitude, longitude FROM $shelters"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT wkt AS _geojson FROM $border"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "PLATEAU's 3D model of Edogawa (CityGML: each building's block, and its LoD 2 model where PLATEAU has one), coloured by the deepest water the study picked expects at it, in PLATEAU's depth bands. Grey: no water there in that study, or left out by the charts' brushes. Hover a building for its storeys, use and the water in every study; white dots are the ward's shelters. The 1 km tiles load as the view moves.",
+          "id": 1,
+          "links": [],
+          "title": "Every building of Edogawa, by the water PLATEAU expects there",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "clickArea": false,
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 15,
+                      "dragRotate": true,
+                      "latitude": 35.7105,
+                      "longitude": 139.8935,
+                      "pitch": 55,
+                      "zoom": 15.2
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "height_m"
+                              },
+                              {
+                                "name": "water_l2_m"
+                              }
+                            ],
+                            "grafana-C": []
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "shelters",
+                        "border",
+                        "city"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Shelters",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "filled": true,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 7,
+                              "strokeColor": [
+                                20,
+                                20,
+                                20
+                              ],
+                              "thickness": 2
+                            }
+                          },
+                          "id": "shelters",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "sizeField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Ward border",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "filled": false,
+                              "opacity": 0.8,
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "strokeOpacity": 0.7,
+                              "stroked": true,
+                              "thickness": 2
+                            }
+                          },
+                          "id": "border",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": null,
+                            "strokeColorField": null
+                          }
+                        },
+                        {
+                          "config": {
+                            "colorField": {
+                              "name": "depth_m",
+                              "type": "real"
+                            },
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Buildings (PLATEAU)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cityColourBy": "data",
+                              "cityFootprints": "none",
+                              "cityKeyAttribute": "key",
+                              "cityKeyField": "key",
+                              "cityLod": "highest",
+                              "cityPick": "building",
+                              "cityReduce": "max",
+                              "cityRoofColor": [
+                                125,
+                                125,
+                                125
+                              ],
+                              "cityWallColor": [
+                                165,
+                                165,
+                                165
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    0.5,
+                                    "#F2E15B"
+                                  ],
+                                  [
+                                    3,
+                                    "#F59E5B"
+                                  ],
+                                  [
+                                    5,
+                                    "#E4505B"
+                                  ],
+                                  [
+                                    null,
+                                    "#A3266F"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#F2E15B",
+                                  "#F59E5B",
+                                  "#E4505B",
+                                  "#A3266F"
+                                ],
+                                "name": "Water, m (PLATEAU depth bands)",
+                                "type": "custom"
+                              }
+                            }
+                          },
+                          "id": "city",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "depth_m",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "places": {},
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-shelters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The ward's shelters, the deepest water round them first (largest assumed river flood, any river).\nSELECT name AS \"Shelter\", height_m AS \"Height (m)\", water_l2_m AS \"Water (m)\",\n       floor((height_m - coalesce(water_l2_m, 0)) / 3)::INTEGER AS \"Dry floors\"\nFROM 'http://feeds/datasets/edogawa-flood/shelters.parquet'\nORDER BY water_l2_m DESC NULLS LAST, name"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The ward's 163 designated shelters (PLATEAU's related data; names as the ward gives them), the height of the building and the deepest water PLATEAU expects at the buildings within 30 m in the largest assumed river flood (any river). Dry floors: the building's height over the water, 3 m a floor.",
+          "id": 9,
+          "links": [],
+          "title": "Shelters",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false,
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Water (m)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "transparent",
+                              "value": null
+                            },
+                            {
+                              "color": "#F2E15B",
+                              "value": 0.01
+                            },
+                            {
+                              "color": "#F59E5B",
+                              "value": 0.5
+                            },
+                            {
+                              "color": "#E4505B",
+                              "value": 3
+                            },
+                            {
+                              "color": "#A3266F",
+                              "value": 5
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Height (m)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Dry floors"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-stats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*)::DOUBLE AS \"Buildings under water\",\n       100.0 * count(*) / (SELECT sum(buildings) FROM $tiles) AS \"Of the ward\",\n       count(*) FILTER (WHERE depth_m \u003e= 3)::DOUBLE AS \"3 m or more\",\n       sum(no_dry_floor)::DOUBLE AS \"No floor above the water\",\n       count(*) FILTER (WHERE days \u003e= 14)::DOUBLE AS \"Two weeks or more\"\nFROM $bld WHERE $__crossfilter($bldFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Of PLATEAU's 144,788 buildings in Edogawa, those under water in the study picked and kept by the charts' brushes: with 3 m or more (the ground floor under), with no floor above the water (storeys times 3 m, for the 106,142 buildings whose storeys PLATEAU gives) and with water of 0.5 m or more for two weeks or longer (PLATEAU has how long the water stays only for the largest assumed river floods).",
+          "id": 2,
+          "links": [],
+          "title": "The ward under water",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "locale"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Of the ward"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "3 m or more"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E4505B",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "No floor above the water"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#A3266F",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 24
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-storeys": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings under water by their storeys above ground (PLATEAU gives them for 106,142 of the ward's buildings; those over 15 storeys are off the right edge). Most are houses of two storeys: 3 m of water fills the ground floor, 6 m the whole house.",
+          "id": 5,
+          "links": [],
+          "title": "How tall",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fb: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: bld, filterBy: $fb }\n    x: { bin: storeys, step: 1 }\n    y: { count: }\n    fill: '#B0B0B0'\n    inset: 0.5\n  - select: intervalX\n    as: $fb\nxDomain: [0, 16]\nyTickFormat: '~s'\nxLabel: Storeys →\nyLabel: null\nmarginLeft: 40\n",
+                "variables": "- param: fb\n  column: storeys\n  from: storeys_lo\n  to: storeys_hi\n"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-uses": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings under water by their use in PLATEAU (Unknown where it gives none); in grey, all of them, in colour those the other charts keep. Click a bar to keep that use, shift-click for several.",
+          "id": 6,
+          "links": [],
+          "title": "What the buildings are",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fb: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: bld }\n    x: { count: }\n    y: usage\n    fill: '#B0B0B0'\n    fillOpacity: 0.2\n  - mark: barX\n    data: { from: bld, filterBy: $fb }\n    x: { count: }\n    y: usage\n    fill: '#F59E5B'\n    sort: { y: -x }\n  - select: toggleY\n    as: $fb\nyDomain: Fixed\nxTickFormat: '~s'\nxLabel: Buildings →\nyLabel: null\nmarginLeft: 150\n",
+                "variables": "- param: fb\n  column: usage\n  variable: uses\n"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-uses-table": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT usage AS \"Use\", count(*)::DOUBLE AS \"Wet\",\n       count(*) FILTER (WHERE depth_m \u003e= 3)::DOUBLE AS \"3 m +\",\n       sum(no_dry_floor)::DOUBLE AS \"No dry floor\",\n       median(storeys) AS \"Storeys\"\nFROM $bld WHERE $__crossfilter($bldFilters)\nGROUP BY usage ORDER BY count(*) DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The buildings the brushes keep, by use: wet (any water), with 3 m or more (the ground floor under), with no dry floor (the water at least storeys times 3 m), and their median storeys.",
+          "id": 7,
+          "links": [],
+          "title": "By what the building is",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false,
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Use"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 180
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "No dry floor"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E4505B",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Storeys"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 21,
+              "width": 16,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-stats"
+              },
+              "height": 6,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-depth"
+              },
+              "height": 5,
+              "width": 8,
+              "x": 16,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-days"
+              },
+              "height": 5,
+              "width": 8,
+              "x": 16,
+              "y": 11
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-storeys"
+              },
+              "height": 5,
+              "width": 8,
+              "x": 16,
+              "y": 16
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-uses"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 0,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-uses-table"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 8,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-compare"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 16,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-shelters"
+              },
+              "height": 14,
+              "width": 10,
+              "x": 0,
+              "y": 31
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 14,
+              "width": 14,
+              "x": 10,
+              "y": 31
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "chaski",
+      "city",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus",
+      "water"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Edogawa under water: every building in the flood studies",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Largest river flood (L2)",
+            "value": "L2"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Study",
+          "multi": false,
+          "name": "scenario",
+          "options": [],
+          "query": "Largest river flood (L2) : L2,Planned river flood (L1: Tone and Edogawa only) : L1,Storm surge (Tokyo Bay) : Surge",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Any",
+            "value": "any"
+          },
+          "definition": "-- The rivers (or the sea) of the study picked, after \"Any\".\nSELECT __text, __value FROM (\n  SELECT 0 AS o, 'Any' AS __text, 'any' AS __value\n  UNION ALL\n  SELECT DISTINCT 1, river, river FROM 'http://feeds/datasets/edogawa-flood/flood.parquet' WHERE scenario = ${scenario:sqlstring}\n) ORDER BY o, __text",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Source",
+          "multi": false,
+          "name": "river",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The rivers (or the sea) of the study picked, after \"Any\".\nSELECT __text, __value FROM (\n  SELECT 0 AS o, 'Any' AS __text, 'any' AS __value\n  UNION ALL\n  SELECT DISTINCT 1, river, river FROM 'http://feeds/datasets/edogawa-flood/flood.parquet' WHERE scenario = ${scenario:sqlstring}\n) ORDER BY o, __text"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "https://pacha.ubica.dev",
+            "value": "https://pacha.ubica.dev"
+          },
+          "hide": "hideVariable",
+          "label": "This site's https address (the 3D files)",
+          "name": "site",
+          "query": "https://pacha.ubica.dev",
+          "skipUrlSync": true
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "bld",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "bld",
+              "refId": "bld",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per scenario and source: one row per building PLATEAU's study puts under\n-- water (the deepest of the rivers picked), with what the building is. The browser holds it\n-- and every brush is answered there.\nWITH w AS (\n  SELECT key, max(depth_m) AS depth_m, max(band) AS band, max(hours) AS hours\n  FROM 'http://feeds/datasets/edogawa-flood/flood.parquet'\n  WHERE scenario = ${scenario:sqlstring}\n    AND (${river:sqlstring} = 'any' OR river = ${river:sqlstring})\n  GROUP BY key\n)\nSELECT w.key, w.depth_m,\n       ['under 0.5 m', '0.5 to 3 m', '3 to 5 m', '5 m or more'][w.band] AS band,\n       w.hours / 24 AS days, b.storeys, b.height_m, b.usage,\n       (w.depth_m \u003e= 3 * b.storeys)::INTEGER AS no_dry_floor\nFROM w JOIN 'http://feeds/datasets/edogawa-flood/buildings.parquet' b USING (key)",
+                  "refId": "bld"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "tiles",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "tiles",
+              "refId": "tiles",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: PLATEAU's 1 km tiles of buildings, each box and its CityJSON on\n-- this site (the City Model layer fetches it from the viewer's browser: an https address).\nSELECT ${site:sqlstring} || '/datasets/edogawa-flood/cityjson/m' || mesh || '.json' AS city_url,\n       west, south, east, north, buildings\nFROM 'http://feeds/datasets/edogawa-flood/tiles.parquet'",
+                  "refId": "tiles"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "shelters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "shelters",
+              "refId": "shelters",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the ward's shelters (PLATEAU's related data), with the deepest\n-- water PLATEAU expects at the buildings within 30 m of each in the largest assumed river flood.\nSELECT name, kind, height_m, water_l2_m, lat AS latitude, lon AS longitude\nFROM 'http://feeds/datasets/edogawa-flood/shelters.parquet'",
+                  "refId": "shelters"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "border",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "border",
+              "refId": "border",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the ward's border.\nSELECT wkt FROM 'http://feeds/datasets/edogawa-flood/border.parquet'",
+                  "refId": "border"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "bldFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$bld",
+              "filters": [
+                {
+                  "column": "depth_m",
+                  "from": "$depth_lo",
+                  "label": "Water (m)",
+                  "name": "depth",
+                  "to": "$depth_hi",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "days",
+                  "from": "$days_lo",
+                  "label": "Days under water",
+                  "name": "days",
+                  "to": "$days_hi",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "storeys",
+                  "from": "$storeys_lo",
+                  "label": "Storeys",
+                  "name": "storeys",
+                  "to": "$storeys_hi",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "usage",
+                  "label": "Use",
+                  "name": "usage",
+                  "type": "in",
+                  "variable": "$uses"
+                }
+              ],
+              "kind": "filters",
+              "refId": "bldFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Water from (m)",
+          "name": "depth_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Water to (m)",
+          "name": "depth_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Days from",
+          "name": "days_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Days to",
+          "name": "days_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Storeys from",
+          "name": "storeys_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Storeys to",
+          "name": "storeys_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Uses",
+          "name": "uses",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
