@@ -1,0 +1,1184 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "portcoast-gaussian-splats"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "An industrial port on the coast of Vietnam as a Gaussian splat scan: Esri's Portcoast sample, 5.3 GB of drone-captured splats in 3D Tiles, streamed and drawn in the browser by Kepler Plus's Gaussian Splats layer, from the whole site down to the scrap beside its sheds, with five simulated air quality stations standing on its roofs and heaps, their PM10, PM2.5 and NO₂ over the day on cards and charts that share a crosshair.",
+    "editable": true,
+    "elements": {
+      "card-areas": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scan as Esri publishes it: its areas (each a tileset of its own), its size and what made it.\nSELECT len(t.root.children) AS \"Areas in the scan\",\n       round(i.size / 1e9, 1) AS \"Size on Esri\",\n       t.asset.extras.generator AS \"Made with\",\n       to_timestamp(i.created / 1000) AS \"Published\"\nFROM read_json('https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json', compression = 'gzip') t,\n     read_json('https://www.arcgis.com/sharing/rest/content/items/01596d71a5ce40ec8a6f21baad6e5b6f?f=json') i"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Esri cuts the scan into areas of about 250 m, each a tileset with its own levels of detail.",
+          "id": 1,
+          "links": [],
+          "title": "Areas in the scan",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Areas in the scan$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-made": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scan as Esri publishes it: its areas (each a tileset of its own), its size and what made it.\nSELECT len(t.root.children) AS \"Areas in the scan\",\n       round(i.size / 1e9, 1) AS \"Size on Esri\",\n       t.asset.extras.generator AS \"Made with\",\n       to_timestamp(i.created / 1000) AS \"Published\"\nFROM read_json('https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json', compression = 'gzip') t,\n     read_json('https://www.arcgis.com/sharing/rest/content/items/01596d71a5ce40ec8a6f21baad6e5b6f?f=json') i"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The software that turned the drone's photographs into splats, as the tileset names it.",
+          "id": 3,
+          "links": [],
+          "title": "Made with",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Made with$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-size": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scan as Esri publishes it: its areas (each a tileset of its own), its size and what made it.\nSELECT len(t.root.children) AS \"Areas in the scan\",\n       round(i.size / 1e9, 1) AS \"Size on Esri\",\n       t.asset.extras.generator AS \"Made with\",\n       to_timestamp(i.created / 1000) AS \"Published\"\nFROM read_json('https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json', compression = 'gzip') t,\n     read_json('https://www.arcgis.com/sharing/rest/content/items/01596d71a5ce40ec8a6f21baad6e5b6f?f=json') i"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The whole scan at its finest, as Esri stores it. A browser reads only what is in view.",
+          "id": 2,
+          "links": [],
+          "title": "Size on Esri",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "decgbytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Size on Esri$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**What a Gaussian splat is.** A photographic 3D scene made of millions of small coloured ellipsoids, each with its own size, turn and opacity, fitted to a drone's photographs so that, drawn together from any side, they look like the photographs. Where a mesh has faces and a point cloud has dots with the ground showing between them, splats blend into a continuous picture: thin things (cranes, pipes, scrap, fences) come out as they are seen, not as a surface could model them.\n\n**Where this one comes from.** \"Portcoast industrial\", a sample published by Esri ([its ArcGIS item](https://www.arcgis.com/sharing/rest/content/items/01596d71a5ce40ec8a6f21baad6e5b6f)): an industrial area on the coast of Quảng Ngãi, Vietnam, about 0.75 by 1.6 km, captured for Portcoast Consultant Corporation and turned into Gaussian splats with ArcGIS Reality. Esri serves it as OGC 3D Tiles 1.1, the scene cut into 27 areas of about 250 m, each a tileset of its own with coarser and finer levels; every tile is a glTF with the Khronos extension `KHR_gaussian_splatting`, its splats compressed with SPZ. The whole scan is 5.3 GB; your browser reads from Esri only the tiles in view, at the detail the camera needs. Esri publishes it as a sample and names no licence.\n\n**The air quality is simulated.** No sensor stands on this site that we know of: the five stations, their names and every reading are made up, to show how live measurements look over a scan. A DuckDB query makes a reading every 10 minutes over the time range: each station has its own level of dust (PM10), the share of it that is fine (PM2.5) and its NO₂; dust rises with the day shift's handling, about 09:30 and 15:30 local time, NO₂ with the traffic, about 07:30 and 17:30, both drift on a slow wave, and now and then a burst of dust (a load tipped, a gust over a stockpile). The noise comes from a hash of the station and the time, so a refresh keeps the past readings. A card is green under 45 µg/m³ of PM10, the WHO's daily guideline, orange to 100 and red above.\n\n**How it is drawn.** By Kepler Plus's Gaussian Splats layer, in the browser with WebGL: each splat as the ellipse it covers on the screen, fading from its centre, sorted from far to near and blended, the scan set on the map's ground by its own lowest splats. Each station is a 3D Callout standing on what the scan shows under it (a roof, a heap of scrap, the yard), read off the splats around its place. The crosshair is shared: hover a chart on the right, or a card's curve, and every card and chart shows that moment. Drag with the right button (or Ctrl and drag) to tilt and turn; these maps let you come as close as about 10 m.\n\n**What to expect.** A drone looks down: roofs, yards and the tops of things are sharp, walls under eaves and the ground between tall things less so, and from street level the ground thins to nothing edge-on. A few dark specks float over the scrap yard: splats the training left in the air. The first view takes a few seconds while the coarse tiles arrive; the finer ones follow as you come closer.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-air": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scan: one row, the whole site, streamed from Esri's 3D Tiles by the Gaussian Splats layer.\nSELECT 'Portcoast industrial' AS label, 15.3885 AS latitude, 108.7975 AS longitude,\n       'https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json' AS splat_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- SIMULATED air quality, not measured: five made-up stations across the scanned site, a reading\n-- every 10 minutes over the dashboard's time range. Each station has its own level of dust (PM10),\n-- its fine share (PM2.5) and NO2; dust rises with the day shift's handling (peaks about 09:30 and\n-- 15:30 local time), drifts with a slow wave, and now and then a burst (a load tipped, a gust over\n-- a stockpile). The noise comes from a hash of station and time, so a refresh keeps past readings.\nWITH stations(code, label, latitude, longitude, altitude, pm10_base, fine_share, no2_base, phase) AS (VALUES\n  ('SCR', 'Scrap yard',      15.38790, 108.79506, 0, 85.0, 0.40, 22.0, 0.0),\n  ('SHD', 'Shed roof',       15.39028, 108.79552, 0, 55.0, 0.45, 30.0, 1.3),\n  ('PRC', 'Process area',    15.38759, 108.79821, 0, 70.0, 0.60, 48.0, 2.1),\n  ('STK', 'East stockpiles', 15.38735, 108.80106, 0, 105.0, 0.35, 18.0, 3.4),\n  ('GRN', 'Green belt',      15.38966, 108.80130, 0, 32.0, 0.50, 34.0, 4.6)\n),\ntimes AS (\n  SELECT unnest(generate_series(time_bucket(INTERVAL 10 MINUTE, $__timeFrom()::TIMESTAMP),\n                                $__timeTo()::TIMESTAMP, INTERVAL 10 MINUTE)) AS time\n),\nraw AS (\n  SELECT s.*, t.time,\n         hour(t.time + INTERVAL 7 HOUR) + minute(t.time) / 60.0 AS h,\n         epoch(t.time) AS e,\n         (hash(s.code, epoch(t.time)) % 10000) / 10000.0 AS n1,\n         (hash(s.code, epoch(t.time), 'burst') % 10000) / 10000.0 AS n2\n  FROM stations s, times t\n),\nshaped AS (\n  SELECT *,\n         pm10_base * (0.5 + 0.55 * (exp(-power(h - 9.5, 2) / 5) + exp(-power(h - 15.5, 2) / 5)))\n           * (1 + 0.18 * sin(2 * pi() * e / 19000 + phase)) * (0.88 + 0.24 * n1)\n           + CASE WHEN n2 \u003e 0.96 THEN pm10_base * (n2 - 0.96) * 25 ELSE 0 END AS pm10_raw,\n         no2_base * (0.6 + 0.5 * (exp(-power(h - 7.5, 2) / 3) + exp(-power(h - 17.5, 2) / 3)))\n           * (1 + 0.12 * sin(2 * pi() * e / 23000 + phase)) * (0.9 + 0.2 * n1) AS no2_raw\n  FROM raw\n)\nSELECT time, code, label, latitude, longitude, altitude,\n       round(avg(pm10_raw) OVER w, 1) AS pm10,\n       round(avg(pm10_raw * fine_share * (0.9 + 0.2 * n1)) OVER w, 1) AS pm25,\n       round(avg(no2_raw) OVER w, 1) AS no2\nFROM shaped\nWINDOW w AS (PARTITION BY code ORDER BY time ROWS 2 PRECEDING)\nORDER BY code, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Esri's Portcoast scan, streamed from its 3D Tiles, and five made-up air quality stations on it: each card stands on the roof or heap under its station, with its PM10 now (coloured by the WHO's daily guideline), PM2.5 and NO₂, and its PM10 over the time range. The readings are simulated, not measured.",
+          "id": 4,
+          "links": [],
+          "title": "An industrial port in Quảng Ngãi, Vietnam, as Gaussian splats, with simulated air quality",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "grafana-satellite",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 15.3876,
+                      "longitude": 108.7982,
+                      "maxPitch": 85,
+                      "pitch": 48,
+                      "zoom": 16.25
+                    },
+                    "mapStyle": {
+                      "styleType": "grafana-satellite"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "label"
+                              },
+                              {
+                                "name": "pm10"
+                              },
+                              {
+                                "name": "pm25"
+                              },
+                              {
+                                "name": "no2"
+                              },
+                              {
+                                "name": "time"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "PM10, simulated",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "size": 12
+                              }
+                            ],
+                            "visConfig": {
+                              "calloutAlertLabel": "",
+                              "calloutBase": "surface",
+                              "calloutLift": 2,
+                              "calloutStem": 30,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    45,
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    100,
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    null,
+                                    "#E02F44"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73BF69",
+                                  "#FF9830",
+                                  "#E02F44"
+                                ],
+                                "name": "PM10: WHO daily guideline, then 100",
+                                "type": "custom"
+                              },
+                              "opacity": 1,
+                              "radius": 5,
+                              "sparkAlerts": false,
+                              "sparkCards": "auto",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkExtras": [
+                                {
+                                  "field": "pm25",
+                                  "label": "PM2.5",
+                                  "unit": "µg/m³"
+                                },
+                                {
+                                  "field": "no2",
+                                  "label": "NO₂",
+                                  "unit": "µg/m³"
+                                }
+                              ],
+                              "sparkOverlap": "all",
+                              "sparkPublishCrosshair": true,
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkTooltip": false,
+                              "sparkUnit": "µg/m³"
+                            }
+                          },
+                          "id": "air-stations",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "pm10",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Portcoast industrial (Gaussian splats)",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 1,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "portcoast-splats",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [],
+                  "version": "v1"
+                },
+                "maxZoom": 24,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-close": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scan: one row, the whole site, streamed from Esri's 3D Tiles by the Gaussian Splats layer.\nSELECT 'Portcoast industrial' AS label, 15.3885 AS latitude, 108.7975 AS longitude,\n       'https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json' AS splat_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The scrap yard south of the vaulted sheds, from some 60 m: the heaps of scrap metal and the gantry cranes over them, down to their thin trusses, are all splats.",
+          "id": 8,
+          "links": [],
+          "title": "Close up: the scrap yard and its gantry cranes",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "grafana-satellite",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 30,
+                      "dragRotate": true,
+                      "latitude": 15.3879,
+                      "longitude": 108.795,
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "zoom": 19.3
+                    },
+                    "mapStyle": {
+                      "styleType": "grafana-satellite"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Portcoast industrial (Gaussian splats)",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 1,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "portcoast-splats",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [],
+                  "version": "v1"
+                },
+                "maxZoom": 24,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-no2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- NO₂ at each simulated station, one column each, for the chart (the readings of the map).\nWITH readings AS (\n-- SIMULATED air quality, not measured: five made-up stations across the scanned site, a reading\n-- every 10 minutes over the dashboard's time range. Each station has its own level of dust (PM10),\n-- its fine share (PM2.5) and NO2; dust rises with the day shift's handling (peaks about 09:30 and\n-- 15:30 local time), drifts with a slow wave, and now and then a burst (a load tipped, a gust over\n-- a stockpile). The noise comes from a hash of station and time, so a refresh keeps past readings.\nWITH stations(code, label, latitude, longitude, altitude, pm10_base, fine_share, no2_base, phase) AS (VALUES\n  ('SCR', 'Scrap yard',      15.38790, 108.79506, 0, 85.0, 0.40, 22.0, 0.0),\n  ('SHD', 'Shed roof',       15.39028, 108.79552, 0, 55.0, 0.45, 30.0, 1.3),\n  ('PRC', 'Process area',    15.38759, 108.79821, 0, 70.0, 0.60, 48.0, 2.1),\n  ('STK', 'East stockpiles', 15.38735, 108.80106, 0, 105.0, 0.35, 18.0, 3.4),\n  ('GRN', 'Green belt',      15.38966, 108.80130, 0, 32.0, 0.50, 34.0, 4.6)\n),\ntimes AS (\n  SELECT unnest(generate_series(time_bucket(INTERVAL 10 MINUTE, $__timeFrom()::TIMESTAMP),\n                                $__timeTo()::TIMESTAMP, INTERVAL 10 MINUTE)) AS time\n),\nraw AS (\n  SELECT s.*, t.time,\n         hour(t.time + INTERVAL 7 HOUR) + minute(t.time) / 60.0 AS h,\n         epoch(t.time) AS e,\n         (hash(s.code, epoch(t.time)) % 10000) / 10000.0 AS n1,\n         (hash(s.code, epoch(t.time), 'burst') % 10000) / 10000.0 AS n2\n  FROM stations s, times t\n),\nshaped AS (\n  SELECT *,\n         pm10_base * (0.5 + 0.55 * (exp(-power(h - 9.5, 2) / 5) + exp(-power(h - 15.5, 2) / 5)))\n           * (1 + 0.18 * sin(2 * pi() * e / 19000 + phase)) * (0.88 + 0.24 * n1)\n           + CASE WHEN n2 \u003e 0.96 THEN pm10_base * (n2 - 0.96) * 25 ELSE 0 END AS pm10_raw,\n         no2_base * (0.6 + 0.5 * (exp(-power(h - 7.5, 2) / 3) + exp(-power(h - 17.5, 2) / 3)))\n           * (1 + 0.12 * sin(2 * pi() * e / 23000 + phase)) * (0.9 + 0.2 * n1) AS no2_raw\n  FROM raw\n)\nSELECT time, code, label, latitude, longitude, altitude,\n       round(avg(pm10_raw) OVER w, 1) AS pm10,\n       round(avg(pm10_raw * fine_share * (0.9 + 0.2 * n1)) OVER w, 1) AS pm25,\n       round(avg(no2_raw) OVER w, 1) AS no2\nFROM shaped\nWINDOW w AS (PARTITION BY code ORDER BY time ROWS 2 PRECEDING)\nORDER BY code, time\n)\nPIVOT readings ON label USING first(no2) GROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Nitrogen dioxide at each made-up station, highest by the process area, rising with the traffic morning and evening.",
+          "id": 7,
+          "links": [],
+          "title": "NO₂ by station (simulated)",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "fillOpacity": 0,
+                    "lineWidth": 1,
+                    "showPoints": "never",
+                    "spanNulls": false
+                  },
+                  "min": 0,
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-pm10": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- PM10 at each simulated station, one column each, for the chart (the readings of the map).\nWITH readings AS (\n-- SIMULATED air quality, not measured: five made-up stations across the scanned site, a reading\n-- every 10 minutes over the dashboard's time range. Each station has its own level of dust (PM10),\n-- its fine share (PM2.5) and NO2; dust rises with the day shift's handling (peaks about 09:30 and\n-- 15:30 local time), drifts with a slow wave, and now and then a burst (a load tipped, a gust over\n-- a stockpile). The noise comes from a hash of station and time, so a refresh keeps past readings.\nWITH stations(code, label, latitude, longitude, altitude, pm10_base, fine_share, no2_base, phase) AS (VALUES\n  ('SCR', 'Scrap yard',      15.38790, 108.79506, 0, 85.0, 0.40, 22.0, 0.0),\n  ('SHD', 'Shed roof',       15.39028, 108.79552, 0, 55.0, 0.45, 30.0, 1.3),\n  ('PRC', 'Process area',    15.38759, 108.79821, 0, 70.0, 0.60, 48.0, 2.1),\n  ('STK', 'East stockpiles', 15.38735, 108.80106, 0, 105.0, 0.35, 18.0, 3.4),\n  ('GRN', 'Green belt',      15.38966, 108.80130, 0, 32.0, 0.50, 34.0, 4.6)\n),\ntimes AS (\n  SELECT unnest(generate_series(time_bucket(INTERVAL 10 MINUTE, $__timeFrom()::TIMESTAMP),\n                                $__timeTo()::TIMESTAMP, INTERVAL 10 MINUTE)) AS time\n),\nraw AS (\n  SELECT s.*, t.time,\n         hour(t.time + INTERVAL 7 HOUR) + minute(t.time) / 60.0 AS h,\n         epoch(t.time) AS e,\n         (hash(s.code, epoch(t.time)) % 10000) / 10000.0 AS n1,\n         (hash(s.code, epoch(t.time), 'burst') % 10000) / 10000.0 AS n2\n  FROM stations s, times t\n),\nshaped AS (\n  SELECT *,\n         pm10_base * (0.5 + 0.55 * (exp(-power(h - 9.5, 2) / 5) + exp(-power(h - 15.5, 2) / 5)))\n           * (1 + 0.18 * sin(2 * pi() * e / 19000 + phase)) * (0.88 + 0.24 * n1)\n           + CASE WHEN n2 \u003e 0.96 THEN pm10_base * (n2 - 0.96) * 25 ELSE 0 END AS pm10_raw,\n         no2_base * (0.6 + 0.5 * (exp(-power(h - 7.5, 2) / 3) + exp(-power(h - 17.5, 2) / 3)))\n           * (1 + 0.12 * sin(2 * pi() * e / 23000 + phase)) * (0.9 + 0.2 * n1) AS no2_raw\n  FROM raw\n)\nSELECT time, code, label, latitude, longitude, altitude,\n       round(avg(pm10_raw) OVER w, 1) AS pm10,\n       round(avg(pm10_raw * fine_share * (0.9 + 0.2 * n1)) OVER w, 1) AS pm25,\n       round(avg(no2_raw) OVER w, 1) AS no2\nFROM shaped\nWINDOW w AS (PARTITION BY code ORDER BY time ROWS 2 PRECEDING)\nORDER BY code, time\n)\nPIVOT readings ON label USING first(pm10) GROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Coarse dust at each made-up station over the time range. The crosshair is shared with the map's cards and the other charts.",
+          "id": 5,
+          "links": [],
+          "title": "PM10 by station (simulated)",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "fillOpacity": 0,
+                    "lineWidth": 1,
+                    "showPoints": "never",
+                    "spanNulls": false
+                  },
+                  "min": 0,
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-pm25": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- PM2.5 at each simulated station, one column each, for the chart (the readings of the map).\nWITH readings AS (\n-- SIMULATED air quality, not measured: five made-up stations across the scanned site, a reading\n-- every 10 minutes over the dashboard's time range. Each station has its own level of dust (PM10),\n-- its fine share (PM2.5) and NO2; dust rises with the day shift's handling (peaks about 09:30 and\n-- 15:30 local time), drifts with a slow wave, and now and then a burst (a load tipped, a gust over\n-- a stockpile). The noise comes from a hash of station and time, so a refresh keeps past readings.\nWITH stations(code, label, latitude, longitude, altitude, pm10_base, fine_share, no2_base, phase) AS (VALUES\n  ('SCR', 'Scrap yard',      15.38790, 108.79506, 0, 85.0, 0.40, 22.0, 0.0),\n  ('SHD', 'Shed roof',       15.39028, 108.79552, 0, 55.0, 0.45, 30.0, 1.3),\n  ('PRC', 'Process area',    15.38759, 108.79821, 0, 70.0, 0.60, 48.0, 2.1),\n  ('STK', 'East stockpiles', 15.38735, 108.80106, 0, 105.0, 0.35, 18.0, 3.4),\n  ('GRN', 'Green belt',      15.38966, 108.80130, 0, 32.0, 0.50, 34.0, 4.6)\n),\ntimes AS (\n  SELECT unnest(generate_series(time_bucket(INTERVAL 10 MINUTE, $__timeFrom()::TIMESTAMP),\n                                $__timeTo()::TIMESTAMP, INTERVAL 10 MINUTE)) AS time\n),\nraw AS (\n  SELECT s.*, t.time,\n         hour(t.time + INTERVAL 7 HOUR) + minute(t.time) / 60.0 AS h,\n         epoch(t.time) AS e,\n         (hash(s.code, epoch(t.time)) % 10000) / 10000.0 AS n1,\n         (hash(s.code, epoch(t.time), 'burst') % 10000) / 10000.0 AS n2\n  FROM stations s, times t\n),\nshaped AS (\n  SELECT *,\n         pm10_base * (0.5 + 0.55 * (exp(-power(h - 9.5, 2) / 5) + exp(-power(h - 15.5, 2) / 5)))\n           * (1 + 0.18 * sin(2 * pi() * e / 19000 + phase)) * (0.88 + 0.24 * n1)\n           + CASE WHEN n2 \u003e 0.96 THEN pm10_base * (n2 - 0.96) * 25 ELSE 0 END AS pm10_raw,\n         no2_base * (0.6 + 0.5 * (exp(-power(h - 7.5, 2) / 3) + exp(-power(h - 17.5, 2) / 3)))\n           * (1 + 0.12 * sin(2 * pi() * e / 23000 + phase)) * (0.9 + 0.2 * n1) AS no2_raw\n  FROM raw\n)\nSELECT time, code, label, latitude, longitude, altitude,\n       round(avg(pm10_raw) OVER w, 1) AS pm10,\n       round(avg(pm10_raw * fine_share * (0.9 + 0.2 * n1)) OVER w, 1) AS pm25,\n       round(avg(no2_raw) OVER w, 1) AS no2\nFROM shaped\nWINDOW w AS (PARTITION BY code ORDER BY time ROWS 2 PRECEDING)\nORDER BY code, time\n)\nPIVOT readings ON label USING first(pm25) GROUP BY time ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Fine particles at each made-up station: a share of its dust, larger where things burn.",
+          "id": 6,
+          "links": [],
+          "title": "PM2.5 by station (simulated)",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "fillOpacity": 0,
+                    "lineWidth": 1,
+                    "showPoints": "never",
+                    "spanNulls": false
+                  },
+                  "min": 0,
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-through": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scan: one row, the whole site, streamed from Esri's 3D Tiles by the Gaussian Splats layer.\nSELECT 'Portcoast industrial' AS label, 15.3885 AS latitude, 108.7975 AS longitude,\n       'https://tiles.arcgis.com/tiles/V6ZHFr6zdgNZuVG0/arcgis/rest/services/Portcoast_industrial/3DTilesServer/tileset.json' AS splat_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The same scan at 50 % opacity: the satellite picture shows through it evenly, so you can see how the scan lines up with the ground under it.",
+          "id": 9,
+          "links": [],
+          "title": "Seen through: the scan at half opacity on the satellite picture",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "grafana-satellite",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 15.3885,
+                      "longitude": 108.7975,
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "zoom": 16.4
+                    },
+                    "mapStyle": {
+                      "styleType": "grafana-satellite"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Portcoast industrial (Gaussian splats)",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 0.5,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "portcoast-splats",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [],
+                  "version": "v1"
+                },
+                "maxZoom": 24,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-areas"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-size"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-made"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-air"
+              },
+              "height": 27,
+              "width": 16,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-pm10"
+              },
+              "height": 9,
+              "width": 8,
+              "x": 16,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-pm25"
+              },
+              "height": 9,
+              "width": 8,
+              "x": 16,
+              "y": 12
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-no2"
+              },
+              "height": 9,
+              "width": 8,
+              "x": 16,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-close"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 30
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-through"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 12,
+              "y": 30
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 12,
+              "width": 24,
+              "x": 0,
+              "y": 46
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "air-quality",
+      "buildings",
+      "duckdb",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "to": "now"
+    },
+    "title": "Gaussian splats: an industrial port in Vietnam, with simulated air quality",
+    "variables": []
+  }
+}
