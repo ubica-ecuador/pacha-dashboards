@@ -1,0 +1,1524 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "accesibilidad-cuenca"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Minutos hasta la oportunidad más cercana, una de 37 categorías a la vez, elegida en la lista desplegable.",
+    "editable": true,
+    "elements": {
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Un COG por categoría, servido junto al tablero. TiTiler lo lee dentro de la red\n-- de Docker y el navegador solo recibe teselas. `$categoria` va sin comillas:\n-- este datasource ya las pone.\nSELECT 'http://feeds/datasets/accesibilidad-cuenca/' || $categoria || '_' || $version || '.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Minutos hasta la oportunidad más cercana de la categoría elegida (P50). Amarillo claro = cerca; azul oscuro = 120 min o más, sin acceso.",
+          "id": 2,
+          "links": [],
+          "title": "Accesibilidad dual · ${categoria:text}",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "area",
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -2.8915486605014014,
+                      "longitude": -78.98801023104558,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11.473164931404273
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "building": false,
+                        "label": true,
+                        "road": true
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "raster_url"
+                              }
+                            ],
+                            "grafana-A-raster": []
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "punto",
+                        "accesibilidad"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Punto",
+                            "visConfig": {
+                              "markerRadius": 10,
+                              "markers": [
+                                {
+                                  "color": [
+                                    230,
+                                    57,
+                                    70
+                                  ],
+                                  "id": "m1",
+                                  "label": "Punto",
+                                  "latVariable": "lat",
+                                  "lngVariable": "lng",
+                                  "position": [
+                                    -79.004,
+                                    -2.897
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "id": "punto",
+                          "type": "markers",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              119,
+                              110,
+                              87
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-A-raster",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Minutos a la oportunidad más cercana",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "colormapId": "ylgnbu",
+                              "dynamicColor": false,
+                              "enableTerrain": false,
+                              "enableTerrainTopView": false,
+                              "endDate": "2020-03-02",
+                              "filterEnabled": false,
+                              "filterRange": [
+                                -1,
+                                1
+                              ],
+                              "gammaContrastFactor": 1,
+                              "linearRescalingFactor": [
+                                0,
+                                1
+                              ],
+                              "nonLinearRescaling": false,
+                              "opacity": 0.8,
+                              "preset": "singleBand",
+                              "saturationValue": 1,
+                              "showTileBorders": false,
+                              "showTileDebugInfo": false,
+                              "sigmoidalBiasFactor": 0.5,
+                              "sigmoidalContrastFactor": 0,
+                              "singleBandName": "b1",
+                              "stacSearchProvider": "earth-search",
+                              "startDate": "2020-02-02",
+                              "useSTACSearching": false,
+                              "zoomOffset": 0
+                            }
+                          },
+                          "id": "accesibilidad",
+                          "type": "rasterTile",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "ylgnbu",
+                "rasterPainted": false,
+                "rasterServerUrl": "/titiler",
+                "saveRequest": 5,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "coordinate",
+                    "variable": "lat",
+                    "variableTo": "lng"
+                  }
+                ]
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 3,
+          "links": [],
+          "title": "Cómo leer el mapa · sobre los datos",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "\u003cdiv style=\"font-size:13px;line-height:1.5\"\u003e\n\u003cp style=\"margin:0 0 6px\"\u003e\u003cb\u003eMinutos hasta la oportunidad más cercana\u003c/b\u003e\u003c/p\u003e\n\u003cdiv style=\"height:14px;border-radius:3px;background:linear-gradient(to right,#ffffd9,#ecf7b1,#c6e8b4,#7eccbb,#40b5c3,#1d91c0,#215ea8,#243494,#081d58)\"\u003e\u003c/div\u003e\n\u003cdiv style=\"display:flex;justify-content:space-between;font-size:12px;opacity:.85;margin-top:2px\"\u003e\n\u003cspan\u003e0\u003c/span\u003e\u003cspan\u003e30\u003c/span\u003e\u003cspan\u003e60\u003c/span\u003e\u003cspan\u003e90\u003c/span\u003e\u003cspan\u003e120+\u003c/span\u003e\n\u003c/div\u003e\n\u003cp style=\"margin:12px 0 0\"\u003eCada píxel (≈76 m) dice cuánto se tarda desde ahí hasta la \u003cb\u003eoportunidad más cercana\u003c/b\u003e de la categoría: la \u003ci\u003eaccesibilidad dual\u003c/i\u003e. Tiempo en su mediana (P50); el tope es 120 min, «no se llega en dos horas». La escala es la misma en todas las categorías.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003e\u003cb\u003eMedir una zona:\u003c/b\u003e en el mapa, herramienta de dibujo → \u003ci\u003eRectangle\u003c/i\u003e (o \u003ci\u003ePolygon\u003c/i\u003e) y dibuja. El resumen y el ranking pasan a medir solo dentro. Para volver a todo el ráster: clic derecho sobre la figura → \u003ci\u003eDelete\u003c/i\u003e.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003e\u003cb\u003eDesde un punto:\u003c/b\u003e haz clic en el mapa o arrastra el marcador rojo «Punto»; el panel \u003ci\u003eDesde el punto\u003c/i\u003e da los minutos desde ahí a cada categoría.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0\"\u003eLos porcentajes son de \u003cb\u003eárea\u003c/b\u003e, no de población; sin dibujo incluyen la zona rural.\u003c/p\u003e\n\u003cp style=\"margin:8px 0 0;opacity:.8\"\u003e\u003cb\u003eLos datos:\u003c/b\u003e 37 rásters de un estudio de accesibilidad dual de Cuenca (entrega de septiembre de 2026), uno por categoría, en minutos hasta la oportunidad más cercana; servidos por el tile server de Pacha.\u003c/p\u003e\n\u003c/div\u003e",
+                "mode": "html"
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- La distribución de minutos del ráster elegido dentro de la zona consultada,\n-- medida por TiTiler: el área dibujada en el mapa, o todo el ráster.\nWITH zona AS (\n  SELECT nullif($area, '') IS NOT NULL AS dibujada,\n         ST_GeomFromText(coalesce(nullif($area, ''), 'POLYGON((-79.0865 -2.9574, -78.8805 -2.9574, -78.8805 -2.8073, -79.0865 -2.8073, -79.0865 -2.9574))')) AS g\n), s AS (\n  SELECT dibujada, g, http_post('http://titiler/cog/statistics?url=http://feeds/datasets/accesibilidad-cuenca/' || $categoria || '_' || $version || '.tif\u0026histogram_bins=0,15,30,60,120,121', MAP {}, json_object('type', 'Feature', 'properties', json_object(), 'geometry', ST_AsGeoJSON(zona.g)::JSON)) AS r FROM zona\n), st AS (\n  SELECT dibujada, g, CASE WHEN (r-\u003e\u003e'status') = '200' THEN (r-\u003e\u003e'body')::JSON -\u003e 'properties' -\u003e 'statistics' -\u003e 'b1'\n            ELSE error('TiTiler no pudo medir la zona (' || coalesce(r-\u003e\u003e'status', '?') || '): ' || coalesce(nullif(r-\u003e\u003e'body', ''), r-\u003e\u003e'reason', '')) END AS b FROM s\n), h AS (\n  SELECT dibujada, ST_Area_Spheroid(ST_FlipCoordinates(g)) / 1e6 AS km2,\n         (b-\u003e\u003e'median')::DOUBLE AS mediana, [(b-\u003e'histogram'-\u003e0-\u003e\u003ei)::DOUBLE FOR i IN range(5)] AS c\n  FROM st\n)\nSELECT CASE WHEN dibujada THEN 'Área dibujada' ELSE 'Todo el ráster' END AS \"Zona\",\n       km2 AS \"Superficie\",\n       mediana AS \"Mediana\",\n       100 * c[1] / nullif(list_sum(c), 0) AS \"≤15 min\",\n       100 * c[2] / nullif(list_sum(c), 0) AS \"15–30 min\",\n       100 * c[3] / nullif(list_sum(c), 0) AS \"30–60 min\",\n       100 * c[4] / nullif(list_sum(c), 0) AS \"60–120 min\",\n       100 * c[5] / nullif(list_sum(c), 0) AS \"Sin acceso (120)\"\nFROM h"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "filterFieldsByName",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "include": {
+                        "names": [
+                          "Zona",
+                          "Superficie",
+                          "Mediana"
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "La zona consultada —el área dibujada en el mapa, o todo el ráster si no hay dibujo—, su superficie y la mediana de minutos hasta la oportunidad más cercana dentro de ella.",
+          "id": 4,
+          "links": [],
+          "title": "${categoria:text}",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "noValue": "—",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Mediana"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "m"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Superficie"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "suffix: km²"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 20
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Las 37 categorías a la vez, dentro de la misma zona que el resumen: una\n-- petición de estadísticas a TiTiler por ráster. Ordenadas por la parte de la\n-- zona que queda a 15 minutos o menos.\nWITH zona AS (\n  SELECT nullif($area, '') IS NOT NULL AS dibujada,\n         ST_GeomFromText(coalesce(nullif($area, ''), 'POLYGON((-79.0865 -2.9574, -78.8805 -2.9574, -78.8805 -2.8073, -79.0865 -2.8073, -79.0865 -2.9574))')) AS g\n), cat(oportunidad, slug) AS (VALUES\n    ('Tienda de barrio / frutería', 'tienda-de-barrio-fruteria'),\n    ('Panadería', 'panaderia'),\n    ('Supermercado', 'supermercado'),\n    ('Mercado municipal', 'mercado-municipal'),\n    ('Farmacia', 'farmacia'),\n    ('Médico / dentista / terapia', 'medico-dentista-terapia'),\n    ('Peluquería', 'peluqueria'),\n    ('Escuela', 'escuela'),\n    ('Refuerzo escolar', 'refuerzo-escolar'),\n    ('Academia de idiomas', 'academia-de-idiomas'),\n    ('Academia de música / arte', 'academia-de-musica-arte'),\n    ('Academia deportiva', 'academia-deportiva'),\n    ('Librería', 'libreria'),\n    ('Papelería', 'papeleria'),\n    ('Biblioteca', 'biblioteca'),\n    ('Museo', 'museo'),\n    ('Galería de arte', 'galeria-de-arte'),\n    ('Teatro', 'teatro'),\n    ('Cine', 'cine'),\n    ('Centro comunitario', 'centro-comunitario'),\n    ('Iglesia / catequesis', 'iglesia-catequesis'),\n    ('Restaurante', 'restaurante'),\n    ('Heladería / cafetería', 'heladeria-cafeteria'),\n    ('Patio de comidas', 'patio-de-comidas'),\n    ('Centro comercial', 'centro-comercial'),\n    ('Piscina', 'piscina'),\n    ('Juegos bajo techo', 'juegos-bajo-techo'),\n    ('Videojuegos', 'videojuegos'),\n    ('Salón de fiestas', 'salon-de-fiestas'),\n    ('Río', 'rio'),\n    ('Espacio público abierto', 'espacio-publico'),\n    ('Zoológico', 'zoologico'),\n    ('Estadio', 'estadio'),\n    ('Parada de bus', 'parada-de-bus'),\n    ('Parada de tranvía', 'parada-de-tranvia'),\n    ('Ciclovía', 'ciclovia'),\n    ('Taller de bicicletas', 'taller-de-bicicletas')\n), s AS (\n  SELECT oportunidad, slug, http_post('http://titiler/cog/statistics?url=http://feeds/datasets/accesibilidad-cuenca/' || slug || '_' || $version || '.tif\u0026histogram_bins=0,15,30,60,120,121', MAP {}, json_object('type', 'Feature', 'properties', json_object(), 'geometry', ST_AsGeoJSON(zona.g)::JSON)) AS r FROM cat, zona\n), st AS (\n  SELECT oportunidad, slug, CASE WHEN (r-\u003e\u003e'status') = '200' THEN (r-\u003e\u003e'body')::JSON -\u003e 'properties' -\u003e 'statistics' -\u003e 'b1'\n            ELSE error('TiTiler no pudo medir la zona (' || coalesce(r-\u003e\u003e'status', '?') || '): ' || coalesce(nullif(r-\u003e\u003e'body', ''), r-\u003e\u003e'reason', '')) END AS b FROM s\n), h AS (\n  SELECT oportunidad, slug, [(b-\u003e'histogram'-\u003e0-\u003e\u003ei)::DOUBLE FOR i IN range(5)] AS c FROM st\n)\nSELECT oportunidad AS \"Oportunidad\",\n       100 * c[1] / nullif(list_sum(c), 0) AS \"≤15 min\",\n       100 * c[2] / nullif(list_sum(c), 0) AS \"15–30 min\",\n       100 * c[3] / nullif(list_sum(c), 0) AS \"30–60 min\",\n       100 * c[4] / nullif(list_sum(c), 0) AS \"60–120 min\",\n       100 * c[5] / nullif(list_sum(c), 0) AS \"Sin acceso (120)\",\n       -- Not drawn: it is what a click on a bar puts in the dropdown.\n       slug\nFROM h\nORDER BY c[1] / nullif(list_sum(c), 0) DESC NULLS LAST"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cada barra es una categoría y reparte la zona consultada —el área dibujada en el mapa, o todo el ráster— por tramos de tiempo hasta su oportunidad más cercana. Ordenadas de mejor a peor servidas (más área a 15 minutos o menos). Son área, no población servida.",
+          "id": 5,
+          "links": [],
+          "title": "Las 37 oportunidades · parte de la zona según minutos a la más cercana",
+          "vizConfig": {
+            "group": "barchart",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "axisSoftMax": 100,
+                    "axisSoftMin": 0,
+                    "fillOpacity": 90,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 0,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "links": [
+                    {
+                      "oneClick": true,
+                      "title": "Ver esta categoría en el mapa",
+                      "url": "d/${__dashboard.uid}${__url.params:exclude:var-categoria}\u0026var-categoria=${__data.fields.slug}"
+                    }
+                  ],
+                  "max": 100,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "≤15 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#f7fbc7",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "15–30 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#dcf1b2",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "30–60 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#82ceba",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "60–120 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#215ea8",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Sin acceso (120)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#081d58",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "slug"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": true,
+                          "viz": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.9,
+                "fullHighlight": false,
+                "groupWidth": 0.8,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "orientation": "horizontal",
+                "showValue": "never",
+                "stacking": "normal",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                },
+                "xField": "Oportunidad",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "-- Dashboard --"
+                      },
+                      "group": "datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "panelId": 4
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "filterFieldsByName",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "include": {
+                        "names": [
+                          "≤15 min",
+                          "15–30 min",
+                          "30–60 min",
+                          "60–120 min",
+                          "Sin acceso (120)"
+                        ]
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Qué parte de la zona consultada queda en cada tramo de tiempo hasta la oportunidad más cercana. Los colores son los del mapa.",
+          "id": 6,
+          "links": [],
+          "title": "Parte de la zona por minutos",
+          "vizConfig": {
+            "group": "bargauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "max": 100,
+                  "min": 0,
+                  "noValue": "—",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "≤15 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#f7fbc7",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "15–30 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#dcf1b2",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "30–60 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#82ceba",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "60–120 min"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#215ea8",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Sin acceso (120)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#081d58",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "displayMode": "gradient",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 10,
+                "minVizWidth": 0,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "text"
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Minutos desde el punto del marcador hasta cada una de las 37 categorías: el\n-- valor de ese píxel en cada ráster, pedido a TiTiler (/cog/point). `$lat` y\n-- `$lng` los publica el marcador «Punto» al soltarlo; este datasource ya los\n-- entrecomilla. Un punto fuera del ráster no tiene valor: sin filas, el panel\n-- muestra su aviso (noValue) en vez de un gráfico vacío.\nWITH cat(oportunidad, slug) AS (VALUES\n    ('Tienda de barrio / frutería', 'tienda-de-barrio-fruteria'),\n    ('Panadería', 'panaderia'),\n    ('Supermercado', 'supermercado'),\n    ('Mercado municipal', 'mercado-municipal'),\n    ('Farmacia', 'farmacia'),\n    ('Médico / dentista / terapia', 'medico-dentista-terapia'),\n    ('Peluquería', 'peluqueria'),\n    ('Escuela', 'escuela'),\n    ('Refuerzo escolar', 'refuerzo-escolar'),\n    ('Academia de idiomas', 'academia-de-idiomas'),\n    ('Academia de música / arte', 'academia-de-musica-arte'),\n    ('Academia deportiva', 'academia-deportiva'),\n    ('Librería', 'libreria'),\n    ('Papelería', 'papeleria'),\n    ('Biblioteca', 'biblioteca'),\n    ('Museo', 'museo'),\n    ('Galería de arte', 'galeria-de-arte'),\n    ('Teatro', 'teatro'),\n    ('Cine', 'cine'),\n    ('Centro comunitario', 'centro-comunitario'),\n    ('Iglesia / catequesis', 'iglesia-catequesis'),\n    ('Restaurante', 'restaurante'),\n    ('Heladería / cafetería', 'heladeria-cafeteria'),\n    ('Patio de comidas', 'patio-de-comidas'),\n    ('Centro comercial', 'centro-comercial'),\n    ('Piscina', 'piscina'),\n    ('Juegos bajo techo', 'juegos-bajo-techo'),\n    ('Videojuegos', 'videojuegos'),\n    ('Salón de fiestas', 'salon-de-fiestas'),\n    ('Río', 'rio'),\n    ('Espacio público abierto', 'espacio-publico'),\n    ('Zoológico', 'zoologico'),\n    ('Estadio', 'estadio'),\n    ('Parada de bus', 'parada-de-bus'),\n    ('Parada de tranvía', 'parada-de-tranvia'),\n    ('Ciclovía', 'ciclovia'),\n    ('Taller de bicicletas', 'taller-de-bicicletas')\n), s AS (\n  SELECT oportunidad, slug,\n         http_get('http://titiler/cog/point/' || $lng || ',' || $lat\n                  || '?url=http://feeds/datasets/accesibilidad-cuenca/' || slug || '_' || $version || '.tif') AS r\n  FROM cat\n)\nSELECT oportunidad AS \"Oportunidad\",\n       CASE WHEN (r-\u003e\u003e'status') = '200' THEN ((r-\u003e\u003e'body')::JSON -\u003e 'values' -\u003e\u003e 0)::DOUBLE END AS \"Minutos\",\n       -- Not drawn: it is what a click on a bar puts in the dropdown.\n       slug\nFROM s\nWHERE (r-\u003e\u003e'status') = '200'\nORDER BY 2, 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Haz clic en el mapa o arrastra el marcador «Punto»: cada barra son los minutos desde ese lugar hasta la oportunidad más cercana de cada categoría (P50), de más cerca a más lejos. 120 = sin acceso en dos horas. Un clic en una barra elige esa categoría.",
+          "id": 7,
+          "links": [],
+          "title": "Desde el punto · minutos a cada oportunidad",
+          "vizConfig": {
+            "group": "barchart",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "axisSoftMax": 140,
+                    "axisSoftMin": 0,
+                    "fillOpacity": 90,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 0,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "links": [
+                    {
+                      "oneClick": true,
+                      "title": "Ver esta categoría en el mapa",
+                      "url": "d/${__dashboard.uid}${__url.params:exclude:var-categoria}\u0026var-categoria=${__data.fields.slug}"
+                    }
+                  ],
+                  "mappings": [
+                    {
+                      "options": {
+                        "120": {
+                          "index": 0,
+                          "text": "sin acceso"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ],
+                  "max": 140,
+                  "min": 0,
+                  "noValue": "El punto está fuera del ráster: arrastra el marcador «Punto» sobre Cuenca.",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#f7fbc7",
+                        "value": 0
+                      },
+                      {
+                        "color": "#dcf1b2",
+                        "value": 15
+                      },
+                      {
+                        "color": "#82ceba",
+                        "value": 30
+                      },
+                      {
+                        "color": "#215ea8",
+                        "value": 60
+                      },
+                      {
+                        "color": "#081d58",
+                        "value": 120
+                      }
+                    ]
+                  },
+                  "unit": "suffix: min"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "slug"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": true,
+                          "viz": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.9,
+                "fullHighlight": false,
+                "groupWidth": 0.8,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "orientation": "horizontal",
+                "showValue": "always",
+                "stacking": "none",
+                "text": {
+                  "valueSize": 11
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                },
+                "xField": "Oportunidad",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+              }
+            },
+            "version": "13.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 5,
+              "width": 9,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 5,
+              "width": 7,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 5,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 15,
+              "width": 16,
+              "x": 0,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 15,
+              "width": 8,
+              "x": 16,
+              "y": 5
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 19,
+              "width": 24,
+              "x": 0,
+              "y": 20
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "mobility",
+      "city"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-6h",
+      "hideTimepicker": true,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "Accesibilidad dual a oportunidades urbanas — Cuenca",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Salud y cuidado · Farmacia",
+            "value": "farmacia"
+          },
+          "description": "La categoría de oportunidad urbana cuyo mapa de accesibilidad se muestra. Se puede escribir para buscar.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Oportunidad",
+          "multi": false,
+          "name": "categoria",
+          "options": [
+            {
+              "selected": false,
+              "text": "Abastecimiento · Tienda de barrio / frutería",
+              "value": "tienda-de-barrio-fruteria"
+            },
+            {
+              "selected": false,
+              "text": "Abastecimiento · Panadería",
+              "value": "panaderia"
+            },
+            {
+              "selected": false,
+              "text": "Abastecimiento · Supermercado",
+              "value": "supermercado"
+            },
+            {
+              "selected": false,
+              "text": "Abastecimiento · Mercado municipal",
+              "value": "mercado-municipal"
+            },
+            {
+              "selected": true,
+              "text": "Salud y cuidado · Farmacia",
+              "value": "farmacia"
+            },
+            {
+              "selected": false,
+              "text": "Salud y cuidado · Médico / dentista / terapia",
+              "value": "medico-dentista-terapia"
+            },
+            {
+              "selected": false,
+              "text": "Salud y cuidado · Peluquería",
+              "value": "peluqueria"
+            },
+            {
+              "selected": false,
+              "text": "Educación · Escuela",
+              "value": "escuela"
+            },
+            {
+              "selected": false,
+              "text": "Educación · Refuerzo escolar",
+              "value": "refuerzo-escolar"
+            },
+            {
+              "selected": false,
+              "text": "Educación · Academia de idiomas",
+              "value": "academia-de-idiomas"
+            },
+            {
+              "selected": false,
+              "text": "Educación · Academia de música / arte",
+              "value": "academia-de-musica-arte"
+            },
+            {
+              "selected": false,
+              "text": "Educación · Academia deportiva",
+              "value": "academia-deportiva"
+            },
+            {
+              "selected": false,
+              "text": "Educación · Librería",
+              "value": "libreria"
+            },
+            {
+              "selected": false,
+              "text": "Educación · Papelería",
+              "value": "papeleria"
+            },
+            {
+              "selected": false,
+              "text": "Cultura · Biblioteca",
+              "value": "biblioteca"
+            },
+            {
+              "selected": false,
+              "text": "Cultura · Museo",
+              "value": "museo"
+            },
+            {
+              "selected": false,
+              "text": "Cultura · Galería de arte",
+              "value": "galeria-de-arte"
+            },
+            {
+              "selected": false,
+              "text": "Cultura · Teatro",
+              "value": "teatro"
+            },
+            {
+              "selected": false,
+              "text": "Cultura · Cine",
+              "value": "cine"
+            },
+            {
+              "selected": false,
+              "text": "Cultura · Centro comunitario",
+              "value": "centro-comunitario"
+            },
+            {
+              "selected": false,
+              "text": "Cultura · Iglesia / catequesis",
+              "value": "iglesia-catequesis"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Restaurante",
+              "value": "restaurante"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Heladería / cafetería",
+              "value": "heladeria-cafeteria"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Patio de comidas",
+              "value": "patio-de-comidas"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Centro comercial",
+              "value": "centro-comercial"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Piscina",
+              "value": "piscina"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Juegos bajo techo",
+              "value": "juegos-bajo-techo"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Videojuegos",
+              "value": "videojuegos"
+            },
+            {
+              "selected": false,
+              "text": "Ocio · Salón de fiestas",
+              "value": "salon-de-fiestas"
+            },
+            {
+              "selected": false,
+              "text": "Espacio público · Río",
+              "value": "rio"
+            },
+            {
+              "selected": false,
+              "text": "Espacio público · Espacio público abierto",
+              "value": "espacio-publico"
+            },
+            {
+              "selected": false,
+              "text": "Espacio público · Zoológico",
+              "value": "zoologico"
+            },
+            {
+              "selected": false,
+              "text": "Espacio público · Estadio",
+              "value": "estadio"
+            },
+            {
+              "selected": false,
+              "text": "Movilidad · Parada de bus",
+              "value": "parada-de-bus"
+            },
+            {
+              "selected": false,
+              "text": "Movilidad · Parada de tranvía",
+              "value": "parada-de-tranvia"
+            },
+            {
+              "selected": false,
+              "text": "Movilidad · Ciclovía",
+              "value": "ciclovia"
+            },
+            {
+              "selected": false,
+              "text": "Movilidad · Taller de bicicletas",
+              "value": "taller-de-bicicletas"
+            }
+          ],
+          "query": "Abastecimiento · Tienda de barrio / frutería : tienda-de-barrio-fruteria,Abastecimiento · Panadería : panaderia,Abastecimiento · Supermercado : supermercado,Abastecimiento · Mercado municipal : mercado-municipal,Salud y cuidado · Farmacia : farmacia,Salud y cuidado · Médico / dentista / terapia : medico-dentista-terapia,Salud y cuidado · Peluquería : peluqueria,Educación · Escuela : escuela,Educación · Refuerzo escolar : refuerzo-escolar,Educación · Academia de idiomas : academia-de-idiomas,Educación · Academia de música / arte : academia-de-musica-arte,Educación · Academia deportiva : academia-deportiva,Educación · Librería : libreria,Educación · Papelería : papeleria,Cultura · Biblioteca : biblioteca,Cultura · Museo : museo,Cultura · Galería de arte : galeria-de-arte,Cultura · Teatro : teatro,Cultura · Cine : cine,Cultura · Centro comunitario : centro-comunitario,Cultura · Iglesia / catequesis : iglesia-catequesis,Ocio · Restaurante : restaurante,Ocio · Heladería / cafetería : heladeria-cafeteria,Ocio · Patio de comidas : patio-de-comidas,Ocio · Centro comercial : centro-comercial,Ocio · Piscina : piscina,Ocio · Juegos bajo techo : juegos-bajo-techo,Ocio · Videojuegos : videojuegos,Ocio · Salón de fiestas : salon-de-fiestas,Espacio público · Río : rio,Espacio público · Espacio público abierto : espacio-publico,Espacio público · Zoológico : zoologico,Espacio público · Estadio : estadio,Movilidad · Parada de bus : parada-de-bus,Movilidad · Parada de tranvía : parada-de-tranvia,Movilidad · Ciclovía : ciclovia,Movilidad · Taller de bicicletas : taller-de-bicicletas",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "La publica el mapa al dibujar un rectángulo o un polígono; vacía, se mide todo el ráster.",
+          "hide": "hideVariable",
+          "label": "Área dibujada (WKT)",
+          "name": "area",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "ConstantVariable",
+        "spec": {
+          "current": {
+            "text": "v2",
+            "value": "v2"
+          },
+          "description": "La entrega de rásters que se lee: datasets/accesibilidad-cuenca/\u003ccategoría\u003e_\u003cversión\u003e.tif. Cada entrega lleva su versión en el nombre: reutilizar la URL serviría los datos viejos desde la caché de TiTiler. Ver datasets/accesibilidad-cuenca/build.sh.",
+          "hide": "hideVariable",
+          "label": "Versión de los datos",
+          "name": "version",
+          "query": "v2",
+          "skipUrlSync": true
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "-2.897",
+            "value": "-2.897"
+          },
+          "description": "La publica el marcador «Punto» del mapa al soltarlo. Por defecto, el Parque Calderón.",
+          "hide": "hideVariable",
+          "label": "Punto · latitud",
+          "name": "lat",
+          "query": "-2.897",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "-79.004",
+            "value": "-79.004"
+          },
+          "description": "La publica el marcador «Punto» del mapa al soltarlo. Por defecto, el Parque Calderón.",
+          "hide": "hideVariable",
+          "label": "Punto · longitud",
+          "name": "lng",
+          "query": "-79.004",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
