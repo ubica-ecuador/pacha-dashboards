@@ -1,0 +1,1349 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "amsterdam-buildings-air"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "enable": true,
+          "filter": {
+            "ids": [
+              7
+            ]
+          },
+          "hide": true,
+          "iconColor": "rgba(87, 148, 242, 0.18)",
+          "name": "Hours on the map",
+          "query": {
+            "datasource": {
+              "name": "infinity"
+            },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "columns": [
+                {
+                  "selector": "time",
+                  "text": "time",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "timeEnd",
+                  "text": "timeEnd",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "text",
+                  "text": "text",
+                  "type": "string"
+                }
+              ],
+              "data": "[{\"time\":\"${t0}\",\"timeEnd\":\"${t1}\",\"text\":\"Hours on the map\"}]",
+              "format": "table",
+              "parser": "backend",
+              "refId": "Window",
+              "source": "inline",
+              "type": "json"
+            },
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Amsterdam's buildings in 3D from 3DBAG, each coloured by the NO2 estimated at it from GGD Amsterdam's reference stations, with its hourly card, and by the sun its roofs can get in a year.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### What it shows\n\nEvery building of central Amsterdam as the Netherlands' 3D building register draws it, roofs and walls in 3D,\ncoloured by a value of its own: the air around it in the first tab, the sun on its roofs in the second.\n\n### Where the data comes from\n\n- **The buildings:** [3DBAG](https://3dbag.nl) (version 2025.09.03, CC BY 4.0, by the 3D geoinformation group of\n  TU Delft and 3DGI), every building of the BAG register reconstructed from the AHN laser scan, with its roofs at\n  LoD 1.2, 1.3 and 2.2. Its CityJSON tiles are read by your browser straight from 3DBAG, only those in view, the\n  nearest the centre first. From afar the air tab draws the whole city as blocks, one per building, from\n  OpenStreetMap's footprints and heights (OpenFreeMap's vector tiles, the base map's buildings); from zoom 15 the\n  buildings near the centre of the view come in with their own roofs (LoD 2.2), each block giving way to its building.\n  The sun tab draws the roofs only (LoD 2.2), as each face's sun needs them.\n- **The air:** [Luchtmeetnet](https://www.luchtmeetnet.nl/), the Dutch national network (RIVM, GGDs, provinces): the\n  hourly NO2 of GGD Amsterdam's 17 reference stations, read through Grafana's server and a cache, whole hours, up to\n  the last 7 days of the time range. The latest hours are provisional.\n\n### How to read it\n\n- **A building's colour is an estimate, not a measurement.** It is the mean NO2 of the hours in the brush's\n  window over the map (the last six by default: drag it, step it or press play to watch the city's air hour by hour;\n  the time picker sets the hours the brush spans, 48 by default), worked out hour by hour from the 17 stations, which stand kilometres apart:\n  each building takes the stations around it weighted by the inverse square of their distance (the dots are the\n  stations, coloured by their own mean). NO2 changes from one street to the next, so a building on a busy\n  road has more than its colour says, one in a quiet courtyard less.\n- The colours are bands at 10, 13, 16, 19 and 22 µg/m³, where Amsterdam's means fall: across a few streets the\n  estimate changes by a few µg/m³, and these bands show it. For a sense of scale: the WHO 2021 guideline is 10 µg/m³\n  for a year's mean and 25 for a day's, the EU's limit 40 for a year's.\n- The card's number is the latest hour, its line every hour of the range: the colour is that line's mean.\n- **Cards:** hover a building for its estimate hour by hour over the time range; the pin keeps the card. The pinned\n  one stands 9 m from the Oude Schans station, so its card follows that station's readings closely.\n- **The sun:** each roof face's yearly potential, kWh/m², from its tilt and the way it faces (a clear sky and diffuse\n  light at Amsterdam's latitude, about 1,000 kWh/m² on flat ground). No shade from neighbours: a solar cadastre's first\n  step, not a yield.",
+                "mode": "markdown"
+              }
+            }
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- NO2 per hour: the median of GGD Amsterdam's stations in bars, the highest\n-- station as a line, from the same requests as the map's (the gateway caches\n-- them). A picture to brush over: its window (t0, t1) is the hours every\n-- building's colour averages.\nWITH stations(station, name, kind, latitude, longitude) AS (VALUES\n  ('NL49002', 'Haarlemmerweg', 'Traffic', 52.38542, 4.87575),\n  ('NL49003', 'Nieuwendammerdijk', 'Municipal', 52.38931, 4.94382),\n  ('NL49007', 'Einsteinweg', 'Traffic', 52.38133, 4.84523),\n  ('NL49012', 'Van Diemenstraat', 'Traffic', 52.38998, 4.88781),\n  ('NL49014', 'Vondelpark', 'Municipal', 52.35971, 4.86621),\n  ('NL49017', 'Stadhouderskade', 'Traffic', 52.35804, 4.89970),\n  ('NL49019', 'Oude Schans', 'Municipal', 52.37206, 4.90440),\n  ('NL49020', 'Jan van Galenstraat', 'Traffic', 52.37479, 4.86032),\n  ('NL49021', 'Kantershof', 'Municipal', 52.32069, 4.98840),\n  ('NL49022', 'Ookmeer', 'Municipal', 52.36681, 4.79334),\n  ('NL49546', 'Zaanstad-Hemkade', 'Industrial', 52.42023, 4.83206),\n  ('NL49561', 'Badhoevedorp-Sloterweg', 'Other', 52.33400, 4.77401),\n  ('NL49564', 'Hoofddorp-Hoofdweg', 'Other', 52.32745, 4.71507),\n  ('NL49565', 'Oude Meer-Aalsmeerderdijk', 'Regional', 52.28013, 4.77082),\n  ('NL49701', 'Zaandam-Wagenschotpad', 'Municipal', 52.44801, 4.81671),\n  ('NL49703', 'Spaarnwoude-Machineweg', 'Regional', 52.39844, 4.72858),\n  ('NL49704', 'Zaanstad-Hoogtij', 'Industrial', 52.42800, 4.77300)\n),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT s.*, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || station || '\u0026formula=' || 'NO2' || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM stations AS s, span\n),\nreadings AS (\n  SELECT station, name, kind, latitude, longitude, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT m.timestamp_measured::TIMESTAMPTZ AS time,\n       median(greatest(m.value, 0)) AS \"Median of the stations\",\n       max(greatest(m.value, 0)) AS \"Highest station\"\nFROM readings\nWHERE m.value IS NOT NULL\nGROUP BY 1\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The hours the buildings show. Drag the window, resize it by its handles or draw a new one, step it hour by hour, or press play: each building takes the mean of the stations' readings in the window, estimated at it, and every card points at the window's end.",
+          "id": 6,
+          "links": [],
+          "title": "Hours on the map",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#5794F2",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "mean",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "unit": "µg/m³"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Highest station"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.drawStyle",
+                        "value": "line"
+                      },
+                      {
+                        "id": "custom.aggregation",
+                        "value": "max"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "backgroundColor": "#121d31",
+                "backgroundTransparency": 5,
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.5
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "loop": false,
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "always",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1200,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "windowMode": "free"
+              },
+              "pluginVersion": ""
+            }
+          }
+        }
+      },
+      "panel-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH no2 AS (\n-- Server side: the hourly NO2 of GGD Amsterdam's 17 stations over the time\n-- range (at most its last 7 days), from Luchtmeetnet's open API, one request per\n-- station, through the gateway's cache (feeds). Each value is the mean of the\n-- hour that ends at its time. A reading a little under zero (the instruments'\n-- noise around nothing) counts as 0.\nWITH stations(station, name, kind, latitude, longitude) AS (VALUES\n  ('NL49002', 'Haarlemmerweg', 'Traffic', 52.38542, 4.87575),\n  ('NL49003', 'Nieuwendammerdijk', 'Municipal', 52.38931, 4.94382),\n  ('NL49007', 'Einsteinweg', 'Traffic', 52.38133, 4.84523),\n  ('NL49012', 'Van Diemenstraat', 'Traffic', 52.38998, 4.88781),\n  ('NL49014', 'Vondelpark', 'Municipal', 52.35971, 4.86621),\n  ('NL49017', 'Stadhouderskade', 'Traffic', 52.35804, 4.89970),\n  ('NL49019', 'Oude Schans', 'Municipal', 52.37206, 4.90440),\n  ('NL49020', 'Jan van Galenstraat', 'Traffic', 52.37479, 4.86032),\n  ('NL49021', 'Kantershof', 'Municipal', 52.32069, 4.98840),\n  ('NL49022', 'Ookmeer', 'Municipal', 52.36681, 4.79334),\n  ('NL49546', 'Zaanstad-Hemkade', 'Industrial', 52.42023, 4.83206),\n  ('NL49561', 'Badhoevedorp-Sloterweg', 'Other', 52.33400, 4.77401),\n  ('NL49564', 'Hoofddorp-Hoofdweg', 'Other', 52.32745, 4.71507),\n  ('NL49565', 'Oude Meer-Aalsmeerderdijk', 'Regional', 52.28013, 4.77082),\n  ('NL49701', 'Zaandam-Wagenschotpad', 'Municipal', 52.44801, 4.81671),\n  ('NL49703', 'Spaarnwoude-Machineweg', 'Regional', 52.39844, 4.72858),\n  ('NL49704', 'Zaanstad-Hoogtij', 'Industrial', 52.42800, 4.77300)\n),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT s.*, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || station || '\u0026formula=' || 'NO2' || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM stations AS s, span\n),\nreadings AS (\n  SELECT station, name, kind, latitude, longitude, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT station, name, kind, latitude, longitude,\n       m.timestamp_measured::TIMESTAMPTZ AS time,\n       round(greatest(m.value, 0), 1) AS no2\nFROM readings\nWHERE m.value IS NOT NULL\nORDER BY station, time\n)\nSELECT epoch_ms(max(time)) AS \"Latest hour\" FROM no2"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The end of the newest hour any station has published (Luchtmeetnet).",
+          "id": 3,
+          "links": [],
+          "title": "Latest hour",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- 3DBAG's tiles over central Amsterdam (version v20250903), as its WFS tile index\n-- (BAG3D:tiles) gives them in WGS84: each tile's box and its CityJSON file. Kepler\n-- Plus's City Model reads in the browser only the tiles the view needs.\nWITH tiles(tile_id, west, south, east, north) AS (VALUES\n  ('10/422/712', 4.860148, 52.350745, 4.867539, 52.355271),\n  ('10/422/714', 4.860094, 52.355239, 4.867487, 52.359765),\n  ('10/422/716', 4.860041, 52.359733, 4.867434, 52.364259),\n  ('10/422/718', 4.859987, 52.364226, 4.867381, 52.368752),\n  ('10/424/712', 4.867487, 52.350778, 4.874877, 52.355303),\n  ('10/424/714', 4.867434, 52.355271, 4.874825, 52.359797),\n  ('10/424/716', 4.867381, 52.359765, 4.874774, 52.364291),\n  ('10/424/718', 4.867329, 52.364259, 4.874722, 52.368784),\n  ('10/424/720', 4.867276, 52.368752, 4.874670, 52.373278),\n  ('10/424/722', 4.867223, 52.373246, 4.874618, 52.377772),\n  ('10/426/712', 4.874825, 52.350810, 4.882216, 52.355335),\n  ('10/426/714', 4.874774, 52.355303, 4.882164, 52.359829),\n  ('10/426/716', 4.874722, 52.359797, 4.882113, 52.364322),\n  ('10/426/718', 4.874670, 52.364291, 4.882062, 52.368816),\n  ('10/426/720', 4.874618, 52.368784, 4.882011, 52.373310),\n  ('10/426/722', 4.874566, 52.373278, 4.881960, 52.377803),\n  ('10/428/712', 4.882164, 52.350841, 4.889554, 52.355366),\n  ('10/428/714', 4.882113, 52.355335, 4.889503, 52.359860),\n  ('10/428/716', 4.882062, 52.359829, 4.889453, 52.364353),\n  ('10/428/718', 4.882011, 52.364322, 4.889403, 52.368847),\n  ('10/428/720', 4.881960, 52.368816, 4.889352, 52.373341),\n  ('10/428/722', 4.881909, 52.373310, 4.889302, 52.377834),\n  ('10/428/724', 4.881857, 52.377803, 4.889251, 52.382328),\n  ('10/428/726', 4.881806, 52.382297, 4.889201, 52.386822),\n  ('10/430/712', 4.889503, 52.350872, 4.896892, 52.355397),\n  ('10/430/714', 4.889453, 52.355366, 4.896842, 52.359890),\n  ('10/430/716', 4.889403, 52.359860, 4.896793, 52.364384),\n  ('10/430/718', 4.889352, 52.364353, 4.896743, 52.368878),\n  ('10/430/720', 4.889302, 52.368847, 4.896693, 52.373371),\n  ('10/430/722', 4.889251, 52.373341, 4.896644, 52.377865),\n  ('10/430/724', 4.889201, 52.377834, 4.896594, 52.382359),\n  ('10/430/726', 4.889150, 52.382328, 4.896544, 52.386852),\n  ('10/432/712', 4.896842, 52.350903, 4.904230, 52.355427),\n  ('10/432/714', 4.896793, 52.355397, 4.904182, 52.359920),\n  ('10/432/716', 4.896743, 52.359890, 4.904133, 52.364414),\n  ('10/432/718', 4.896693, 52.364384, 4.904084, 52.368908),\n  ('10/432/720', 4.896644, 52.368878, 4.904035, 52.373401),\n  ('10/432/722', 4.896594, 52.373371, 4.903986, 52.377895),\n  ('10/434/712', 4.904182, 52.350933, 4.911569, 52.355457),\n  ('10/434/714', 4.904133, 52.355427, 4.911521, 52.359950),\n  ('10/434/716', 4.904084, 52.359920, 4.911472, 52.364444),\n  ('10/434/718', 4.904035, 52.364414, 4.911424, 52.368938),\n  ('10/434/720', 4.903986, 52.368908, 4.911376, 52.373431),\n  ('10/434/722', 4.903937, 52.373401, 4.911328, 52.377925),\n  ('8/416/728', 4.837518, 52.386594, 4.867118, 52.404701),\n  ('9/420/720', 4.852538, 52.368687, 4.867329, 52.377740),\n  ('9/420/724', 4.852429, 52.377674, 4.867223, 52.386727),\n  ('9/424/724', 4.867118, 52.377740, 4.881909, 52.386790),\n  ('9/424/728', 4.867012, 52.386727, 4.881806, 52.395778),\n  ('9/428/728', 4.881704, 52.386790, 4.896495, 52.395839),\n  ('9/432/724', 4.896495, 52.377865, 4.911280, 52.386912),\n  ('9/432/728', 4.896395, 52.386852, 4.911183, 52.395899),\n  ('9/436/712', 4.911472, 52.350963, 4.926245, 52.360008),\n  ('9/436/716', 4.911376, 52.359950, 4.926152, 52.368996),\n  ('9/436/720', 4.911280, 52.368938, 4.926059, 52.377983),\n  ('9/436/724', 4.911183, 52.377925, 4.925965, 52.386970),\n  ('9/436/728', 4.911087, 52.386912, 4.925872, 52.395958)\n)\nSELECT tile_id,\n       'https://3dbag.fsn1.your-objectstorage.com/v20250903/tiles/' || tile_id || '/' ||\n         replace(tile_id, '/', '-') || '.city.json.gz' AS city_url,\n       west, south, east, north\nFROM tiles"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the hourly NO2 of GGD Amsterdam's 17 stations over the time\n-- range (at most its last 7 days), from Luchtmeetnet's open API, one request per\n-- station, through the gateway's cache (feeds). Each value is the mean of the\n-- hour that ends at its time. A reading a little under zero (the instruments'\n-- noise around nothing) counts as 0.\nWITH stations(station, name, kind, latitude, longitude) AS (VALUES\n  ('NL49002', 'Haarlemmerweg', 'Traffic', 52.38542, 4.87575),\n  ('NL49003', 'Nieuwendammerdijk', 'Municipal', 52.38931, 4.94382),\n  ('NL49007', 'Einsteinweg', 'Traffic', 52.38133, 4.84523),\n  ('NL49012', 'Van Diemenstraat', 'Traffic', 52.38998, 4.88781),\n  ('NL49014', 'Vondelpark', 'Municipal', 52.35971, 4.86621),\n  ('NL49017', 'Stadhouderskade', 'Traffic', 52.35804, 4.89970),\n  ('NL49019', 'Oude Schans', 'Municipal', 52.37206, 4.90440),\n  ('NL49020', 'Jan van Galenstraat', 'Traffic', 52.37479, 4.86032),\n  ('NL49021', 'Kantershof', 'Municipal', 52.32069, 4.98840),\n  ('NL49022', 'Ookmeer', 'Municipal', 52.36681, 4.79334),\n  ('NL49546', 'Zaanstad-Hemkade', 'Industrial', 52.42023, 4.83206),\n  ('NL49561', 'Badhoevedorp-Sloterweg', 'Other', 52.33400, 4.77401),\n  ('NL49564', 'Hoofddorp-Hoofdweg', 'Other', 52.32745, 4.71507),\n  ('NL49565', 'Oude Meer-Aalsmeerderdijk', 'Regional', 52.28013, 4.77082),\n  ('NL49701', 'Zaandam-Wagenschotpad', 'Municipal', 52.44801, 4.81671),\n  ('NL49703', 'Spaarnwoude-Machineweg', 'Regional', 52.39844, 4.72858),\n  ('NL49704', 'Zaanstad-Hoogtij', 'Industrial', 52.42800, 4.77300)\n),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT s.*, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || station || '\u0026formula=' || 'NO2' || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM stations AS s, span\n),\nreadings AS (\n  SELECT station, name, kind, latitude, longitude, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT station, name, kind, latitude, longitude,\n       m.timestamp_measured::TIMESTAMPTZ AS time,\n       round(greatest(m.value, 0), 1) AS no2\nFROM readings\nWHERE m.value IS NOT NULL\nORDER BY station, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "3DBAG's buildings of central Amsterdam, each coloured by the mean NO2 of the hours in the brush's window, estimated at it from GGD Amsterdam's 17 reference stations (inverse distance weighting; the dots are the stations, coloured by their own mean over the window), in µg/m³. From afar the city is drawn as blocks, OpenStreetMap's buildings. The sun stands where it stood at the window's end, and every building casts its shadow. Hover a building for its card: the estimate hour by hour, its value at the window's end; the pin keeps it.",
+          "id": 1,
+          "links": [],
+          "title": "NO2 at every building, estimated from the stations around",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "clickArea": false,
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 15,
+                      "dragRotate": true,
+                      "latitude": 52.3712,
+                      "longitude": 4.904,
+                      "pitch": 45,
+                      "zoom": 15.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "effects": [
+                        {
+                          "id": "light",
+                          "isEnabled": true,
+                          "parameters": {
+                            "ambientLightColor": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "ambientLightIntensity": 0.8,
+                            "shadowColor": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "shadowIntensity": 0.5,
+                            "sunLightColor": [
+                              255,
+                              250,
+                              240
+                            ],
+                            "sunLightIntensity": 1.2,
+                            "timeMode": "animation",
+                            "timestamp": 0
+                          },
+                          "type": "lightAndShadow"
+                        }
+                      ],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "colorsByDataId": {
+                              "grafana-B": "#C06C84"
+                            },
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "Europe/Amsterdam",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            0
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "no2"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "air",
+                        "city"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              109,
+                              67
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "NO2 at GGD Amsterdam's stations (µg/m³)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "buildingsAggregate": "mean",
+                              "buildingsMode": "interpolate",
+                              "buildingsNeighbours": "all",
+                              "buildingsOn": "citymodel:city",
+                              "buildingsPower": 2,
+                              "buildingsReduce": "mean",
+                              "buildingsSensorRadius": 7,
+                              "buildingsSensors": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    10,
+                                    "#00939C"
+                                  ],
+                                  [
+                                    13,
+                                    "#5DBABF"
+                                  ],
+                                  [
+                                    16,
+                                    "#BAE1E2"
+                                  ],
+                                  [
+                                    19,
+                                    "#F8C0AA"
+                                  ],
+                                  [
+                                    22,
+                                    "#DD7755"
+                                  ],
+                                  [
+                                    null,
+                                    "#E0301E"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#00939C",
+                                  "#5DBABF",
+                                  "#BAE1E2",
+                                  "#F8C0AA",
+                                  "#DD7755",
+                                  "#E0301E"
+                                ],
+                                "name": "NO2 mean, µg/m³",
+                                "type": "custom"
+                              },
+                              "opacity": 1
+                            }
+                          },
+                          "id": "air",
+                          "type": "buildings",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "no2",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "3DBAG buildings",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardMin": 0,
+                              "cardPinned": [
+                                "NL.IMBAG.Pand.0363100012182077"
+                              ],
+                              "cardPlacement": "above",
+                              "cardShow": "hover",
+                              "cardSize": "M",
+                              "cardUnit": " µg/m³",
+                              "cityApplyTo": "all",
+                              "cityColourBy": "sensors",
+                              "cityFootprints": "",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 9
+                            }
+                          },
+                          "id": "city",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "places": {},
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-median": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH no2 AS (\n-- Server side: the hourly NO2 of GGD Amsterdam's 17 stations over the time\n-- range (at most its last 7 days), from Luchtmeetnet's open API, one request per\n-- station, through the gateway's cache (feeds). Each value is the mean of the\n-- hour that ends at its time. A reading a little under zero (the instruments'\n-- noise around nothing) counts as 0.\nWITH stations(station, name, kind, latitude, longitude) AS (VALUES\n  ('NL49002', 'Haarlemmerweg', 'Traffic', 52.38542, 4.87575),\n  ('NL49003', 'Nieuwendammerdijk', 'Municipal', 52.38931, 4.94382),\n  ('NL49007', 'Einsteinweg', 'Traffic', 52.38133, 4.84523),\n  ('NL49012', 'Van Diemenstraat', 'Traffic', 52.38998, 4.88781),\n  ('NL49014', 'Vondelpark', 'Municipal', 52.35971, 4.86621),\n  ('NL49017', 'Stadhouderskade', 'Traffic', 52.35804, 4.89970),\n  ('NL49019', 'Oude Schans', 'Municipal', 52.37206, 4.90440),\n  ('NL49020', 'Jan van Galenstraat', 'Traffic', 52.37479, 4.86032),\n  ('NL49021', 'Kantershof', 'Municipal', 52.32069, 4.98840),\n  ('NL49022', 'Ookmeer', 'Municipal', 52.36681, 4.79334),\n  ('NL49546', 'Zaanstad-Hemkade', 'Industrial', 52.42023, 4.83206),\n  ('NL49561', 'Badhoevedorp-Sloterweg', 'Other', 52.33400, 4.77401),\n  ('NL49564', 'Hoofddorp-Hoofdweg', 'Other', 52.32745, 4.71507),\n  ('NL49565', 'Oude Meer-Aalsmeerderdijk', 'Regional', 52.28013, 4.77082),\n  ('NL49701', 'Zaandam-Wagenschotpad', 'Municipal', 52.44801, 4.81671),\n  ('NL49703', 'Spaarnwoude-Machineweg', 'Regional', 52.39844, 4.72858),\n  ('NL49704', 'Zaanstad-Hoogtij', 'Industrial', 52.42800, 4.77300)\n),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT s.*, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || station || '\u0026formula=' || 'NO2' || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM stations AS s, span\n),\nreadings AS (\n  SELECT station, name, kind, latitude, longitude, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT station, name, kind, latitude, longitude,\n       m.timestamp_measured::TIMESTAMPTZ AS time,\n       round(greatest(m.value, 0), 1) AS no2\nFROM readings\nWHERE m.value IS NOT NULL\nORDER BY station, time\n), latest AS (SELECT max(time) AS t FROM no2)\nSELECT median(no2) AS \"NO2\" FROM no2, latest WHERE time = latest.t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median NO2 of the stations over the newest hour, µg/m³: the city's background the map spreads between them.",
+          "id": 4,
+          "links": [],
+          "title": "Median of the stations, latest hour",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#00939C",
+                        "value": 0
+                      },
+                      {
+                        "color": "#8BC6C9",
+                        "value": 5
+                      },
+                      {
+                        "color": "#E6FAFA",
+                        "value": 10
+                      },
+                      {
+                        "color": "#EB9373",
+                        "value": 15
+                      },
+                      {
+                        "color": "#E0301E",
+                        "value": 25
+                      },
+                      {
+                        "color": "#FF6F91",
+                        "value": 40
+                      }
+                    ]
+                  },
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            }
+          }
+        }
+      },
+      "panel-sun": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- 3DBAG's tiles over central Amsterdam (version v20250903), as its WFS tile index\n-- (BAG3D:tiles) gives them in WGS84: each tile's box and its CityJSON file. Kepler\n-- Plus's City Model reads in the browser only the tiles the view needs.\nWITH tiles(tile_id, west, south, east, north) AS (VALUES\n  ('10/422/712', 4.860148, 52.350745, 4.867539, 52.355271),\n  ('10/422/714', 4.860094, 52.355239, 4.867487, 52.359765),\n  ('10/422/716', 4.860041, 52.359733, 4.867434, 52.364259),\n  ('10/422/718', 4.859987, 52.364226, 4.867381, 52.368752),\n  ('10/424/712', 4.867487, 52.350778, 4.874877, 52.355303),\n  ('10/424/714', 4.867434, 52.355271, 4.874825, 52.359797),\n  ('10/424/716', 4.867381, 52.359765, 4.874774, 52.364291),\n  ('10/424/718', 4.867329, 52.364259, 4.874722, 52.368784),\n  ('10/424/720', 4.867276, 52.368752, 4.874670, 52.373278),\n  ('10/424/722', 4.867223, 52.373246, 4.874618, 52.377772),\n  ('10/426/712', 4.874825, 52.350810, 4.882216, 52.355335),\n  ('10/426/714', 4.874774, 52.355303, 4.882164, 52.359829),\n  ('10/426/716', 4.874722, 52.359797, 4.882113, 52.364322),\n  ('10/426/718', 4.874670, 52.364291, 4.882062, 52.368816),\n  ('10/426/720', 4.874618, 52.368784, 4.882011, 52.373310),\n  ('10/426/722', 4.874566, 52.373278, 4.881960, 52.377803),\n  ('10/428/712', 4.882164, 52.350841, 4.889554, 52.355366),\n  ('10/428/714', 4.882113, 52.355335, 4.889503, 52.359860),\n  ('10/428/716', 4.882062, 52.359829, 4.889453, 52.364353),\n  ('10/428/718', 4.882011, 52.364322, 4.889403, 52.368847),\n  ('10/428/720', 4.881960, 52.368816, 4.889352, 52.373341),\n  ('10/428/722', 4.881909, 52.373310, 4.889302, 52.377834),\n  ('10/428/724', 4.881857, 52.377803, 4.889251, 52.382328),\n  ('10/428/726', 4.881806, 52.382297, 4.889201, 52.386822),\n  ('10/430/712', 4.889503, 52.350872, 4.896892, 52.355397),\n  ('10/430/714', 4.889453, 52.355366, 4.896842, 52.359890),\n  ('10/430/716', 4.889403, 52.359860, 4.896793, 52.364384),\n  ('10/430/718', 4.889352, 52.364353, 4.896743, 52.368878),\n  ('10/430/720', 4.889302, 52.368847, 4.896693, 52.373371),\n  ('10/430/722', 4.889251, 52.373341, 4.896644, 52.377865),\n  ('10/430/724', 4.889201, 52.377834, 4.896594, 52.382359),\n  ('10/430/726', 4.889150, 52.382328, 4.896544, 52.386852),\n  ('10/432/712', 4.896842, 52.350903, 4.904230, 52.355427),\n  ('10/432/714', 4.896793, 52.355397, 4.904182, 52.359920),\n  ('10/432/716', 4.896743, 52.359890, 4.904133, 52.364414),\n  ('10/432/718', 4.896693, 52.364384, 4.904084, 52.368908),\n  ('10/432/720', 4.896644, 52.368878, 4.904035, 52.373401),\n  ('10/432/722', 4.896594, 52.373371, 4.903986, 52.377895),\n  ('10/434/712', 4.904182, 52.350933, 4.911569, 52.355457),\n  ('10/434/714', 4.904133, 52.355427, 4.911521, 52.359950),\n  ('10/434/716', 4.904084, 52.359920, 4.911472, 52.364444),\n  ('10/434/718', 4.904035, 52.364414, 4.911424, 52.368938),\n  ('10/434/720', 4.903986, 52.368908, 4.911376, 52.373431),\n  ('10/434/722', 4.903937, 52.373401, 4.911328, 52.377925),\n  ('8/416/728', 4.837518, 52.386594, 4.867118, 52.404701),\n  ('9/420/720', 4.852538, 52.368687, 4.867329, 52.377740),\n  ('9/420/724', 4.852429, 52.377674, 4.867223, 52.386727),\n  ('9/424/724', 4.867118, 52.377740, 4.881909, 52.386790),\n  ('9/424/728', 4.867012, 52.386727, 4.881806, 52.395778),\n  ('9/428/728', 4.881704, 52.386790, 4.896495, 52.395839),\n  ('9/432/724', 4.896495, 52.377865, 4.911280, 52.386912),\n  ('9/432/728', 4.896395, 52.386852, 4.911183, 52.395899),\n  ('9/436/712', 4.911472, 52.350963, 4.926245, 52.360008),\n  ('9/436/716', 4.911376, 52.359950, 4.926152, 52.368996),\n  ('9/436/720', 4.911280, 52.368938, 4.926059, 52.377983),\n  ('9/436/724', 4.911183, 52.377925, 4.925965, 52.386970),\n  ('9/436/728', 4.911087, 52.386912, 4.925872, 52.395958)\n)\nSELECT tile_id,\n       'https://3dbag.fsn1.your-objectstorage.com/v20250903/tiles/' || tile_id || '/' ||\n         replace(tile_id, '/', '-') || '.city.json.gz' AS city_url,\n       west, south, east, north\nFROM tiles"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "3DBAG's buildings of central Amsterdam (LoD 2.2), each roof face coloured by the sun it can get in a year, kWh/m²: about 1,000 on flat ground in Amsterdam times a factor for its tilt and the way it faces (clear sky and diffuse light, no shade from neighbours). Hover a face for its slope, orientation and area.",
+          "id": 2,
+          "links": [],
+          "title": "The sun on every roof, a year's potential",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "clickArea": false,
+                "followGrafanaTheme": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 20,
+                      "dragRotate": true,
+                      "latitude": 52.3712,
+                      "longitude": 4.8975,
+                      "pitch": 50,
+                      "zoom": 16.4
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "no2"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "city"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "3DBAG buildings",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cityColourBy": "solar",
+                              "cityFootprints": "none",
+                              "cityLod": "highest",
+                              "cityPick": "surface",
+                              "citySolarGhi": 1000,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#5A1846",
+                                  "#900C3F",
+                                  "#C70039",
+                                  "#E3611C",
+                                  "#F1920E",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              }
+                            }
+                          },
+                          "id": "city",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "places": {},
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-trends": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every station's hourly NO2, one line each (the same requests as the map's,\n-- through the gateway's cache).\nWITH stations(station, name, kind, latitude, longitude) AS (VALUES\n  ('NL49002', 'Haarlemmerweg', 'Traffic', 52.38542, 4.87575),\n  ('NL49003', 'Nieuwendammerdijk', 'Municipal', 52.38931, 4.94382),\n  ('NL49007', 'Einsteinweg', 'Traffic', 52.38133, 4.84523),\n  ('NL49012', 'Van Diemenstraat', 'Traffic', 52.38998, 4.88781),\n  ('NL49014', 'Vondelpark', 'Municipal', 52.35971, 4.86621),\n  ('NL49017', 'Stadhouderskade', 'Traffic', 52.35804, 4.89970),\n  ('NL49019', 'Oude Schans', 'Municipal', 52.37206, 4.90440),\n  ('NL49020', 'Jan van Galenstraat', 'Traffic', 52.37479, 4.86032),\n  ('NL49021', 'Kantershof', 'Municipal', 52.32069, 4.98840),\n  ('NL49022', 'Ookmeer', 'Municipal', 52.36681, 4.79334),\n  ('NL49546', 'Zaanstad-Hemkade', 'Industrial', 52.42023, 4.83206),\n  ('NL49561', 'Badhoevedorp-Sloterweg', 'Other', 52.33400, 4.77401),\n  ('NL49564', 'Hoofddorp-Hoofdweg', 'Other', 52.32745, 4.71507),\n  ('NL49565', 'Oude Meer-Aalsmeerderdijk', 'Regional', 52.28013, 4.77082),\n  ('NL49701', 'Zaandam-Wagenschotpad', 'Municipal', 52.44801, 4.81671),\n  ('NL49703', 'Spaarnwoude-Machineweg', 'Regional', 52.39844, 4.72858),\n  ('NL49704', 'Zaanstad-Hoogtij', 'Industrial', 52.42800, 4.77300)\n),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT s.*, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || station || '\u0026formula=' || 'NO2' || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM stations AS s, span\n),\nreadings AS (\n  SELECT station, name, kind, latitude, longitude, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT m.timestamp_measured::TIMESTAMPTZ AS time, name, round(greatest(m.value, 0), 1) AS no2\nFROM readings\nWHERE m.value IS NOT NULL\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The median of the stations, hour by hour.\nWITH stations(station, name, kind, latitude, longitude) AS (VALUES\n  ('NL49002', 'Haarlemmerweg', 'Traffic', 52.38542, 4.87575),\n  ('NL49003', 'Nieuwendammerdijk', 'Municipal', 52.38931, 4.94382),\n  ('NL49007', 'Einsteinweg', 'Traffic', 52.38133, 4.84523),\n  ('NL49012', 'Van Diemenstraat', 'Traffic', 52.38998, 4.88781),\n  ('NL49014', 'Vondelpark', 'Municipal', 52.35971, 4.86621),\n  ('NL49017', 'Stadhouderskade', 'Traffic', 52.35804, 4.89970),\n  ('NL49019', 'Oude Schans', 'Municipal', 52.37206, 4.90440),\n  ('NL49020', 'Jan van Galenstraat', 'Traffic', 52.37479, 4.86032),\n  ('NL49021', 'Kantershof', 'Municipal', 52.32069, 4.98840),\n  ('NL49022', 'Ookmeer', 'Municipal', 52.36681, 4.79334),\n  ('NL49546', 'Zaanstad-Hemkade', 'Industrial', 52.42023, 4.83206),\n  ('NL49561', 'Badhoevedorp-Sloterweg', 'Other', 52.33400, 4.77401),\n  ('NL49564', 'Hoofddorp-Hoofdweg', 'Other', 52.32745, 4.71507),\n  ('NL49565', 'Oude Meer-Aalsmeerderdijk', 'Regional', 52.28013, 4.77082),\n  ('NL49701', 'Zaandam-Wagenschotpad', 'Municipal', 52.44801, 4.81671),\n  ('NL49703', 'Spaarnwoude-Machineweg', 'Regional', 52.39844, 4.72858),\n  ('NL49704', 'Zaanstad-Hoogtij', 'Industrial', 52.42800, 4.77300)\n),\nspan AS (\n  -- Whole hours, so one URL stands for an hour and the gateway's cache can\n  -- answer it; and at most 7 days, the most Luchtmeetnet gives in one request.\n  SELECT date_trunc('hour', make_timestamp(CAST(${__to} AS BIGINT) * 1000)) AS t1,\n         greatest(date_trunc('hour', make_timestamp(CAST(${__from} AS BIGINT) * 1000)), t1 - INTERVAL 7 DAY) AS t0\n),\nfetched AS (\n  SELECT s.*, http_get('http://feeds/luchtmeetnet/measurements?station_number=' || station || '\u0026formula=' || 'NO2' || '\u0026start=' || strftime(t0, '%Y-%m-%dT%H:00:00Z') || '\u0026end=' || strftime(t1, '%Y-%m-%dT%H:00:00Z')) AS r\n  FROM stations AS s, span\n),\nreadings AS (\n  SELECT station, name, kind, latitude, longitude, unnest(from_json((r-\u003e\u003e'body')::JSON-\u003e'data', '[{\"timestamp_measured\":\"VARCHAR\",\"value\":\"DOUBLE\"}]')) AS m\n  FROM fetched\n  WHERE (r-\u003e\u003e'status') = '200'\n)\nSELECT m.timestamp_measured::TIMESTAMPTZ AS time, median(greatest(m.value, 0)) AS no2\nFROM readings\nWHERE m.value IS NOT NULL\nGROUP BY 1\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "prepareTimeSeries",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "format": "multi"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Every station's hourly NO2 in grey, their median in orange; the shaded hours are the brush's window, the hours the buildings show. The dashed line is the WHO 2021 guideline for a 24-hour mean, 25 µg/m³: an hour above it is not a breach by itself. NO2 comes mostly from traffic, so it rises in the rush hours and falls at night. The crosshair is shared: hover here and the map's cards and the brush show the same hour.",
+          "id": 7,
+          "links": [],
+          "title": "NO2 by the hour",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8e8e8e",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": true,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 7200000,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  },
+                  "displayName": "${__field.labels.name}",
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "transparent",
+                        "value": 0
+                      },
+                      {
+                        "color": "#8e8e8e",
+                        "value": 25
+                      }
+                    ]
+                  },
+                  "unit": "conμgm3"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byFrameRefID",
+                      "options": "B"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Median of the stations"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E07A3E",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map"
+                        },
+                        "height": 16,
+                        "width": 18,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-latest"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 18,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-median"
+                        },
+                        "height": 3,
+                        "width": 6,
+                        "x": 18,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 16,
+                        "width": 6,
+                        "x": 18,
+                        "y": 6
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-brush"
+                        },
+                        "height": 2,
+                        "width": 6,
+                        "x": 18,
+                        "y": 22
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-trends"
+                        },
+                        "height": 8,
+                        "width": 18,
+                        "x": 0,
+                        "y": 16
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "The air at every building"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-sun"
+                        },
+                        "height": 20,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "The sun on every roof"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "air-quality",
+      "buildings",
+      "city",
+      "duckdb",
+      "kepler",
+      "live",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "15m",
+      "autoRefreshIntervals": [
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-48h",
+      "hideTimepicker": false,
+      "timezone": "Europe/Amsterdam",
+      "to": "now"
+    },
+    "title": "Amsterdam's buildings in 3D: the air at each and the sun on its roofs",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 6 HOUR, '%Y-%m-%dT%H:00:00.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window from (brush; last six hours by default)",
+          "multi": false,
+          "name": "t0",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC') - INTERVAL 6 HOUR, '%Y-%m-%dT%H:00:00.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC'), '%Y-%m-%dT%H:00:00.000Z')",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Window to (brush; last six hours by default)",
+          "multi": false,
+          "name": "t1",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The brush's window when the dashboard opens: the last six hours, whole\n-- hours in UTC. The brush and the map overwrite it (custom values allowed),\n-- and a shared link keeps its own.\nSELECT strftime(date_trunc('hour', now() AT TIME ZONE 'UTC'), '%Y-%m-%dT%H:00:00.000Z')"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
