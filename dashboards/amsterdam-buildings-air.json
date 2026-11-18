@@ -109,7 +109,8 @@
                 "content": "### What it shows\n\nEvery building of central Amsterdam as the Netherlands' 3D building register draws it, roofs and walls in 3D,\ncoloured by a value of its own: the air around it in the first tab, the sun on its roofs in the second.\n\n### Where the data comes from\n\n- **The buildings:** [3DBAG](https://3dbag.nl) (version 2025.09.03, CC BY 4.0, by the 3D geoinformation group of\n  TU Delft and 3DGI), every building of the BAG register reconstructed from the AHN laser scan, with its roofs at\n  LoD 1.2, 1.3 and 2.2. Its CityJSON tiles are read by your browser straight from 3DBAG, only those in view, the\n  nearest the centre first. From afar the air tab draws the whole city as blocks, one per building, from\n  OpenStreetMap's footprints and heights (OpenFreeMap's vector tiles, the base map's buildings); from zoom 15 the\n  buildings near the centre of the view come in with their own roofs (LoD 2.2), each block giving way to its building.\n  The sun tab draws the roofs only (LoD 2.2), as each face's sun needs them.\n- **The air:** [Luchtmeetnet](https://www.luchtmeetnet.nl/), the Dutch national network (RIVM, GGDs, provinces): the\n  hourly NO2 of GGD Amsterdam's 17 reference stations, read through Grafana's server and a cache, whole hours, up to\n  the last 7 days of the time range. The latest hours are provisional.\n\n### How to read it\n\n- **A building's colour is an estimate, not a measurement.** It is the mean NO2 of the hours in the brush's\n  window over the map (the last six by default: drag it, step it or press play to watch the city's air hour by hour;\n  the time picker sets the hours the brush spans, 48 by default), worked out hour by hour from the 17 stations, which stand kilometres apart:\n  each building takes the stations around it weighted by the inverse square of their distance (the dots are the\n  stations, coloured by their own mean). NO2 changes from one street to the next, so a building on a busy\n  road has more than its colour says, one in a quiet courtyard less.\n- The colours are bands at 10, 13, 16, 19 and 22 µg/m³, where Amsterdam's means fall: across a few streets the\n  estimate changes by a few µg/m³, and these bands show it. For a sense of scale: the WHO 2021 guideline is 10 µg/m³\n  for a year's mean and 25 for a day's, the EU's limit 40 for a year's.\n- The card's number is the latest hour, its line every hour of the range: the colour is that line's mean.\n- **Cards:** hover a building for its estimate hour by hour over the time range; the pin keeps the card. The pinned\n  one stands 9 m from the Oude Schans station, so its card follows that station's readings closely.\n- **The sun:** each roof face's yearly potential, kWh/m², from its tilt and the way it faces (a clear sky and diffuse\n  light at Amsterdam's latitude, about 1,000 kWh/m² on flat ground). No shade from neighbours: a solar cadastre's first\n  step, not a yield.",
                 "mode": "markdown"
               }
-            }
+            },
+            "version": "13.3.0"
           }
         }
       },
@@ -171,6 +172,19 @@
                     }
                   },
                   "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "µg/m³"
                 },
                 "overrides": [
@@ -200,10 +214,13 @@
                 ]
               },
               "options": {
+                "accentColor": "",
                 "backgroundColor": "#121d31",
                 "backgroundTransparency": 5,
+                "barColor": "",
                 "barsColor": "series",
                 "bucket": "1h",
+                "cursorColor": "",
                 "cursorFollow": true,
                 "cursorPublish": true,
                 "density": "comfortable",
@@ -218,8 +235,11 @@
                 },
                 "followLatest": false,
                 "hatchGaps": true,
-                "hoverTooltip": true,
+                "hoverTooltip": false,
+                "instantVariable": "t",
                 "loop": false,
+                "mosaicColumn": "time",
+                "mosaicSelection": "",
                 "output": "variables",
                 "outsideOpacity": 30,
                 "pinned": "always",
@@ -227,7 +247,9 @@
                 "pinnedHeight": 52,
                 "pinnedPosition": "floating",
                 "pinnedStyle": "solid",
+                "playMotion": "smooth",
                 "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
                 "publishWhilePlaying": true,
                 "scale": "linear",
                 "selection": "range",
@@ -237,15 +259,23 @@
                 "showReadout": true,
                 "snap": true,
                 "snapTo": "buckets",
-                "stepMs": 1200,
+                "stepMs": 500,
+                "stickyOffset": 0,
+                "valueGuides": false,
                 "variables": {
                   "from": "t0",
                   "to": "t1"
                 },
-                "windowMode": "free"
-              },
-              "pluginVersion": ""
-            }
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
           }
         }
       },
@@ -296,6 +326,19 @@
                     "fixedColor": "text",
                     "mode": "fixed"
                   },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "dateTimeFromNow"
                 },
                 "overrides": []
@@ -317,7 +360,8 @@
                 "textMode": "value",
                 "wideLayout": true
               }
-            }
+            },
+            "version": "13.3.0"
           }
         }
       },
@@ -384,27 +428,109 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
                 "alerts": {
                   "show": false
                 },
+                "basemap": "auto",
                 "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
                 "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": true,
                 "hoverSync": true,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
                 "mapConfig": {
                   "config": {
                     "mapState": {
                       "bearing": 15,
                       "dragRotate": true,
-                      "latitude": 52.3712,
-                      "longitude": 4.904,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 52.37478764437793,
+                      "longitude": 4.891657937135438,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 45,
-                      "zoom": 15.3
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 14.059672619963177
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -419,7 +545,11 @@
                         15,
                         15
                       ],
-                      "topLayerGroups": {},
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": false
+                      },
                       "visibleLayerGroups": {
                         "3d building": false,
                         "border": false,
@@ -427,18 +557,48 @@
                         "label": true,
                         "land": true,
                         "poi": false,
+                        "relief": false,
                         "road": true,
                         "water": true
                       }
                     },
                     "uiState": {
+                      "locale": "en",
                       "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
                         "mapLegend": {
                           "active": true
                         }
-                      }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
                       "effects": [
                         {
                           "id": "light",
@@ -463,7 +623,8 @@
                             ],
                             "sunLightIntensity": 1.2,
                             "timeMode": "animation",
-                            "timestamp": 0
+                            "timestamp": 0,
+                            "timezone": "America/Guayaquil"
                           },
                           "type": "lightAndShadow"
                         }
@@ -492,17 +653,59 @@
                           "timezone": "Europe/Amsterdam",
                           "type": "timeRange",
                           "value": [
-                            0,
-                            0
+                            1794938400000,
+                            1794956400000
                           ],
                           "view": "side"
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "enabled": true,
                           "fieldsToShow": {
-                            "grafana-A": [],
+                            "grafana-A": [
+                              {
+                                "name": "tile_id"
+                              },
+                              {
+                                "name": "city_url"
+                              },
+                              {
+                                "name": "west"
+                              },
+                              {
+                                "name": "south"
+                              },
+                              {
+                                "name": "east"
+                              }
+                            ],
                             "grafana-B": [
                               {
                                 "name": "name"
@@ -515,8 +718,13 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
                         "air",
@@ -548,7 +756,11 @@
                             "textLabel": [],
                             "visConfig": {
                               "allowHover": true,
+                              "billboard": false,
                               "buildingsAggregate": "mean",
+                              "buildingsEmpty": "grey",
+                              "buildingsHeightScale": 1,
+                              "buildingsHideBasemap": true,
                               "buildingsMode": "interpolate",
                               "buildingsNeighbours": "all",
                               "buildingsOn": "citymodel:city",
@@ -556,6 +768,20 @@
                               "buildingsReduce": "mean",
                               "buildingsSensorRadius": 7,
                               "buildingsSensors": true,
+                              "buildingsShadow": 0.35,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": "auto",
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
                               "colorRange": {
                                 "category": "Custom",
                                 "colorLegends": {},
@@ -596,7 +822,41 @@
                                 "name": "NO2 mean, µg/m³",
                                 "type": "custom"
                               },
-                              "opacity": 1
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 1,
+                              "outline": false,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
                             }
                           },
                           "id": "air",
@@ -606,11 +866,18 @@
                               "name": "no2",
                               "type": "real"
                             },
-                            "colorScale": "custom"
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         },
                         {
                           "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
                             "columnMode": "files",
                             "columns": {},
                             "dataId": "grafana-A",
@@ -626,34 +893,143 @@
                             "textLabel": [],
                             "visConfig": {
                               "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
                               "cardMin": 0,
+                              "cardNameField": "auto",
                               "cardPinned": [
                                 "NL.IMBAG.Pand.0363100012182077"
                               ],
                               "cardPlacement": "above",
+                              "cardScale": "common",
                               "cardShow": "hover",
                               "cardSize": "M",
+                              "cardTimeField": "auto",
                               "cardUnit": " µg/m³",
+                              "cardValueField": "color",
                               "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
                               "cityColourBy": "sensors",
+                              "cityCrs": "",
                               "cityFootprints": "",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
                               "cityLod": "highest",
-                              "cityMaxTiles": 9
+                              "cityMaxTiles": 9,
+                              "cityMaxTriangles": 2000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
                             }
                           },
                           "id": "city",
                           "type": "citymodel",
                           "visualChannels": {
-                            "colorField": null,
-                            "colorScale": "quantile"
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
                           }
                         }
-                      ]
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
                     }
                   },
                   "version": "v1"
                 },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
                 "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
@@ -662,7 +1038,8 @@
                 },
                 "variableMappings": []
               }
-            }
+            },
+            "version": "1.6.0"
           }
         }
       },
@@ -763,7 +1140,8 @@
                 "textMode": "value",
                 "wideLayout": true
               }
-            }
+            },
+            "version": "13.3.0"
           }
         }
       },
@@ -927,7 +1305,6 @@
                           "id": "city",
                           "type": "citymodel",
                           "visualChannels": {
-                            "colorField": null,
                             "colorScale": "quantile"
                           }
                         }
@@ -941,7 +1318,8 @@
                 "timeSync": "off",
                 "variableMappings": []
               }
-            }
+            },
+            "version": ""
           }
         }
       },
@@ -1122,7 +1500,7 @@
                 }
               }
             },
-            "version": "13.2.1"
+            "version": "13.3.0"
           }
         }
       }
@@ -1195,12 +1573,12 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-brush"
+                          "name": "panel-trends"
                         },
-                        "height": 2,
-                        "width": 6,
-                        "x": 18,
-                        "y": 22
+                        "height": 8,
+                        "width": 18,
+                        "x": 0,
+                        "y": 16
                       }
                     },
                     {
@@ -1208,12 +1586,12 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-trends"
+                          "name": "panel-brush"
                         },
-                        "height": 8,
-                        "width": 18,
-                        "x": 0,
-                        "y": 16
+                        "height": 2,
+                        "width": 6,
+                        "x": 18,
+                        "y": 22
                       }
                     }
                   ]
