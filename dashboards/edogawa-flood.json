@@ -27,7 +27,7 @@
       }
     ],
     "cursorSync": "Off",
-    "description": "Edogawa, Tokyo, building by building: PLATEAU's 3D city model (CityGML) of the ward's 144,788 buildings, each coloured by the water PLATEAU's river and storm surge studies expect there, with linked charts of depth, days under water, storeys and use that filter the map in the browser, and the shelters.",
+    "description": "Edogawa, Tokyo, building by building: PLATEAU's 3D city model (CityGML) of the ward's 144,788 buildings, each coloured by the water PLATEAU's river and storm surge studies expect there, with linked charts of depth, days under water, storeys and use that filter the map in the browser, an area drawn on the map that filters them, and the shelters.",
     "editable": true,
     "elements": {
       "panel-about": {
@@ -59,7 +59,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "### What this shows\n\nEdogawa is the easternmost of Tokyo's 23 wards, home to about 680,000 people between the Arakawa, the Nakagawa,\nthe Edogawa and Tokyo Bay. Much of it lies below sea level, sunk by groundwater pumping in the last century, and\nheld dry by levees and sea walls. If the Tone or the Edogawa broke through in the worst rain thought possible,\nor the largest typhoon assumed pushed Tokyo Bay over the walls, almost every building in the ward would stand in\nwater, in many places for two weeks or more. The ward's own hazard map says it plainly: in such a flood, leave\nthe ward.\n\nThe map draws each of PLATEAU's 144,788 buildings as the city model has it and colours it by the deepest water\nthe study picked expects there. The charts beside it are of the same buildings, held in your browser: drag across\none, or click a use, and the map, the figures and the other charts keep only those buildings.\n\n### Where the data comes from\n\n- **[PLATEAU](https://www.mlit.go.jp/plateau/)**, Japan's 3D city models by the Ministry of Land, Infrastructure,\n  Transport and Tourism: [Edogawa-ku, FY2023](https://www.geospatial.jp/ckan/dataset/plateau-13123-edogawa-ku-2023),\n  CityGML v4 (free for any use with credit, compatible with CC BY 4.0). Each building carries the flood studies\n  that reach it: the national and Tokyo governments' river studies (depth, band and, for the largest assumed\n  floods, how long water of 0.5 m or more stays) and Tokyo's storm surge study of March 2018 (depth and band).\n  The shelters are PLATEAU's related data.\n- **[Flateau](https://source.coop/pacificspatial/flateau)** by Pacific Spatial Solutions (CC BY 4.0): PLATEAU's\n  attributes as tables, with the same building ids. The 3D files (converted with citygml-tools) carry the\n  geometry; Flateau the attributes, which citygml-tools leaves out.\n\n### How to read it\n\n- **Study.** Largest river flood (L2): the worst rain thought possible, about once in 1,000 years, for every\n  river PLATEAU has. Planned river flood (L1): the flood the river works are designed for, about once in 200\n  years, studied only for the Tone and the Edogawa: their water comes from the north and stops at the\n  Shin-Nakagawa, the canal across the ward, so the south-west stays grey. Storm surge: Tokyo Bay.\n- **Source.** Each river study floods the ward from one river's broken levee. \"Any\" takes the worst of them at\n  each building, which no single flood would do at once.\n- **Colours** are PLATEAU's depth bands, those of Japan's hazard maps: under 0.5 m, 0.5 to 3 m (the ground\n  floor), 3 to 5 m (the first floor up), 5 m or more; grey, no water there in that study, or left out by a brush.\n- **Storeys** are PLATEAU's (106,142 buildings have them); \"no floor above the water\" assumes 3 m a floor.\n- Not in these studies: the Arakawa, the largest river on the ward's west side.\n- Most buildings are drawn as blocks of their measured height (LoD 1); PLATEAU has detailed roofs (LoD 2) for\n  3,990. On another Pacha, set the hidden variable `site` to its https address: the 3D files are served there.",
+                "content": "### What this shows\n\nEdogawa is the easternmost of Tokyo's 23 wards, home to about 680,000 people between the Arakawa, the Nakagawa,\nthe Edogawa and Tokyo Bay. Much of it lies below sea level, sunk by groundwater pumping in the last century, and\nheld dry by levees and sea walls. If the Tone or the Edogawa broke through in the worst rain thought possible,\nor the largest typhoon assumed pushed Tokyo Bay over the walls, almost every building in the ward would stand in\nwater, in many places for two weeks or more. The ward's own hazard map says it plainly: in such a flood, leave\nthe ward.\n\nThe map draws each of PLATEAU's 144,788 buildings as the city model has it and colours it by the deepest water\nthe study picked expects there. The charts beside it are of the same buildings, held in your browser: drag across\none, or click a use, and the map, the figures and the other charts keep only those buildings.\n\n### Where the data comes from\n\n- **[PLATEAU](https://www.mlit.go.jp/plateau/)**, Japan's 3D city models by the Ministry of Land, Infrastructure,\n  Transport and Tourism: [Edogawa-ku, FY2023](https://www.geospatial.jp/ckan/dataset/plateau-13123-edogawa-ku-2023),\n  CityGML v4 (free for any use with credit, compatible with CC BY 4.0). Each building carries the flood studies\n  that reach it: the national and Tokyo governments' river studies (depth, band and, for the largest assumed\n  floods, how long water of 0.5 m or more stays) and Tokyo's storm surge study of March 2018 (depth and band).\n  The shelters are PLATEAU's related data.\n- **[Flateau](https://source.coop/pacificspatial/flateau)** by Pacific Spatial Solutions (CC BY 4.0): PLATEAU's\n  attributes as tables, with the same building ids. The 3D files (converted with citygml-tools) carry the\n  geometry; Flateau the attributes, which citygml-tools leaves out.\n\n### How to read it\n\n- **Study.** Largest river flood (L2): the worst rain thought possible, about once in 1,000 years, for every\n  river PLATEAU has. Planned river flood (L1): the flood the river works are designed for, about once in 200\n  years, studied only for the Tone and the Edogawa: their water comes from the north and stops at the\n  Shin-Nakagawa, the canal across the ward, so the south-west stays grey. Storm surge: Tokyo Bay.\n- **Source.** Each river study floods the ward from one river's broken levee. \"Any\" takes the worst of them at\n  each building, which no single flood would do at once.\n- **Colours** are PLATEAU's depth bands, those of Japan's hazard maps: under 0.5 m, 0.5 to 3 m (the ground\n  floor), 3 to 5 m (the first floor up), 5 m or more; grey, no water there in that study, or left out by a brush.\n- **An area.** Draw one on the map (the pencil on the right; the bin deletes it): the buildings outside it are\n  dimmed, and the figures, the charts and the table count only the buildings inside, such as one neighbourhood.\n- **Storeys** are PLATEAU's (106,142 buildings have them); \"no floor above the water\" assumes 3 m a floor.\n- Not in these studies: the Arakawa, the largest river on the ward's west side.\n- Most buildings are drawn as blocks of their measured height (LoD 1); PLATEAU has detailed roofs (LoD 2) for\n  3,990. On another Pacha, set the hidden variable `site` to its https address: the 3D files are served there.",
                 "mode": "markdown"
               }
             },
@@ -287,7 +287,7 @@
               },
               "options": {
                 "preaggregate": true,
-                "reads": "",
+                "reads": "- param: fb\n  column: [lon, lat]\n  area: map_area\n",
                 "spec": "params:\n  fb: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: bld, filterBy: $fb }\n    x: { bin: depth_m, step: 0.25 }\n    y: { count: }\n    fill: band\n    inset: 0.5\n  - select: intervalX\n    as: $fb\nxDomain: Fixed\ncolorDomain: ['under 0.5 m', '0.5 to 3 m', '3 to 5 m', '5 m or more']\ncolorRange: ['#F2E15B', '#F59E5B', '#E4505B', '#A3266F']\nyTickFormat: '~s'\nxLabel: Water (m) →\nyLabel: null\nmarginLeft: 40\n",
                 "variables": "- param: fb\n  column: depth_m\n  from: depth_lo\n  to: depth_hi\n"
               }
@@ -314,7 +314,7 @@
                       "group": "ubica-chaski-datasource",
                       "kind": "DataQuery",
                       "spec": {
-                        "rawSql": "-- The tiles (box and CityJSON), then one row per building under water that the brushes keep:\n-- the City Model layer colours those by key and leaves the others grey.\nSELECT city_url, west, south, east, north, NULL::DOUBLE AS key, NULL::DOUBLE AS depth_m FROM $tiles\nUNION ALL\nSELECT NULL, NULL, NULL, NULL, NULL, key, depth_m FROM $bld WHERE $__crossfilter($bldFilters)"
+                        "rawSql": "-- The tiles (box and CityJSON), then one row per building under water that the brushes keep:\n-- the City Model layer colours those by key and leaves the others grey. Not the area drawn on\n-- the map: Kepler Plus dims the buildings outside it, their colours kept.\nSELECT city_url, west, south, east, north, NULL::DOUBLE AS key, NULL::DOUBLE AS depth_m FROM $tiles\nUNION ALL\nSELECT NULL, NULL, NULL, NULL, NULL, key, depth_m FROM $bld WHERE $__crossfilter($bldFilters, -drawn)"
                       },
                       "version": "v0"
                     },
@@ -362,7 +362,7 @@
               "transformations": []
             }
           },
-          "description": "PLATEAU's 3D model of Edogawa (CityGML: each building's block, and its LoD 2 model where PLATEAU has one), coloured by the deepest water the study picked expects at it, in PLATEAU's depth bands. Grey: no water there in that study, or left out by the charts' brushes. Hover a building for its storeys, use and the water in every study; white dots are the ward's shelters. The 1 km tiles load as the view moves.",
+          "description": "PLATEAU's 3D model of Edogawa (CityGML: each building's block, and its LoD 2 model where PLATEAU has one), coloured by the deepest water the study picked expects at it, in PLATEAU's depth bands. Grey: no water there in that study, or left out by the charts' brushes. Hover a building for its storeys, use and the water in every study; white dots are the ward's shelters. Draw an area with the draw tool (the pencil on the right): the buildings outside it are dimmed, and the figures and charts count only those inside. The 1 km tiles load as the view moves.",
           "id": 1,
           "links": [],
           "title": "Every building of Edogawa, by the water PLATEAU expects there",
@@ -392,6 +392,7 @@
                 "alerts": {
                   "show": false
                 },
+                "areaVariable": "map_area",
                 "basemap": "auto",
                 "clickArea": false,
                 "clickAreaSizeMetres": 6000,
@@ -1743,7 +1744,7 @@
                   "editorMode": "code",
                   "format": 1,
                   "rawQuery": true,
-                  "rawSql": "-- Server side, once per scenario and source: one row per building PLATEAU's study puts under\n-- water (the deepest of the rivers picked), with what the building is. The browser holds it\n-- and every brush is answered there.\nWITH w AS (\n  SELECT key, max(depth_m) AS depth_m, max(band) AS band, max(hours) AS hours\n  FROM 'http://feeds/datasets/edogawa-flood/flood.parquet'\n  WHERE scenario = ${scenario:sqlstring}\n    AND (${river:sqlstring} = 'any' OR river = ${river:sqlstring})\n  GROUP BY key\n)\nSELECT w.key, w.depth_m,\n       ['under 0.5 m', '0.5 to 3 m', '3 to 5 m', '5 m or more'][w.band] AS band,\n       w.hours / 24 AS days, b.storeys, b.height_m, b.usage,\n       (w.depth_m \u003e= 3 * b.storeys)::INTEGER AS no_dry_floor\nFROM w JOIN 'http://feeds/datasets/edogawa-flood/buildings.parquet' b USING (key)",
+                  "rawSql": "-- Server side, once per scenario and source: one row per building PLATEAU's study puts under\n-- water (the deepest of the rivers picked), with what the building is. The browser holds it\n-- and every brush is answered there.\nWITH w AS (\n  SELECT key, max(depth_m) AS depth_m, max(band) AS band, max(hours) AS hours\n  FROM 'http://feeds/datasets/edogawa-flood/flood.parquet'\n  WHERE scenario = ${scenario:sqlstring}\n    AND (${river:sqlstring} = 'any' OR river = ${river:sqlstring})\n  GROUP BY key\n)\nSELECT w.key, w.depth_m,\n       ['under 0.5 m', '0.5 to 3 m', '3 to 5 m', '5 m or more'][w.band] AS band,\n       w.hours / 24 AS days, b.storeys, b.height_m, b.usage,\n       (w.depth_m \u003e= 3 * b.storeys)::INTEGER AS no_dry_floor,\n       b.lon, b.lat\nFROM w JOIN 'http://feeds/datasets/edogawa-flood/buildings.parquet' b USING (key)",
                   "refId": "bld"
                 },
                 "type": "datasource"
@@ -1966,6 +1967,14 @@
                   "name": "usage",
                   "type": "in",
                   "variable": "$uses"
+                },
+                {
+                  "label": "Drawn on the map",
+                  "lat": "lat",
+                  "lng": "lon",
+                  "name": "drawn",
+                  "type": "area",
+                  "variable": "$map_area"
                 }
               ],
               "kind": "filters",
@@ -2074,6 +2083,20 @@
           "hide": "hideVariable",
           "label": "Uses",
           "name": "uses",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Area drawn on the map",
+          "name": "map_area",
           "query": "",
           "skipUrlSync": false
         }

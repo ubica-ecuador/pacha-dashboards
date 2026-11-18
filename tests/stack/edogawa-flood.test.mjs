@@ -51,11 +51,10 @@ test('follows the dashboards conventions', () => {
     city.config.visConfig.colorRange.colorMap.map(([v]) => v),
     [0.5, 3, 5, null]
   );
-  assert.match(map.data.spec.queries[0].spec.query.spec.rawSql, /\$__crossfilter\(\$bldFilters\)/);
   // Four Mosaic charts on one crossfilter selection, each writing the variables its filter reads.
   assert.equal(mosaics.length, 4);
   const filters = variable('bldFilters').query.spec.filters;
-  for (const f of filters) {
+  for (const f of filters.filter((x) => x.name !== 'drawn')) {
     for (const ref of [f.from, f.to, f.variable].filter(Boolean)) {
       const name = ref.slice(1);
       assert.equal(variable(name).hide, 'hideVariable');
@@ -65,9 +64,21 @@ test('follows the dashboards conventions', () => {
       );
     }
   }
+  // The area drawn on the map: written by the map, a Chaski area filter on each building's place, read by one Mosaic
+  // chart; the map's own rows keep every building (Kepler Plus dims those outside).
+  assert.equal(map.vizConfig.spec.options.areaVariable, 'map_area');
+  assert.deepEqual(
+    filters.find((f) => f.name === 'drawn'),
+    { name: 'drawn', label: 'Drawn on the map', type: 'area', variable: '$map_area', lat: 'lat', lng: 'lon' }
+  );
+  assert.match(map.data.spec.queries[0].spec.query.spec.rawSql, /\$__crossfilter\(\$bldFilters, -drawn\)/);
+  assert.deepEqual(
+    mosaics.filter((p) => p.vizConfig.spec.options.reads.includes('map_area')).map((p) => p.title),
+    ['How deep']
+  );
   // No dataset reads a variable a chart writes: a reload would clear every brush.
   for (const name of ['bld', 'tiles', 'shelters', 'border']) {
-    assert.doesNotMatch(variable(name).query.spec.source.query.rawSql, /depth_lo|days_lo|storeys_lo|\$uses/);
+    assert.doesNotMatch(variable(name).query.spec.source.query.rawSql, /depth_lo|days_lo|storeys_lo|\$uses|map_area/);
   }
 });
 
@@ -134,9 +145,14 @@ test('the datasets as the dashboard opens, and the sources of each study', { tim
   assert.equal(tiles.reduce((a, r) => a + Number(r.buildings), 0), 144_788);
   assert.match(tiles[0].city_url, /^https:\/\/pacha\.example\/datasets\/edogawa-flood\/cityjson\/m\d{8}\.json$/);
   // The largest river flood reaches almost the whole ward; the planned scale only the Tone's and the Edogawa's part.
-  const [l2] = await duckdb(STACK_URL, `SELECT count(*) AS n, sum(no_dry_floor) AS nodry FROM (${serverSql('bld')})`);
+  const [l2] = await duckdb(
+    STACK_URL,
+    `SELECT count(*) AS n, sum(no_dry_floor) AS nodry, count(lon) AS placed FROM (${serverSql('bld')})`
+  );
   assert.equal(Number(l2.n), 140_560);
   assert.equal(Number(l2.nodry), 1_870);
+  // Each with its place, for an area drawn on the map.
+  assert.equal(Number(l2.placed), 140_560);
   const [l1] = await duckdb(STACK_URL, `SELECT count(*) AS n FROM (${serverSql('bld', { scenario: 'L1' })})`);
   assert.equal(Number(l1.n), 62_979);
   // The source picker offers only the study's own rivers (or the sea), after "Any".
@@ -160,6 +176,27 @@ test('opens with no panel in error, the charts drawn over the buildings in the b
     const deep = await view.panel('How deep');
     await deep.getByTestId('mosaic-panel').locator('svg rect').first().waitFor({ timeout: 60_000 });
     assert.equal(await view.page.getByTestId('mosaic-error').count(), 0);
+    assert.equal(await view.panelErrors(), 0);
+  } finally {
+    await view.browser.close();
+  }
+});
+
+test('an area drawn on the map narrows the figures to the buildings inside', { timeout: 300_000 }, async (t) => {
+  if (!built()) return t.skip('no datasets/edogawa-flood on this instance');
+  const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
+  if (provisioned.status === 404) return t.skip('not on this instance: it needs Kepler Plus with the City Model layer');
+  // A rectangle of about 700 x 650 m by the Edogawa river, as a shared link carries it: 2,620 buildings under water
+  // there in the largest river flood (any river), 768 with 3 m or more.
+  const wkt = 'POLYGON((139.8872 35.7383,139.8952 35.7383,139.8952 35.7443,139.8872 35.7443,139.8872 35.7383))';
+  const view = await openDashboard(`/d/${UID}?var-map_area=${encodeURIComponent(wkt)}`, {
+    timeoutMs: 150_000,
+    datasets: ['bld', 'tiles'],
+  });
+  try {
+    const stats = await view.panel('The ward under water');
+    await stats.getByText('2,620').waitFor({ timeout: 60_000 });
+    await stats.getByText('768').waitFor();
     assert.equal(await view.panelErrors(), 0);
   } finally {
     await view.browser.close();
