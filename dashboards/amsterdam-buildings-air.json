@@ -522,15 +522,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 52.37478764437793,
-                      "longitude": 4.891657937135438,
+                      "latitude": 52.3676955241393,
+                      "longitude": 4.892098744105578,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 85,
                       "pitch": 45,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 14.059672619963177
+                      "zoom": 12.819345239926353
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -546,7 +546,7 @@
                         15
                       ],
                       "topLayerGroups": {
-                        "label": true,
+                        "label": false,
                         "poi": true,
                         "road": false
                       },
@@ -611,11 +611,11 @@
                             ],
                             "ambientLightIntensity": 0.8,
                             "shadowColor": [
-                              0,
-                              0,
-                              0
+                              112,
+                              108,
+                              99
                             ],
-                            "shadowIntensity": 0.5,
+                            "shadowIntensity": 0.416,
                             "sunLightColor": [
                               255,
                               250,
@@ -653,8 +653,8 @@
                           "timezone": "Europe/Amsterdam",
                           "type": "timeRange",
                           "value": [
-                            1794938400000,
-                            1794956400000
+                            1794895200000,
+                            1794902400000
                           ],
                           "view": "side"
                         }
@@ -899,7 +899,11 @@
                               "cardMin": 0,
                               "cardNameField": "auto",
                               "cardPinned": [
-                                "NL.IMBAG.Pand.0363100012182077"
+                                "NL.IMBAG.Pand.0363100012182077",
+                                "35853580#189",
+                                "36858960#996",
+                                "2781985100#47",
+                                "35810320#155"
                               ],
                               "cardPlacement": "above",
                               "cardScale": "common",
