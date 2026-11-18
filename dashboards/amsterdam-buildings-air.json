@@ -1564,12 +1564,25 @@
                       "spec": {
                         "element": {
                           "kind": "ElementReference",
+                          "name": "panel-brush"
+                        },
+                        "height": 2,
+                        "width": 6,
+                        "x": 18,
+                        "y": 6
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
                           "name": "panel-about"
                         },
                         "height": 16,
                         "width": 6,
                         "x": 18,
-                        "y": 6
+                        "y": 8
                       }
                     },
                     {
@@ -1583,19 +1596,6 @@
                         "width": 18,
                         "x": 0,
                         "y": 16
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-brush"
-                        },
-                        "height": 2,
-                        "width": 6,
-                        "x": 18,
-                        "y": 22
                       }
                     }
                   ]
