@@ -1,0 +1,1492 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "valenbisi-null"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Where and when València's public bikes fail their riders, over the last week, from the city's open data on a FIWARE platform (Stellio, NGSI-LD): each station on a map from no bike (red) to no dock (blue), the day hour by hour, the stations most often empty or full, and a timeline of the week, all filtering each other in the browser.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n\n**Valenbisi**, València's public bikes: about 275 stations, each read about every 7 minutes from the Ajuntament de\nValència's open data by a harvester that writes them as **Smart Data Models** (`BikeHireDockingStation`) to **Stellio**,\nan **NGSI-LD** context broker of the **FIWARE** catalogue. Stellio keeps every observation; a Parquet export holds the\nlast 7 days ([exports](https://fiware.ubica.dev/exports/)). The same platform feeds\n[València en tiempo real](/d/fiware-valencia).\n\n**How it is counted.** DuckDB on the server reads the export and keeps each station's last reading in each quarter hour;\nDuckDB in your browser (Chaski) answers every panel and every filter from that table. A quarter hour with 0 bikes counts\n0.25 h of *no bike*; one with 0 free docks, 0.25 h of *no dock*. A quarter hour with no reading (a few hundred station\nhours in a week) has no row and counts as neither. A station's colour on the map is its share of the time with no dock\nminus its share with no bike, in points. The hour of the day is València's. LABMAD, a test station in Madrid, is left out.\n\n\u003csmall\u003eData: © Ajuntament de València, open data Geoportal, CC BY 4.0. An independent proof of concept, not affiliated\nwith the Ajuntament de València. Base map © OpenStreetMap contributors, © CARTO.\u003c/small\u003e",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "day": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Hour by hour, the share of the time a station had no bike to take (red) or no dock to leave one (blue), over the days and the area the filters keep. Drag across hours to keep them: the map, the rankings and the cards follow.",
+          "id": 7,
+          "links": [],
+          "title": "The day of a NULL: no bike (red), no dock (blue)",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  dockFilters: { select: crossfilter }\nplot:\n  - mark: lineY\n    data: { from: docks, filterBy: $dockFilters }\n    x: hr\n    y: { avg: no_bike }\n    stroke: '#E0605A'\n    strokeWidth: 3\n  - mark: lineY\n    data: { from: docks, filterBy: $dockFilters }\n    x: hr\n    y: { avg: no_dock }\n    stroke: '#4393C3'\n    strokeWidth: 3\n  - select: intervalX\n    as: $dockFilters\nxDomain: [0, 23]\nyDomain: [0, 0.2]\nxTicks: [0, 3, 6, 9, 12, 15, 18, 21]\nyTickFormat: '%'\nxLabel: Hour of the day →\nyLabel: ↑ Share of the time\nmarginLeft: 44\nmarginBottom: 34\n",
+                "variables": "- param: dockFilters\n  column: hr\n  from: hr_lo\n  to: hr_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "day_cards": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*)::DOUBLE AS \"Stations\" FROM (SELECT station FROM $docks WHERE $__crossfilter($dockFilters) GROUP BY station HAVING sum(no_bike_h) \u003e= 24)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Stations that added up 24 hours or more with no bike, in what the filters keep.",
+          "id": 5,
+          "links": [],
+          "title": "A day or more with no bike",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Each station over the hours and days the filters keep: the share of the time with no bike and with no dock,\n-- their hours, and its lean (no dock minus no bike, in points). The area drawn on this map is left out here, so\n-- the map keeps every station while the rest of the dashboard keeps the area's.\nSELECT station, name, latitude, longitude, max(slots) AS slots,\n       round(100 * avg(no_bike), 1) AS no_bike_pct, round(100 * avg(no_dock), 1) AS no_dock_pct,\n       round(100 * (avg(no_dock) - avg(no_bike)), 1) AS lean,\n       sum(no_bike_h) AS hours_no_bike, sum(no_dock_h) AS hours_no_dock\nFROM $docks\nWHERE $__crossfilter($dockFilters, -area)\nGROUP BY station, name, latitude, longitude"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The cards: the six stations with the most hours with no bike and the six with the most with no dock, in what\n-- the filters keep, each with its series hour by hour over the days kept (all hours of the day, so the line is\n-- whole): the share of its docks that held a bike, 0 empty and 100 full.\nWITH f AS (SELECT * FROM $docks WHERE $__crossfilter($dockFilters, -area)),\ntop AS (\n  (SELECT station FROM f GROUP BY station ORDER BY sum(no_bike_h) DESC, station LIMIT 6)\n  UNION\n  (SELECT station FROM f GROUP BY station ORDER BY sum(no_dock_h) DESC, station LIMIT 6)\n)\nSELECT d.station, any_value(d.short) AS name, any_value(d.latitude) AS latitude, any_value(d.longitude) AS longitude,\n       time_bucket(INTERVAL 1 HOUR, d.t) AS time,\n       round(100 * avg(d.bikes / nullif(d.slots, 0)))::INTEGER AS value\nFROM $docks AS d JOIN top USING (station)\nWHERE $__crossfilter($dockFilters, -area, -hour)\nGROUP BY d.station, time\nORDER BY d.station, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each station, sized by its docks and coloured by what it lacked most in the hours and days the filters keep: red, no bike to take; blue, no dock to leave one; grey, neither for long. Hover a station for its shares; draw an area to keep its stations.",
+          "id": 2,
+          "links": [],
+          "title": "Where Valenbisi is NULL",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "dockArea",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 29.52368245496998,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39.467632928813785,
+                      "longitude": -0.37849759112057835,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 36.26293995859213,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 12.6
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        9,
+                        9,
+                        9
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "no_bike_pct"
+                              },
+                              {
+                                "name": "no_dock_pct"
+                              },
+                              {
+                                "name": "hours_no_bike"
+                              },
+                              {
+                                "name": "hours_no_dock"
+                              },
+                              {
+                                "name": "slots"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "time"
+                              },
+                              {
+                                "name": "value"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "cards",
+                        "stations"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              186,
+                              186,
+                              186
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The most NULL stations: their docks with a bike, hour by hour",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#B2182B",
+                                  "#D6604D",
+                                  "#F4A582",
+                                  "#BABABA",
+                                  "#92C5DE",
+                                  "#4393C3",
+                                  "#2166AC"
+                                ],
+                                "name": "Empty to full",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 1,
+                              "sparkCards": "auto",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 8,
+                              "sparkDots": false,
+                              "sparkDotsOnTop": true,
+                              "sparkExtras": [],
+                              "sparkFill": true,
+                              "sparkMax": 100,
+                              "sparkMin": 0,
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": true,
+                              "sparkRange": "data",
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": "%",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "cards",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "value",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantize",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              186,
+                              186,
+                              186
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Stations: no bike (red) to no dock (blue)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    -30,
+                                    "#B2182B"
+                                  ],
+                                  [
+                                    -15,
+                                    "#D6604D"
+                                  ],
+                                  [
+                                    -5,
+                                    "#F4A582"
+                                  ],
+                                  [
+                                    5,
+                                    "#BABABA"
+                                  ],
+                                  [
+                                    15,
+                                    "#92C5DE"
+                                  ],
+                                  [
+                                    30,
+                                    "#4393C3"
+                                  ],
+                                  [
+                                    null,
+                                    "#2166AC"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#B2182B",
+                                  "#D6604D",
+                                  "#F4A582",
+                                  "#BABABA",
+                                  "#92C5DE",
+                                  "#4393C3",
+                                  "#2166AC"
+                                ],
+                                "name": "No bike ↔ no dock",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": true,
+                              "glowExtent": 2,
+                              "glowStrength": 0.35,
+                              "opacity": 0.92,
+                              "outline": true,
+                              "pulseDurationMs": 1400,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2.2,
+                              "pulseMode": "ripple",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 30,
+                              "radiusRange": [
+                                7,
+                                33.7
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                20,
+                                22,
+                                28
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "stations",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "lean",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": {
+                              "name": "slots",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "rasterServerUrl": "",
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "no_bike": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT 100.0 * avg(no_bike) AS \"No bike\" FROM $docks WHERE $__crossfilter($dockFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the time a station had no bike to take, in the hours, days and area the filters keep.",
+          "id": 3,
+          "links": [],
+          "title": "No bike",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#E0605A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "no_dock": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT 100.0 * avg(no_dock) AS \"No dock\" FROM $docks WHERE $__crossfilter($dockFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the time a station had no dock free to leave a bike in.",
+          "id": 4,
+          "links": [],
+          "title": "No dock",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#4393C3",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "rank": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The twelve stations with the most hours with no bike (left) and with no dock (right), in the hours, days and area the filters keep.",
+          "id": 10,
+          "links": [],
+          "title": "The stations most often NULL",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  dockFilters: { select: crossfilter }\nhconcat:\n  - plot:\n      - mark: barX\n        data: { from: docks, filterBy: $dockFilters }\n        x: { sum: no_bike_h }\n        y: short\n        fill: '#E0605A'\n        sort: { y: -x, limit: 12 }\n    xLabel: Hours with no bike →\n    yLabel: null\n    marginLeft: 250\n    width: 650\n  - plot:\n      - mark: barX\n        data: { from: docks, filterBy: $dockFilters }\n        x: { sum: no_dock_h }\n        y: short\n        fill: '#4393C3'\n        sort: { y: -x, limit: 12 }\n    xLabel: Hours with no dock →\n    yLabel: null\n    marginLeft: 250\n    width: 650\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "stations": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(DISTINCT station)::DOUBLE AS \"Stations\" FROM $docks WHERE $__crossfilter($dockFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The stations in the area the filters keep.",
+          "id": 6,
+          "links": [],
+          "title": "Stations",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Valenbisi's NULLs\n\nA public bike system fails a rider in two ways: **no bike** to take, or **no dock** to leave one in. Both are a zero in the\ncity's feed, a NULL in the trip that never happens.\n\nIn the week to 18 November 2026, a València station had no bike **12 % of the time** and no dock **6 %**. 93 of 275\nstations added up a whole day or more with no bike; among the driest were the old town's squares (Plaza de la Reina,\nthe Ajuntament's) and Ribera. Towards the sea it is the other way round: between 1 and 5 at night, a station there had\nno free dock a quarter of the time, full of the bikes left there the evening before.\n\n**Use it:** drag across hours on *The day of a NULL*, or days on *The week*; draw an area on the map. Every panel follows,\nin your browser. The cards show the week the platform holds now.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The quarter hours of the last week, with every other filter as a pill. Drag across it to keep a span of days or hours; press play to walk through the week.",
+          "id": 8,
+          "links": [],
+          "title": "The week",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 168,
+                "filters": "dockFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "quarter hours",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "t",
+                "timeline": "time"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map"
+              },
+              "height": 22,
+              "width": 15,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "story"
+              },
+              "height": 10,
+              "width": 9,
+              "x": 15,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "no_bike"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 15,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "no_dock"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 18,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "day_cards"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 21,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "day"
+              },
+              "height": 8,
+              "width": 9,
+              "x": 15,
+              "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "timeline"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "rank"
+              },
+              "height": 11,
+              "width": 24,
+              "x": 0,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "stations"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 0,
+              "y": 38
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "about"
+              },
+              "height": 9,
+              "width": 20,
+              "x": 4,
+              "y": 38
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "city",
+      "duckdb",
+      "kepler",
+      "mobility",
+      "mosaic",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-7d",
+      "hideTimepicker": true,
+      "timezone": "Europe/Madrid",
+      "to": "now"
+    },
+    "title": "Valenbisi's NULLs: no bike to take, no dock to leave one",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Valenbisi's stations quarter hour by quarter hour over the last week: bikes, free docks, and whether either was zero.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Docks",
+          "multi": false,
+          "name": "docks",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "docks",
+              "refId": "docks",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: Valenbisi's history (Stellio -\u003e Parquet, the FIWARE platform's export of the last 7 days), the\n-- last reading of each station in each quarter hour. A station is NULL when it has no bike to take (no_bike) or no\n-- dock to leave one in (no_dock); each quarter hour counts 0.25 h. The hour of the day is València's. LABMAD, a test\n-- station in Madrid, is left out by the box. A quarter hour with no reading has no row.\nSELECT t, hour(timezone('Europe/Madrid', t)) AS hr, station,\n       station || ' · ' || replace(regexp_replace(raw_name, '^[0-9]+_ ?', ''), '_', ' ') AS name,\n       left(station || ' · ' || replace(regexp_replace(raw_name, '^[0-9]+_ ?', ''), '_', ' '), 34) AS short,\n       latitude, longitude, slots, bikes, free,\n       (bikes = 0)::INTEGER AS no_bike, (free = 0)::INTEGER AS no_dock,\n       CASE WHEN bikes = 0 THEN 0.25 ELSE 0 END AS no_bike_h,\n       CASE WHEN free = 0 THEN 0.25 ELSE 0 END AS no_dock_h\nFROM (\n  SELECT time_bucket(INTERVAL 15 MINUTE, time) AS t,\n         regexp_extract(entity_id, '[0-9]+$') AS station,\n         last(name ORDER BY time) AS raw_name,\n         last(available_bikes ORDER BY time) AS bikes,\n         last(free_slots ORDER BY time) AS free,\n         last(total_slots ORDER BY time) AS slots,\n         any_value(latitude) AS latitude, any_value(longitude) AS longitude\n  FROM read_parquet('https://fiware.ubica.dev/exports/bikes.parquet')\n  WHERE latitude BETWEEN 39.3 AND 39.6 AND longitude BETWEEN -0.5 AND -0.25\n  GROUP BY 1, 2\n)",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "From",
+          "name": "tFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "To",
+          "name": "tTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Hour from",
+          "name": "hr_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Hour to",
+          "name": "hr_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Area",
+          "name": "dockArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "dockFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$docks",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "t",
+                  "from": "$tFrom",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$tTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "hr",
+                  "from": "$hr_lo",
+                  "label": "Hour of the day",
+                  "name": "hour",
+                  "to": "$hr_hi",
+                  "type": "range"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$dockArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "dockFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
