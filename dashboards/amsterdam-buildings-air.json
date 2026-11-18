@@ -522,15 +522,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 52.3676955241393,
-                      "longitude": 4.892098744105578,
+                      "latitude": 52.36217229215663,
+                      "longitude": 4.8611399863665214,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 85,
                       "pitch": 45,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 12.819345239926353
+                      "zoom": 14.059672619963177
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -611,11 +611,11 @@
                             ],
                             "ambientLightIntensity": 0.8,
                             "shadowColor": [
-                              112,
-                              108,
-                              99
+                              21,
+                              38,
+                              41
                             ],
-                            "shadowIntensity": 0.416,
+                            "shadowIntensity": 0.392,
                             "sunLightColor": [
                               255,
                               250,
@@ -654,7 +654,7 @@
                           "type": "timeRange",
                           "value": [
                             1794895200000,
-                            1794902400000
+                            1794916800000
                           ],
                           "view": "side"
                         }
@@ -1499,7 +1499,7 @@
                 },
                 "tooltip": {
                   "hideZeros": false,
-                  "mode": "multi",
+                  "mode": "single",
                   "sort": "desc"
                 }
               }
