@@ -46,10 +46,10 @@ test('reads TriMet only through the gateway, and carries no AppID', () => {
   }
 });
 
-test('is provisioned in Gallery', async () => {
+test('is provisioned in Pacha dashboards', async () => {
   const { status, json } = await api(STACK_URL, '/api/dashboards/uid/trimet-live');
   assert.equal(status, 200);
-  assert.equal(json.meta.folderUid, 'gallery');
+  assert.equal(json.meta.folderUid, 'dashboards');
 });
 
 test('the fleet is vehicles around Portland, with a delay each', { skip }, async () => {

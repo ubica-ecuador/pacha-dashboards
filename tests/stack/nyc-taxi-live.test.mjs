@@ -33,10 +33,10 @@ test('follows the dashboards conventions', () => {
   assert.ok(queries.filter((q) => q.sql.includes('read_parquet')).every((q) => q.sql.includes(TRIPS)));
 });
 
-test('is provisioned in Gallery', async () => {
+test('is provisioned in Pacha dashboards', async () => {
   const { status, json } = await api(STACK_URL, '/api/dashboards/uid/nyc-taxi-live');
   assert.equal(status, 200);
-  assert.equal(json.meta.folderUid, 'gallery');
+  assert.equal(json.meta.folderUid, 'dashboards');
 });
 
 test('the built week holds 3.09 million trips, every day of 14-20 September 2015, inside New York', async () => {

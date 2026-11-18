@@ -23,16 +23,19 @@ const open = async (query = '') => {
 after(async () => current && current.browser.close());
 
 const provisioned = await api(STACK_URL, '/api/dashboards/uid/trimet-live-fleet');
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
 const keyed = compose(['exec', '-T', 'gateway', 'printenv', 'TRIMET_APP_ID']).trim() !== '';
-const skip = (provisioned.status === 404 && 'Kepler Plus is not mounted') || (!keyed && 'TRIMET_APP_ID is not set');
+const skip = (noPlusApp) || (!keyed && 'TRIMET_APP_ID is not set');
 
 test('carries no AppID: the gateway adds it', () => {
   assert.doesNotMatch(JSON.stringify(loadDashboard('dashboards/trimet-live-fleet.json')), /appid=/i);
 });
 
-test('is provisioned in Plus', { skip }, () => {
+test('is provisioned in Pacha dashboards', { skip }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'plus');
+  assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
 test('loads every dataset for an anonymous visitor, with no panel in error', { skip }, async () => {

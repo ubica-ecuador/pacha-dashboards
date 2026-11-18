@@ -14,7 +14,10 @@ import { openDashboard } from '../lib/pacha.mjs';
 const UID = 'cyclone-clouds-3d';
 const dashboard = loadDashboard(`dashboards/${UID}.json`);
 const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
-const noPlus = provisioned.status === 404 && 'Kepler Plus is not mounted';
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
+const noPlus = noPlusApp;
 const built = noPlus
   ? false
   : await duckdb(STACK_URL, "SELECT count(*) AS n FROM 'http://feeds/datasets/cyclone-clouds/centres.parquet'").then(
@@ -50,9 +53,9 @@ test('follows the dashboards conventions', () => {
   }
 });
 
-test('is provisioned in Plus', { skip: noPlus }, () => {
+test('is provisioned in Pacha dashboards', { skip: noPlus }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'plus');
+  assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
 test('the browser dataset: nine steps, within 1,000 km of the eye, humid, on eleven levels', { skip }, async () => {

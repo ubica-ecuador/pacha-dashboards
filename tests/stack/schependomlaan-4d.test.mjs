@@ -15,7 +15,10 @@ const UID = 'schependomlaan-4d';
 const DATASETS = ['parts', 'daily', 'tasks', 'taskdays'];
 const dashboard = loadDashboard(`dashboards/${UID}.json`);
 const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
-const noPlus = provisioned.status === 404 && 'Kepler Plus is not mounted';
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
+const noPlus = noPlusApp;
 const built = noPlus
   ? false
   : await duckdb(STACK_URL, "SELECT count(*) AS n FROM 'http://feeds/datasets/schependomlaan/parts.parquet'").then(
@@ -44,9 +47,9 @@ test('follows the dashboards conventions', () => {
   for (const name of DATASETS) assert.doesNotMatch(sqlOf(name), /\$t[01]\b|\$\{t[01]/, name);
 });
 
-test('is provisioned in Plus', { skip: noPlus }, () => {
+test('is provisioned in Pacha dashboards', { skip: noPlus }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'plus');
+  assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
 test('one row per element of the model, each placed at its origin in Nijmegen', { skip }, async () => {

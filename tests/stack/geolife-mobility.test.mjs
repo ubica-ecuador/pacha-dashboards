@@ -111,11 +111,14 @@ let view;
 after(async () => view && view.browser.close());
 
 const provisioned = await api(STACK_URL, '/api/dashboards/uid/geolife-mobility', { anonymous: true });
-const skip = unbuilt || (provisioned.status === 404 && 'Kepler Plus is not mounted');
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
+const skip = unbuilt || (noPlusApp);
 
-test('is provisioned in Plus', { skip }, () => {
+test('is provisioned in Pacha dashboards', { skip }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'plus');
+  assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
 test('loads for an anonymous visitor within 45 s, every tab with no panel in error', { skip }, async () => {

@@ -57,10 +57,10 @@ test('follows the dashboards conventions', () => {
   }
 });
 
-test('is provisioned in Gallery', async () => {
+test('is provisioned in Pacha dashboards', async () => {
   const { status, json } = await api(STACK_URL, '/api/dashboards/uid/ancestry-esda');
   assert.equal(status, 200);
-  assert.equal(json.meta.folderUid, 'gallery');
+  assert.equal(json.meta.folderUid, 'dashboards');
 });
 
 test('the weights cover every tract of 100 residents or more, six nearest each, queen both ways', async () => {

@@ -40,7 +40,10 @@ let view;
 after(async () => view && view.browser.close());
 
 const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
-const skip = provisioned.status === 404 && 'Kepler Plus is not mounted';
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
+const skip = noPlusApp;
 
 test('follows the dashboards conventions', () => {
   assert.equal(dashboard.metadata.name, UID);
@@ -97,9 +100,9 @@ test('the gateway caches FIRMS, and serves the grid file', () => {
   assert.match(headers('/datasets/power-grid/lines.parquet'), /^HTTP\/1\.1 200/);
 });
 
-test('is provisioned in Plus', { skip }, () => {
+test('is provisioned in Pacha dashboards', { skip }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'plus');
+  assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
 test('loads for an anonymous visitor, with no panel in error', { skip, timeout: 240_000 }, async () => {

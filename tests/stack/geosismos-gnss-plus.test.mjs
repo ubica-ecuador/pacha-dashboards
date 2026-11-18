@@ -35,7 +35,10 @@ const status = (url) =>
 const unbuilt = status(FILE) !== '200' && 'Geo-Sismos positions are not built on this stack (datasets/geosismos/build.sh)';
 
 const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
-const noPlus = provisioned.status === 404 && 'Kepler Plus is not mounted';
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
+const noPlus = noPlusApp;
 
 let view;
 after(async () => view && view.browser.close());

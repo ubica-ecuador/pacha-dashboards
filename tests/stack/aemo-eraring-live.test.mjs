@@ -14,7 +14,10 @@ import { openDashboard } from '../lib/pacha.mjs';
 const UID = 'aemo-eraring-live';
 const dashboard = loadDashboard(`dashboards/${UID}.json`);
 const provisioned = await api(STACK_URL, `/api/dashboards/uid/${UID}`);
-const noPlus = provisioned.status === 404 && 'Kepler Plus is not mounted';
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
+const noPlus = noPlusApp;
 const manifestSql = `SELECT url FROM read_json('http://feeds/recordings/aemo-scada/manifest.json',
   columns = {url: 'VARCHAR', "from": 'TIMESTAMPTZ', "to": 'TIMESTAMPTZ'})`;
 const recorded = noPlus ? [] : await duckdb(STACK_URL, manifestSql).catch(() => []);
@@ -49,9 +52,9 @@ test('follows the dashboards conventions', () => {
   assert.match(JSON.stringify(dashboard.spec.variables), /http:\/\/feeds\/recordings\/aemo-scada\/manifest\.json/);
 });
 
-test('is provisioned in Plus', { skip: noPlus }, () => {
+test('is provisioned in Pacha dashboards', { skip: noPlus }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'plus');
+  assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
 test('the recorder keeps every unit of the market every five minutes, the newest under a quarter of an hour old', { skip }, async () => {

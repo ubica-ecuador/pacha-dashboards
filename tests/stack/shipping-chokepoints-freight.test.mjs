@@ -21,7 +21,10 @@ let current;
 after(async () => current && current.browser.close());
 
 const provisioned = await api(STACK_URL, '/api/dashboards/uid/shipping-chokepoints-freight');
-const skip = provisioned.status === 404 && 'Kepler Plus is not mounted';
+// Plus dashboards are provisioned here whether or not Kepler Plus is mounted.
+const noPlusApp =
+  (await api(STACK_URL, '/api/plugins/ubica-keplerplus-app/settings')).status === 404 && 'Kepler Plus is not mounted';
+const skip = noPlusApp;
 const fredKey = compose(['exec', '-T', 'gateway', 'printenv', 'FRED_API_KEY']).trim();
 const noFredKey = !fredKey && 'FRED_API_KEY is not set';
 
@@ -86,9 +89,9 @@ test('a click on a chokepoint picks it', () => {
   assert.deepEqual(layers.map((l) => l.type).sort(), ['geojson', 'point', 'sparkline']);
 });
 
-test('is provisioned in Plus', { skip }, () => {
+test('is provisioned in Pacha dashboards', { skip }, () => {
   assert.equal(provisioned.status, 200);
-  assert.equal(provisioned.json.meta.folderUid, 'plus');
+  assert.equal(provisioned.json.meta.folderUid, 'dashboards');
 });
 
 test('loads for an anonymous visitor, with no panel in error', { skip: skip || noFredKey }, async () => {
