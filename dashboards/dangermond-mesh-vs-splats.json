@@ -1,0 +1,1130 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "dangermond-mesh-vs-splats"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "One drone flight over Government Point and Percos Beach, in The Nature Conservancy's Dangermond Preserve, California, drawn two ways from the same photographs: an integrated mesh (an I3S scene layer of textured triangles) and Gaussian splats (3D Tiles of soft coloured ellipsoids), streamed from ArcGIS behind a swipe curtain on Kepler Plus, over the whole site and close up on the cliff and the shrubs, with the flight's five products and what sets a mesh apart from splats.",
+    "editable": true,
+    "elements": {
+      "card-mesh": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The two products these maps draw, as ArcGIS lists them: their sizes, and how many the flight made.\nWITH products(item, product, format, shown) AS (VALUES\n  ('27cffcafffc2460b88bb7f21afd75df6', 'Gaussian splats', '3D Tiles 1.1, KHR_gaussian_splatting', 'Right of the curtain'),\n  ('a957491d210642f7959b1b50c57ed7fa', 'Integrated mesh', 'I3S scene layer, textured triangles', 'Left of the curtain'),\n  ('d0a3a5feebbc4e179580b635b3383fc7', 'Point cloud', 'I3S point cloud scene layer', 'Not drawn here'),\n  ('45797445c6e04ac99ba93ef54a01259d', 'Orthomosaic', 'Tiled map service, 2D picture', 'Not drawn here'),\n  ('71cafc446d014838b4bedf55a37e2e7b', 'Terrain model (DTM)', 'Tiled image service, bare ground heights', 'Not drawn here')\n)\nSELECT count(*) AS \"Products\",\n       round(sum(i.size) FILTER (WHERE p.product = 'Gaussian splats') / 1e9, 2) AS \"Splats\",\n       round(sum(i.size) FILTER (WHERE p.product = 'Integrated mesh') / 1e9, 2) AS \"Mesh\"\nFROM products p JOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/27cffcafffc2460b88bb7f21afd75df6?f=json', 'https://www.arcgis.com/sharing/rest/content/items/a957491d210642f7959b1b50c57ed7fa?f=json', 'https://www.arcgis.com/sharing/rest/content/items/d0a3a5feebbc4e179580b635b3383fc7?f=json', 'https://www.arcgis.com/sharing/rest/content/items/45797445c6e04ac99ba93ef54a01259d?f=json', 'https://www.arcgis.com/sharing/rest/content/items/71cafc446d014838b4bedf55a37e2e7b?f=json']) i ON i.id = p.item"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The mesh at its finest, as ArcGIS stores it. Your browser reads only the tiles in view.",
+          "id": 3,
+          "links": [],
+          "title": "Integrated mesh",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 2,
+                  "unit": "decgbytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Mesh$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-products": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The two products these maps draw, as ArcGIS lists them: their sizes, and how many the flight made.\nWITH products(item, product, format, shown) AS (VALUES\n  ('27cffcafffc2460b88bb7f21afd75df6', 'Gaussian splats', '3D Tiles 1.1, KHR_gaussian_splatting', 'Right of the curtain'),\n  ('a957491d210642f7959b1b50c57ed7fa', 'Integrated mesh', 'I3S scene layer, textured triangles', 'Left of the curtain'),\n  ('d0a3a5feebbc4e179580b635b3383fc7', 'Point cloud', 'I3S point cloud scene layer', 'Not drawn here'),\n  ('45797445c6e04ac99ba93ef54a01259d', 'Orthomosaic', 'Tiled map service, 2D picture', 'Not drawn here'),\n  ('71cafc446d014838b4bedf55a37e2e7b', 'Terrain model (DTM)', 'Tiled image service, bare ground heights', 'Not drawn here')\n)\nSELECT count(*) AS \"Products\",\n       round(sum(i.size) FILTER (WHERE p.product = 'Gaussian splats') / 1e9, 2) AS \"Splats\",\n       round(sum(i.size) FILTER (WHERE p.product = 'Integrated mesh') / 1e9, 2) AS \"Mesh\"\nFROM products p JOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/27cffcafffc2460b88bb7f21afd75df6?f=json', 'https://www.arcgis.com/sharing/rest/content/items/a957491d210642f7959b1b50c57ed7fa?f=json', 'https://www.arcgis.com/sharing/rest/content/items/d0a3a5feebbc4e179580b635b3383fc7?f=json', 'https://www.arcgis.com/sharing/rest/content/items/45797445c6e04ac99ba93ef54a01259d?f=json', 'https://www.arcgis.com/sharing/rest/content/items/71cafc446d014838b4bedf55a37e2e7b?f=json']) i ON i.id = p.item"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What The Nature Conservancy publishes from this one drone flight on ArcGIS Online.",
+          "id": 1,
+          "links": [],
+          "title": "Products of the flight",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Products$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "card-splats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The two products these maps draw, as ArcGIS lists them: their sizes, and how many the flight made.\nWITH products(item, product, format, shown) AS (VALUES\n  ('27cffcafffc2460b88bb7f21afd75df6', 'Gaussian splats', '3D Tiles 1.1, KHR_gaussian_splatting', 'Right of the curtain'),\n  ('a957491d210642f7959b1b50c57ed7fa', 'Integrated mesh', 'I3S scene layer, textured triangles', 'Left of the curtain'),\n  ('d0a3a5feebbc4e179580b635b3383fc7', 'Point cloud', 'I3S point cloud scene layer', 'Not drawn here'),\n  ('45797445c6e04ac99ba93ef54a01259d', 'Orthomosaic', 'Tiled map service, 2D picture', 'Not drawn here'),\n  ('71cafc446d014838b4bedf55a37e2e7b', 'Terrain model (DTM)', 'Tiled image service, bare ground heights', 'Not drawn here')\n)\nSELECT count(*) AS \"Products\",\n       round(sum(i.size) FILTER (WHERE p.product = 'Gaussian splats') / 1e9, 2) AS \"Splats\",\n       round(sum(i.size) FILTER (WHERE p.product = 'Integrated mesh') / 1e9, 2) AS \"Mesh\"\nFROM products p JOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/27cffcafffc2460b88bb7f21afd75df6?f=json', 'https://www.arcgis.com/sharing/rest/content/items/a957491d210642f7959b1b50c57ed7fa?f=json', 'https://www.arcgis.com/sharing/rest/content/items/d0a3a5feebbc4e179580b635b3383fc7?f=json', 'https://www.arcgis.com/sharing/rest/content/items/45797445c6e04ac99ba93ef54a01259d?f=json', 'https://www.arcgis.com/sharing/rest/content/items/71cafc446d014838b4bedf55a37e2e7b?f=json']) i ON i.id = p.item"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The splats at their finest, as ArcGIS stores them. Your browser reads only the tiles in view.",
+          "id": 2,
+          "links": [],
+          "title": "Gaussian splats",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 2,
+                  "unit": "decgbytes"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Splats$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**What it shows.** One drone flight over Government Point and Percos Beach, in the Jack and Laura Dangermond Preserve at Point Conception, California, turned into two kinds of 3D scene from the same photographs: an integrated mesh on the left of each curtain and Gaussian splats on its right. Drag the curtain to move between them. The three maps share nothing but the flight: each has its camera, and in each the curtain's two sides move together. Drag with the right button (or Ctrl and drag) to tilt and turn.\n\n**A mesh and splats.** The *integrated mesh* is one continuous surface of triangles with the photographs laid on it as a texture, a single skin over the ground, the shrubs and the cliff. The *Gaussian splats* are no surface at all: millions of small, soft, coloured ellipsoids, each with its own place, size, turn and opacity, fitted so that, blended together from any side, they look like the photographs. So the mesh is what you measure on: it has a surface to cut, to cast shadows from, to stand things on. The splats are what you look at: thin things (shrub branches, fence wires, the spray on the waves), water and the cliff's crumbling edge come out as the photographs saw them, where the mesh smooths them into its skin or melts them into sheets. Close up, the mesh's texture blurs into its triangles; the splats keep their grain until their ellipses show, and the ground seen edge-on thins away.\n\n**Where they come from.** The Nature Conservancy flew the preserve with Esri, Wingtra and UC Santa Barbara and publishes five products of this flight on ArcGIS Online (the table); these maps draw two, streamed from ArcGIS by your browser: [the Gaussian splats](https://www.arcgis.com/home/item.html?id=27cffcafffc2460b88bb7f21afd75df6), OGC 3D Tiles 1.1 with the Khronos extension `KHR_gaussian_splatting`, and [the integrated mesh](https://www.arcgis.com/home/item.html?id=a957491d210642f7959b1b50c57ed7fa), an I3S scene layer, each at several levels of detail of which only the tiles in view are read. Their terms: *Data and derived products are provided for demonstration, research, educational, visualization, and analytical purposes. Copyright © The Nature Conservancy. All rights reserved. Source: The Nature Conservancy.*\n\n**How it is drawn.** By Kepler Plus: the splats by its Gaussian Splats layer, set on the map's ground by their lowest splats; the mesh by the free panel's 3D tile layer, at the heights it was surveyed at, a few metres over the sea like the splats once grounded. The satellite picture under the whole site is today's, not the flight's; the close-ups lie on a dark map, as satellite pictures stop short of the sea at that zoom.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-cliff": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The splats: one row for the whole flight, streamed from The Nature Conservancy's 3D Tiles by the Gaussian Splats layer.\n-- The mesh is no query: the map reads it straight from its I3S scene layer (the tile-3d dataset of its mapConfig).\nSELECT 'Government Point and Percos Beach' AS label, 34.4514 AS latitude, -120.4486 AS longitude, 'https://tiles.arcgis.com/tiles/u2Q4oAfciDZpDAD8/arcgis/rest/services/GovernmentPoint_Percos_Gov2_GaussianSplatLayer_1782667712/3DTilesServer/tileset.json' AS splat_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The crumbling cliff and the boulders below it, from a few tens of metres: the mesh smooths them into its skin, the splats keep their grain.",
+          "id": 5,
+          "links": [],
+          "title": "Close up: the cliff and the beach",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 315,
+                      "dragRotate": true,
+                      "isSplit": true,
+                      "isViewportSynced": true,
+                      "latitude": 34.4488,
+                      "longitude": -120.4476,
+                      "mapSplitMode": "SWIPE_COMPARE",
+                      "maxPitch": 85,
+                      "pitch": 68,
+                      "swipeComparePercentage": 50,
+                      "zoom": 18.7
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "cliff-mesh-tiles",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Integrated mesh",
+                            "visConfig": {
+                              "altitudeOffset": 0,
+                              "groundTileset": false,
+                              "opacity": 1,
+                              "pointSize": 2
+                            }
+                          },
+                          "id": "cliff-mesh",
+                          "type": "tile3d",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Gaussian splats",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 1,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "cliff-splats",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "splitMaps": [
+                        {
+                          "layers": {
+                            "cliff-mesh": true,
+                            "cliff-splats": false
+                          }
+                        },
+                        {
+                          "layers": {
+                            "cliff-mesh": false,
+                            "cliff-splats": true
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [
+                    {
+                      "data": {
+                        "allData": [],
+                        "color": [
+                          0,
+                          92,
+                          255
+                        ],
+                        "disableDataOperation": true,
+                        "fields": [],
+                        "id": "cliff-mesh-tiles",
+                        "label": "Integrated mesh",
+                        "metadata": {
+                          "tile3dUrl": "https://tiles.arcgis.com/tiles/u2Q4oAfciDZpDAD8/arcgis/rest/services/GovernmentPoint_Percos_Gov2_IntegratedMesh/SceneServer/layers/0"
+                        },
+                        "type": "tile-3d"
+                      },
+                      "version": "v1"
+                    }
+                  ],
+                  "version": "v1"
+                },
+                "maxZoom": 23,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-overview": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The splats: one row for the whole flight, streamed from The Nature Conservancy's 3D Tiles by the Gaussian Splats layer.\n-- The mesh is no query: the map reads it straight from its I3S scene layer (the tile-3d dataset of its mapConfig).\nSELECT 'Government Point and Percos Beach' AS label, 34.4514 AS latitude, -120.4486 AS longitude, 'https://tiles.arcgis.com/tiles/u2Q4oAfciDZpDAD8/arcgis/rest/services/GovernmentPoint_Percos_Gov2_GaussianSplatLayer_1782667712/3DTilesServer/tileset.json' AS splat_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The same drone flight drawn two ways, the integrated mesh left of the curtain and the Gaussian splats right of it: drag the curtain to move between them.",
+          "id": 4,
+          "links": [],
+          "title": "Government Point and Percos Beach: integrated mesh | Gaussian splats",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "grafana-satellite",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "isSplit": true,
+                      "isViewportSynced": true,
+                      "latitude": 34.4497,
+                      "longitude": -120.45,
+                      "mapSplitMode": "SWIPE_COMPARE",
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "swipeComparePercentage": 50,
+                      "zoom": 16.6
+                    },
+                    "mapStyle": {
+                      "styleType": "grafana-satellite"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "overview-mesh-tiles",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Integrated mesh",
+                            "visConfig": {
+                              "altitudeOffset": 0,
+                              "groundTileset": false,
+                              "opacity": 1,
+                              "pointSize": 2
+                            }
+                          },
+                          "id": "overview-mesh",
+                          "type": "tile3d",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Gaussian splats",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 1,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "overview-splats",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "splitMaps": [
+                        {
+                          "layers": {
+                            "overview-mesh": true,
+                            "overview-splats": false
+                          }
+                        },
+                        {
+                          "layers": {
+                            "overview-mesh": false,
+                            "overview-splats": true
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [
+                    {
+                      "data": {
+                        "allData": [],
+                        "color": [
+                          0,
+                          92,
+                          255
+                        ],
+                        "disableDataOperation": true,
+                        "fields": [],
+                        "id": "overview-mesh-tiles",
+                        "label": "Integrated mesh",
+                        "metadata": {
+                          "tile3dUrl": "https://tiles.arcgis.com/tiles/u2Q4oAfciDZpDAD8/arcgis/rest/services/GovernmentPoint_Percos_Gov2_IntegratedMesh/SceneServer/layers/0"
+                        },
+                        "type": "tile-3d"
+                      },
+                      "version": "v1"
+                    }
+                  ],
+                  "version": "v1"
+                },
+                "maxZoom": 23,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      },
+      "panel-products": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every product The Nature Conservancy made from the flight, with its size and date as its ArcGIS item gives them.\nWITH products(item, product, format, shown) AS (VALUES\n  ('27cffcafffc2460b88bb7f21afd75df6', 'Gaussian splats', '3D Tiles 1.1, KHR_gaussian_splatting', 'Right of the curtain'),\n  ('a957491d210642f7959b1b50c57ed7fa', 'Integrated mesh', 'I3S scene layer, textured triangles', 'Left of the curtain'),\n  ('d0a3a5feebbc4e179580b635b3383fc7', 'Point cloud', 'I3S point cloud scene layer', 'Not drawn here'),\n  ('45797445c6e04ac99ba93ef54a01259d', 'Orthomosaic', 'Tiled map service, 2D picture', 'Not drawn here'),\n  ('71cafc446d014838b4bedf55a37e2e7b', 'Terrain model (DTM)', 'Tiled image service, bare ground heights', 'Not drawn here')\n)\nSELECT p.product AS \"Product\", p.format AS \"Format\", p.shown AS \"On these maps\",\n       round(i.size / 1e9, 2) AS \"Size\", to_timestamp(i.created / 1000) AS \"Published\", p.item AS \"ArcGIS item\"\nFROM products p JOIN read_json(['https://www.arcgis.com/sharing/rest/content/items/27cffcafffc2460b88bb7f21afd75df6?f=json', 'https://www.arcgis.com/sharing/rest/content/items/a957491d210642f7959b1b50c57ed7fa?f=json', 'https://www.arcgis.com/sharing/rest/content/items/d0a3a5feebbc4e179580b635b3383fc7?f=json', 'https://www.arcgis.com/sharing/rest/content/items/45797445c6e04ac99ba93ef54a01259d?f=json', 'https://www.arcgis.com/sharing/rest/content/items/71cafc446d014838b4bedf55a37e2e7b?f=json']) i ON i.id = p.item\nORDER BY i.size DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What The Nature Conservancy made from the flight, as ArcGIS lists it; click an item for its page.",
+          "id": 7,
+          "links": [],
+          "title": "One flight, five products",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Product"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 190
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "ArcGIS item"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "targetBlank": true,
+                            "title": "Its ArcGIS page",
+                            "url": "https://www.arcgis.com/home/item.html?id=${__value.raw}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Size"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "decgbytes"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Published"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:YYYY-MM-DD"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 120
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "On these maps"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 190
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "fields": "",
+                  "reducer": [],
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-ranch": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The splats: one row for the whole flight, streamed from The Nature Conservancy's 3D Tiles by the Gaussian Splats layer.\n-- The mesh is no query: the map reads it straight from its I3S scene layer (the tile-3d dataset of its mapConfig).\nSELECT 'Government Point and Percos Beach' AS label, 34.4514 AS latitude, -120.4486 AS longitude, 'https://tiles.arcgis.com/tiles/u2Q4oAfciDZpDAD8/arcgis/rest/services/GovernmentPoint_Percos_Gov2_GaussianSplatLayer_1782667712/3DTilesServer/tileset.json' AS splat_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trees, shrubs and tracks behind the shore: thin things are where a mesh and splats differ most.",
+          "id": 6,
+          "links": [],
+          "title": "Close up: trees and shrubs",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "isSplit": true,
+                      "isViewportSynced": true,
+                      "latitude": 34.456,
+                      "longitude": -120.446,
+                      "mapSplitMode": "SWIPE_COMPARE",
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "swipeComparePercentage": 50,
+                      "zoom": 17.8
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "label"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "ranch-mesh-tiles",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Integrated mesh",
+                            "visConfig": {
+                              "altitudeOffset": 0,
+                              "groundTileset": false,
+                              "opacity": 1,
+                              "pointSize": 2
+                            }
+                          },
+                          "id": "ranch-mesh",
+                          "type": "tile3d",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Gaussian splats",
+                            "visConfig": {
+                              "cardShow": "tooltip",
+                              "opacity": 1,
+                              "splatAltitude": 0,
+                              "splatClick": "none",
+                              "splatGround": true,
+                              "splatUrlField": "auto"
+                            }
+                          },
+                          "id": "ranch-splats",
+                          "type": "splats",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "splitMaps": [
+                        {
+                          "layers": {
+                            "ranch-mesh": true,
+                            "ranch-splats": false
+                          }
+                        },
+                        {
+                          "layers": {
+                            "ranch-mesh": false,
+                            "ranch-splats": true
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "datasets": [
+                    {
+                      "data": {
+                        "allData": [],
+                        "color": [
+                          0,
+                          92,
+                          255
+                        ],
+                        "disableDataOperation": true,
+                        "fields": [],
+                        "id": "ranch-mesh-tiles",
+                        "label": "Integrated mesh",
+                        "metadata": {
+                          "tile3dUrl": "https://tiles.arcgis.com/tiles/u2Q4oAfciDZpDAD8/arcgis/rest/services/GovernmentPoint_Percos_Gov2_IntegratedMesh/SceneServer/layers/0"
+                        },
+                        "type": "tile-3d"
+                      },
+                      "version": "v1"
+                    }
+                  ],
+                  "version": "v1"
+                },
+                "maxZoom": 23,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-products"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-splats"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 8,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-mesh"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-overview"
+              },
+              "height": 20,
+              "width": 24,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-cliff"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-ranch"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 12,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-products"
+              },
+              "height": 7,
+              "width": 24,
+              "x": 0,
+              "y": 39
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 14,
+              "width": 24,
+              "x": 0,
+              "y": 46
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "cartography",
+      "duckdb",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": true,
+      "timezone": "browser",
+      "to": "now"
+    },
+    "title": "A mesh and Gaussian splats: one drone flight over the Dangermond Preserve, drawn two ways",
+    "variables": []
+  }
+}
