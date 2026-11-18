@@ -1,0 +1,12 @@
+    # The Danish Maritime Authority's AIS, a day at a time: one zipped CSV of
+    # about 650 MB, two or three days late. Only the recorder's ais-denmark feed
+    # reads it, once per day, so it is streamed through and never cached. The
+    # bucket by path: its dotted name does not match S3's certificate.
+    location ~ "^/dma-ais/(aisdk-[0-9]{4}-[0-9]{2}-[0-9]{2}\.zip)$" {
+        set $dma_ais s3.eu-central-1.amazonaws.com;
+        proxy_pass https://$dma_ais/aisdata.ais.dk/$1;
+        proxy_set_header Host $dma_ais;
+        proxy_cache off;
+        proxy_buffering off;
+        proxy_read_timeout 120s;
+    }

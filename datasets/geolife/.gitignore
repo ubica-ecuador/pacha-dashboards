@@ -1,0 +1,3 @@
+# Built by build.sh on each instance; GeoLife is not ours to publish.
+*.parquet
+.*.tmp

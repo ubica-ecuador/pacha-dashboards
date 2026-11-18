@@ -1,0 +1,17 @@
+    # TriMet's web services, v2 and V1, with the AppID added. Always asked for
+    # gzip, and stored that way: the trip status feed is 11 MB plain and 1 MB
+    # gzipped. gunzip hands it plain to a client that does not ask for gzip,
+    # as DuckDB's http_get does not. Kept 15 s: one fetch per dashboard
+    # refresh, however many datasets and visitors ask. The key is the path and
+    # query as the dashboard sent them, without the AppID.
+    location ~ ^/trimet/(ws/(?:v2|V1)/[A-Za-z]+)$ {
+        set $trimet developer.trimet.org;
+        proxy_pass https://$trimet/$1?$trimet_args;
+        proxy_set_header Host $trimet;
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache trimet;
+        proxy_cache_key $request_uri;
+        proxy_cache_valid 200 15s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

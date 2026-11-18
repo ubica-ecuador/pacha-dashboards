@@ -1,0 +1,2066 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "air-traffic-world"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Every aircraft adsb.lol's volunteer receivers hear, moving on the map, and the last week of their positions as this instance recorded them, replayed over the time range. Click the charts to filter by kind of flight, airline, type, altitude or country. Coverage is dense over Europe and North America and thin elsewhere. The history needs the recorder (compose profile `recorder`). Data: adsb.lol, ODbL.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The live snapshot through the gateway, which asks adsb.lol once a minute.\nWITH live AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM (\n    SELECT a-\u003e\u003e'hex' AS hex, nullif(trim(a-\u003e\u003e'flight'), '') AS flight, a-\u003e\u003e't' AS type, a-\u003e\u003e'r' AS reg,\n           a-\u003e\u003e'category' AS category, (a-\u003e\u003e'lat')::DOUBLE AS lat, (a-\u003e\u003e'lon')::DOUBLE AS lon,\n           try_cast(a-\u003e\u003e'alt_baro' AS INTEGER) AS alt_baro, coalesce(a-\u003e\u003e'alt_baro' = 'ground', false) AS on_ground,\n           (a-\u003e\u003e'gs')::DOUBLE AS gs, (a-\u003e\u003e'track')::DOUBLE AS track, a-\u003e\u003e'squawk' AS squawk,\n           try_cast(a-\u003e\u003e'dbFlags' AS INTEGER) AS db_flags,\n           make_timestamptz((now * 1000)::BIGINT) - to_milliseconds((coalesce((a-\u003e\u003e'seen_pos')::DOUBLE, 0) * 1000)::BIGINT) AS ts\n    FROM (SELECT now, unnest(ac) AS a FROM read_json('http://feeds/adsblol/world', columns = {now: 'DOUBLE', ac: 'JSON[]'}))\n    WHERE a-\u003e\u003e'lat' IS NOT NULL\n  )\n)\nSELECT count(*) AS \"Aircraft\",\n       count(*) FILTER (WHERE on_ground) AS \"On the ground\",\n       count(*) FILTER (WHERE kind = 'Military') AS \"Military\",\n       count(*) FILTER (WHERE squawk IN ('7500', '7600', '7700')) AS \"Emergency squawks\"\nFROM live\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every aircraft adsb.lol hears right now, worldwide, within the filters set above.",
+          "id": 1,
+          "links": [],
+          "title": "In the air now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Distinct aircraft by country of registration.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n)\nSELECT country AS value, country AS label, count(DISTINCT hex) AS aircraft\nFROM recorded\nWHERE country IS NOT NULL\n  AND (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\nGROUP BY ALL\nORDER BY aircraft DESC\nLIMIT 15"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From the registration's nationality prefix. Military aircraft often carry none. Click a bar to filter.",
+          "id": 10,
+          "links": [],
+          "title": "Country of registration",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft by country of registration.\n// A click on a bar filters the whole dashboard by it ($$country); a click on the\n// picked bar clears the filter.\nconst VAR = 'country';\nconst COLORS = {};\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('aircraft').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} aircraft\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text, width: 150, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Aircraft', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#00A6CA', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Two minutes a bar at least, wider as the range grows: a poll carries positions\n-- heard up to a minute before it, so one-minute bars split polls unevenly.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n)\nSELECT time_bucket(to_milliseconds(greatest($__interval_ms, 120000)), ts) AS time, kind,\n       count(DISTINCT hex) AS heard\nFROM recorded\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\nGROUP BY ALL\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Distinct aircraft heard in each interval of the range, within the filters, stacked by kind of flight. A missing bar is a gap in the recording, not empty skies.",
+          "id": 11,
+          "links": [],
+          "title": "Aircraft heard, by kind",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft heard per interval, stacked by kind of flight. An interval\n// with no bar is a gap in the recording, not empty skies.\nconst COLORS = {\"Airline\": \"#00A6CA\", \"Cargo\": \"#F29E2E\", \"Private \u0026 general aviation\": \"#90EB9D\", \"Helicopter\": \"#C77DFF\", \"Military\": \"#E5484D\", \"Ground \u0026 other\": \"#8B8D98\"};\nconst times = col('time');\nconst kinds = col('kind');\nconst heard = col('heard');\nconst order = Object.keys(COLORS).filter((k) =\u003e kinds.includes(k));\nconst buckets = [...new Set(times)].sort((a, b) =\u003e a - b);\nconst series = order.map((k) =\u003e {\n  const at = new Map();\n  kinds.forEach((kind, i) =\u003e kind === k \u0026\u0026 at.set(times[i], heard[i]));\n  return { name: k, type: 'bar', stack: 'all', barMaxWidth: 14, itemStyle: { color: COLORS[k] },\n           data: buckets.map((t) =\u003e [t, at.get(t) ?? 0]) };\n});\nreturn {\n  animation: false,\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 10, itemHeight: 10 },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis' },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: lines } } },\n  yAxis: { type: 'value', min: 0, axisLabel: { color: muted }, splitLine: { lineStyle: { color: lines } } },\n  series,\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "SELECT ts AS time, alt_baro AS altitude_ft, gs AS ground_speed\nFROM read_parquet([${files:singlequote}], union_by_name = true)\nWHERE ts BETWEEN $__timeFrom() AND $__timeTo() AND hex = ${hex:sqlstring}\nORDER BY ts"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The aircraft picked on a map, over the time range: barometric altitude on the left, ground speed on the right.",
+          "id": 12,
+          "links": [],
+          "title": "Picked aircraft: altitude and ground speed",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// The picked aircraft: barometric altitude on the left axis, ground speed on\n// the right one. Nothing picked, nothing drawn.\nconst times = col('time');\nconst alt = col('altitude_ft');\nconst gs = col('ground_speed');\nconst picked = context.grafana.replaceVariables('${hex}');\nreturn {\n  animation: false,\n  title: times.length ? undefined : {\n    text: picked ? 'Nothing recorded for ' + picked + ' in this range' : 'Pick an aircraft on the map',\n    left: 'center', top: 'middle', textStyle: { color: muted, fontSize: 14, fontWeight: 'normal' },\n  },\n  legend: { top: 0, textStyle: { color: muted } },\n  grid: { left: 8, right: 8, top: 32, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis' },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: lines } } },\n  yAxis: [\n    { type: 'value', name: 'ft', nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { lineStyle: { color: lines } } },\n    { type: 'value', name: 'kt', nameTextStyle: { color: muted }, axisLabel: { color: muted }, splitLine: { show: false } },\n  ],\n  series: [\n    { name: 'Altitude (ft)', type: 'line', showSymbol: false, itemStyle: { color: '#00A6CA' }, data: times.map((t, i) =\u003e [t, alt[i]]) },\n    { name: 'Ground speed (kt)', type: 'line', showSymbol: false, yAxisIndex: 1, itemStyle: { color: '#F29E2E' }, data: times.map((t, i) =\u003e [t, gs[i]]) },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n)\nSELECT count(DISTINCT hex) AS \"Aircraft heard\", count(DISTINCT flight) AS \"Flights\", count(*) AS \"Positions\"\nFROM recorded\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "What this instance recorded over the time range, within the filters. Empty without the recorder (compose profile `recorder`).",
+          "id": 2,
+          "links": [],
+          "title": "Recorded in this range",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every aircraft over the dashboard's range: what the recorder kept, thinned to\n-- about 15 positions per aircraft whatever the range, then the live snapshot on\n-- top, so the map is current even before the recorder has written anything.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\nlive AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM (\n    SELECT a-\u003e\u003e'hex' AS hex, nullif(trim(a-\u003e\u003e'flight'), '') AS flight, a-\u003e\u003e't' AS type, a-\u003e\u003e'r' AS reg,\n           a-\u003e\u003e'category' AS category, (a-\u003e\u003e'lat')::DOUBLE AS lat, (a-\u003e\u003e'lon')::DOUBLE AS lon,\n           try_cast(a-\u003e\u003e'alt_baro' AS INTEGER) AS alt_baro, coalesce(a-\u003e\u003e'alt_baro' = 'ground', false) AS on_ground,\n           (a-\u003e\u003e'gs')::DOUBLE AS gs, (a-\u003e\u003e'track')::DOUBLE AS track, a-\u003e\u003e'squawk' AS squawk,\n           try_cast(a-\u003e\u003e'dbFlags' AS INTEGER) AS db_flags,\n           make_timestamptz((now * 1000)::BIGINT) - to_milliseconds((coalesce((a-\u003e\u003e'seen_pos')::DOUBLE, 0) * 1000)::BIGINT) AS ts\n    FROM (SELECT now, unnest(ac) AS a FROM read_json('http://feeds/adsblol/world', columns = {now: 'DOUBLE', ac: 'JSON[]'}))\n    WHERE a-\u003e\u003e'lat' IS NOT NULL\n  )\n),\nstep AS (\n  SELECT greatest(INTERVAL 1 MINUTE, ($__timeTo()::TIMESTAMPTZ - $__timeFrom()::TIMESTAMPTZ) / 15) AS s\n),\nrows AS (\n  SELECT hex AS icao24, flight, type AS model, kind, ts AS time, lat AS latitude, lon,\n         coalesce(alt_baro, 0) AS altitude_ft,\n         -- The height the map draws it at: metres, exaggerated, or a whole flight\n         -- level would be a hair's breadth on a map of the world.\n         coalesce(alt_baro, 0) * 0.3048 * CAST(${zscale} AS DOUBLE) AS altitude_m,\n         gs AS ground_speed, track\n  FROM recorded, step\n  WHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\n  QUALIFY row_number() OVER (PARTITION BY hex, time_bucket(step.s, ts) ORDER BY ts DESC) = 1\n  UNION ALL\n  SELECT hex AS icao24, flight, type AS model, kind, ts AS time, lat AS latitude, lon,\n         coalesce(alt_baro, 0) AS altitude_ft,\n         -- The height the map draws it at: metres, exaggerated, or a whole flight\n         -- level would be a hair's breadth on a map of the world.\n         coalesce(alt_baro, 0) * 0.3048 * CAST(${zscale} AS DOUBLE) AS altitude_m,\n         gs AS ground_speed, track\n  FROM live\n  WHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\n    -- Only when the range ends now: a range in the past is the recording alone.\n    AND $__timeTo()::TIMESTAMPTZ \u003e now() - INTERVAL 5 MINUTE\n),\nunwrapped AS (\n  SELECT * EXCLUDE (lon_u),\n         lon_u - 360 * round(arg_max(lon_u, time) OVER (PARTITION BY icao24) / 360) AS lon\n  FROM (\n    SELECT * EXCLUDE (lon, prev_lon),\n           lon + 360 * sum(CASE WHEN lon - prev_lon \u003e 180 THEN -1 WHEN lon - prev_lon \u003c -180 THEN 1 ELSE 0 END)\n                       OVER (PARTITION BY icao24 ORDER BY time ROWS UNBOUNDED PRECEDING) AS lon_u\n    FROM (SELECT *, lag(lon) OVER (PARTITION BY icao24 ORDER BY time) AS prev_lon FROM rows)\n  )\n)\nSELECT * RENAME (lon AS longitude) FROM unwrapped\nORDER BY icao24, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each aircraft where it is now, in 3D at its altitude (exaggerated by the factor chosen above), pointing where it is going, coloured by altitude, with the last minutes of its track; only those the filters above let through. Right-drag or Ctrl-drag to tilt and turn the map. The bar at the bottom is the dashboard's time range: press ▶ to replay it, or drag it. Hover an aircraft for its card, click it to follow it below. Data: adsb.lol (ODbL), dense over Europe and North America, thin elsewhere.",
+          "id": 3,
+          "links": [],
+          "title": "Every aircraft in the world",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 34.011856971260414,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 32.69279653109675,
+                      "longitude": -117.15604023700303,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 64.04411764705883,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 8.982742839774593
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        14,
+                        14,
+                        14
+                      ],
+                      "mapStyles": {},
+                      "styleType": "grafana-satellite-terrain",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": false,
+                        "land": true,
+                        "poi": true,
+                        "road": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "incremental",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "clock",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "count",
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "1-minute",
+                            "type": "histogram"
+                          },
+                          "speed": 0.227,
+                          "syncTimelineMode": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "value": [
+                            1793070713753,
+                            1793072513753
+                          ],
+                          "view": "minified"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "flight"
+                                },
+                                {
+                                  "name": "model"
+                                },
+                                {
+                                  "name": "kind"
+                                },
+                                {
+                                  "name": "altitude_ft"
+                                },
+                                {
+                                  "name": "ground_speed"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "4sz5qoyt": [],
+                            "grafana-A": [
+                              {
+                                "name": "icao24"
+                              },
+                              {
+                                "name": "flight"
+                              },
+                              {
+                                "name": "model"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "format": "L LTS",
+                                "name": "time"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "aircraft",
+                        "5w4zj37"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              0,
+                              204,
+                              188
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Aircraft",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#37535E",
+                                  "#396A76",
+                                  "#38828C",
+                                  "#3A9B9E",
+                                  "#52B3A8",
+                                  "#86C8A9",
+                                  "#B7DBB1",
+                                  "#E5EEC1"
+                                ],
+                                "name": "Ocean Green",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "altitude_m",
+                              "fleetAssetField": "icao24",
+                              "fleetCard": true,
+                              "fleetCardField": "speed",
+                              "fleetCardMinutes": 60,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "M",
+                              "fleetCardUnit": "",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "neutral",
+                              "fleetCrossValue": true,
+                              "fleetCrosshair": true,
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "follow",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "track",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{\"\":{\"silhouette\":\"plane\",\"preset\":\"none\"}}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "beacon",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [
+                                "a0a8da",
+                                "a577d4"
+                              ],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetReckon": true,
+                              "fleetRemember": "auto",
+                              "fleetRememberMin": 30,
+                              "fleetShadow": true,
+                              "fleetSize": 30,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 1000,
+                              "fleetSpeedField": "ground_speed",
+                              "fleetSpeedUnit": "kt",
+                              "fleetStaleAfter": 5,
+                              "fleetStatusFrom": "derived",
+                              "fleetStem": true,
+                              "fleetStopSpeed": 30,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "live",
+                              "fleetTrail": 10,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
+                              "fleetTrailOpacity": 0.8,
+                              "fleetTrailShow": false,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "comets",
+                              "fleetTrailWidth": 2,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
+                              "fleetTypeField": "none",
+                              "fleetZoomRate": 0.35,
+                              "fleetZoomRef": 6,
+                              "fleetZoomScale": true,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#2C7BB6",
+                                  "#00A6CA",
+                                  "#00CCBC",
+                                  "#90EB9D",
+                                  "#FFFF8C",
+                                  "#F9D057",
+                                  "#F29E2E",
+                                  "#E76818"
+                                ],
+                                "name": "Altitude",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "aircraft",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "altitude_ft",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantize",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columns": {},
+                            "dataId": "4sz5qoyt",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
+                            "label": "Google Photorealistic 3D",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "altitudeOffset": 0,
+                              "groundTileset": false,
+                              "opacity": 1,
+                              "pointSize": 2
+                            }
+                          },
+                          "id": "5w4zj37",
+                          "type": "tile3d",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "datasets": [
+                    {
+                      "data": {
+                        "allData": [],
+                        "color": [
+                          0,
+                          92,
+                          255
+                        ],
+                        "disableDataOperation": true,
+                        "fields": [],
+                        "id": "4sz5qoyt",
+                        "label": "Google Photorealistic 3D",
+                        "metadata": {
+                          "format": "rows",
+                          "id": "4sz5qoyt",
+                          "label": "Google Photorealistic 3D",
+                          "tile3dProvider": "google",
+                          "tile3dUrl": "https://tile.googleapis.com/v1/3dtiles/root.json"
+                        },
+                        "type": "tile-3d"
+                      },
+                      "version": "v1"
+                    }
+                  ],
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 3,
+                "showSidePanel": false,
+                "timeSync": "toMap",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "icao24",
+                    "source": "click",
+                    "variable": "hex"
+                  }
+                ]
+              }
+            },
+            "version": "1.4.1"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- H3 resolution 4 (about 1,800 km2) up to a day, 3 beyond it.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n)\nSELECT h3_h3_to_string(h3_cell_to_parent(cell, CASE WHEN $__timeTo()::TIMESTAMPTZ - $__timeFrom()::TIMESTAMPTZ \u003e INTERVAL 1 DAY THEN 3 ELSE 4 END)) AS h3,\n       count(DISTINCT hex) AS aircraft, count(*) AS positions\nFROM recorded\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\nGROUP BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Distinct aircraft heard in each H3 cell over the time range, within the filters. Cells are coarser for ranges over a day.",
+          "id": 4,
+          "links": [],
+          "title": "Where aircraft flew",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 30,
+                      "longitude": 0,
+                      "pitch": 0,
+                      "zoom": 1.3
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "aircraft"
+                                },
+                                {
+                                  "name": "positions"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "density"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              203,
+                              153
+                            ],
+                            "columns": {
+                              "hex_id": "h3"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Aircraft heard",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#5A1846",
+                                  "#900C3F",
+                                  "#C70039",
+                                  "#E3611C",
+                                  "#F1920E",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "coverage": 1,
+                              "enable3d": false,
+                              "opacity": 0.8
+                            }
+                          },
+                          "id": "density",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "aircraft",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.4.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- A trip id, a time and a position: the panel builds an animated Trip layer.\nWITH area AS (\n  SELECT list_transform(xs, lambda x: x - 360 * round(coalesce(list_avg(xs), 0) / 360)) AS xs, ys\n  FROM (\n    SELECT\n      list_filter(n, lambda v, i: i % 2 = 1) AS xs,\n      list_filter(n, lambda v, i: i % 2 = 0) AS ys\n    FROM (SELECT CAST(regexp_extract_all(${area:sqlstring}, '-?[0-9]+(?:\\.[0-9]+)?(?:[eE][-+]?[0-9]+)?') AS DOUBLE[]) AS n)\n  )\n),\nrecorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\npts AS (\n  SELECT hex AS trip_id, flight, ts AS time, lat AS latitude, lon AS longitude,\n         alt_baro AS altitude_ft, gs AS ground_speed\n  FROM recorded\n  WHERE CASE WHEN ${hex:sqlstring} \u003c\u003e '' THEN hex = ${hex:sqlstring} ELSE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring}) END\n),\npicked AS (\n  SELECT pts.* EXCLUDE (longitude), longitude AS lon FROM pts, area\n  WHERE CASE WHEN ${hex:sqlstring} \u003c\u003e '' THEN true\n             ELSE len(area.xs) \u003e 0 AND (len(area.xs) = 0 OR list_sum(list_transform(range(1, len(area.xs) + 1), lambda i:\n  CASE WHEN (area.ys[i] \u003e latitude) \u003c\u003e (area.ys[i % len(area.xs) + 1] \u003e latitude)\n        AND longitude \u003c (area.xs[i % len(area.xs) + 1] - area.xs[i]) * (latitude - area.ys[i]) / (area.ys[i % len(area.xs) + 1] - area.ys[i]) + area.xs[i]\n       THEN 1 ELSE 0 END)) % 2 = 1) END\n  ORDER BY trip_id, time\n  LIMIT 50000\n),\nunwrapped AS (\n  SELECT * EXCLUDE (lon_u),\n         lon_u - 360 * round(arg_max(lon_u, time) OVER (PARTITION BY trip_id) / 360) AS lon\n  FROM (\n    SELECT * EXCLUDE (lon, prev_lon),\n           lon + 360 * sum(CASE WHEN lon - prev_lon \u003e 180 THEN -1 WHEN lon - prev_lon \u003c -180 THEN 1 ELSE 0 END)\n                       OVER (PARTITION BY trip_id ORDER BY time ROWS UNBOUNDED PRECEDING) AS lon_u\n    FROM (SELECT *, lag(lon) OVER (PARTITION BY trip_id ORDER BY time) AS prev_lon FROM picked)\n  )\n)\nSELECT * RENAME (lon AS longitude) FROM unwrapped\nORDER BY trip_id, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The recorded track of the aircraft picked on the map (or typed above), replayed over the time range: press ▶. With none picked, draw an area here to replay every aircraft inside it that the filters let through, up to 50,000 positions.",
+          "id": 5,
+          "links": [],
+          "title": "Tracks: the picked aircraft, or the drawn area",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "area",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 30,
+                      "longitude": 0,
+                      "pitch": 0,
+                      "zoom": 1.3
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "flight"
+                                },
+                                {
+                                  "name": "altitude_ft"
+                                },
+                                {
+                                  "name": "ground_speed"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "toMap",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "trip_id",
+                    "source": "click",
+                    "variable": "hex"
+                  }
+                ]
+              }
+            },
+            "version": "1.4.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Distinct aircraft by kind of flight.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n)\nSELECT kind AS value, kind AS label, count(DISTINCT hex) AS aircraft\nFROM recorded\nWHERE kind IS NOT NULL\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\nGROUP BY ALL\nORDER BY aircraft DESC\nLIMIT 10"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Military by adsb.lol's database; airline and cargo by the callsign's ICAO airline prefix; helicopters and ground vehicles by the ADS-B emitter category; the rest is private and general aviation. Click a bar to filter the dashboard.",
+          "id": 6,
+          "links": [],
+          "title": "Kind of flight",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft by kind of flight.\n// A click on a bar filters the whole dashboard by it ($$kind); a click on the\n// picked bar clears the filter.\nconst VAR = 'kind';\nconst COLORS = {\"Airline\": \"#00A6CA\", \"Cargo\": \"#F29E2E\", \"Private \u0026 general aviation\": \"#90EB9D\", \"Helicopter\": \"#C77DFF\", \"Military\": \"#E5484D\", \"Ground \u0026 other\": \"#8B8D98\"};\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('aircraft').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} aircraft\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text, width: 150, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Aircraft', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#00A6CA', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Distinct aircraft by altitude band.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n)\nSELECT altband AS value, altband AS label, count(DISTINCT hex) AS aircraft\nFROM recorded\nWHERE altband IS NOT NULL\n  AND (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\nGROUP BY ALL\nORDER BY aircraft DESC\nLIMIT 10"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Distinct aircraft by barometric altitude band, any time in the range. Click a bar to filter.",
+          "id": 7,
+          "links": [],
+          "title": "Altitude",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft by altitude band.\n// A click on a bar filters the whole dashboard by it ($$altband); a click on the\n// picked bar clears the filter.\nconst VAR = 'altband';\nconst COLORS = {};\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('aircraft').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} aircraft\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text, width: 150, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Aircraft', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#00A6CA', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Distinct aircraft by airline.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n),\nairline_names(code, name) AS (VALUES ('AAL', 'American'), ('DAL', 'Delta'), ('UAL', 'United'), ('SWA', 'Southwest'), ('ASA', 'Alaska'), ('JBU', 'JetBlue'), ('NKS', 'Spirit'), ('FFT', 'Frontier'), ('AAY', 'Allegiant'), ('SKW', 'SkyWest'), ('RPA', 'Republic'), ('ENY', 'Envoy'), ('EDV', 'Endeavor'), ('JIA', 'PSA'), ('ACA', 'Air Canada'), ('WJA', 'WestJet'), ('AMX', 'Aeroméxico'), ('VOI', 'Volaris'), ('RYR', 'Ryanair'), ('EZY', 'easyJet'), ('EJU', 'easyJet Europe'), ('WZZ', 'Wizz Air'), ('DLH', 'Lufthansa'), ('BAW', 'British Airways'), ('AFR', 'Air France'), ('KLM', 'KLM'), ('IBE', 'Iberia'), ('VLG', 'Vueling'), ('SAS', 'SAS'), ('AUA', 'Austrian'), ('SWR', 'Swiss'), ('EWG', 'Eurowings'), ('TAP', 'TAP'), ('ITY', 'ITA'), ('THY', 'Turkish'), ('PGT', 'Pegasus'), ('UAE', 'Emirates'), ('QTR', 'Qatar'), ('ETD', 'Etihad'), ('SVA', 'Saudia'), ('FDB', 'flydubai'), ('AIC', 'Air India'), ('IGO', 'IndiGo'), ('CSN', 'China Southern'), ('CES', 'China Eastern'), ('CCA', 'Air China'), ('CHH', 'Hainan'), ('CPA', 'Cathay Pacific'), ('ANA', 'All Nippon'), ('JAL', 'Japan Airlines'), ('KAL', 'Korean Air'), ('AAR', 'Asiana'), ('SIA', 'Singapore'), ('QFA', 'Qantas'), ('VOZ', 'Virgin Australia'), ('ANZ', 'Air New Zealand'), ('AVA', 'Avianca'), ('LAN', 'LATAM'), ('TAM', 'LATAM Brasil'), ('GLO', 'Gol'), ('AZU', 'Azul'), ('CMP', 'Copa'), ('ARG', 'Aerolíneas Argentinas'), ('FDX', 'FedEx'), ('UPS', 'UPS'), ('GTI', 'Atlas Air'), ('CLX', 'Cargolux'), ('CKS', 'Kalitta'), ('BOX', 'AeroLogic'), ('NJE', 'NetJets Europe'), ('EJA', 'NetJets'))\nSELECT airline AS value, airline || coalesce(' · ' || airline_names.name, '') AS label, count(DISTINCT hex) AS aircraft\nFROM recorded LEFT JOIN airline_names ON airline_names.code = recorded.airline\nWHERE airline IS NOT NULL\n  AND (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${model:sqlstring} = '' OR type = ${model:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\nGROUP BY ALL\nORDER BY aircraft DESC\nLIMIT 15"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The ICAO airline prefix of the callsign, with the airline's name for the larger ones. Click a bar to filter.",
+          "id": 8,
+          "links": [],
+          "title": "Airlines",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft by airline.\n// A click on a bar filters the whole dashboard by it ($$airline); a click on the\n// picked bar clears the filter.\nconst VAR = 'airline';\nconst COLORS = {};\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('aircraft').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} aircraft\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text, width: 150, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Aircraft', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#00A6CA', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Distinct aircraft by ICAO type designator.\nWITH recorded AS (\n  SELECT *,\n    CASE\n      WHEN coalesce(db_flags, 0) \u0026 1 = 1 THEN 'Military'\n      WHEN category LIKE 'C%' OR category LIKE 'B%' THEN 'Ground \u0026 other'\n      WHEN category = 'A7' THEN 'Helicopter'\n      WHEN regexp_matches(coalesce(flight, ''), '^(FDX|UPS|GTI|CLX|ABW|BOX|CKS|CAO|DHK|BCS|DHX|ABX|ATN|GEC|CKK|NCA|PAC|MPH|AJT|QAC|ICV|SWN|TAY|CJT|KYE|LCO|MSX)[0-9]') THEN 'Cargo'\n      WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN 'Airline'\n      ELSE 'Private \u0026 general aviation'\n    END AS kind,\n    CASE WHEN regexp_matches(coalesce(flight, ''), '^[A-Z]{3}[0-9]') THEN left(flight, 3) END AS airline,\n    CASE\n      WHEN on_ground THEN 'Ground'\n      WHEN alt_baro \u003c 10000 THEN 'Below 10k ft'\n      WHEN alt_baro \u003c 25000 THEN '10k–25k ft'\n      WHEN alt_baro \u003c 35000 THEN '25k–35k ft'\n      WHEN alt_baro \u003e= 35000 THEN 'Above 35k ft'\n      ELSE 'Unknown'\n    END AS altband,\n    CASE\n      WHEN regexp_matches(reg, '^(N[0-9])') THEN 'United States'\n      WHEN regexp_matches(reg, '^(C-)') THEN 'Canada'\n      WHEN regexp_matches(reg, '^(XA-|XB-|XC-)') THEN 'Mexico'\n      WHEN regexp_matches(reg, '^(G-)') THEN 'United Kingdom'\n      WHEN regexp_matches(reg, '^(D-)') THEN 'Germany'\n      WHEN regexp_matches(reg, '^(F-)') THEN 'France'\n      WHEN regexp_matches(reg, '^(EC-)') THEN 'Spain'\n      WHEN regexp_matches(reg, '^(I-)') THEN 'Italy'\n      WHEN regexp_matches(reg, '^(PH-)') THEN 'Netherlands'\n      WHEN regexp_matches(reg, '^(OO-)') THEN 'Belgium'\n      WHEN regexp_matches(reg, '^(HB-)') THEN 'Switzerland'\n      WHEN regexp_matches(reg, '^(OE-)') THEN 'Austria'\n      WHEN regexp_matches(reg, '^(EI-)') THEN 'Ireland'\n      WHEN regexp_matches(reg, '^(SE-)') THEN 'Sweden'\n      WHEN regexp_matches(reg, '^(LN-)') THEN 'Norway'\n      WHEN regexp_matches(reg, '^(OY-)') THEN 'Denmark'\n      WHEN regexp_matches(reg, '^(OH-)') THEN 'Finland'\n      WHEN regexp_matches(reg, '^(SP-)') THEN 'Poland'\n      WHEN regexp_matches(reg, '^(OK-)') THEN 'Czechia'\n      WHEN regexp_matches(reg, '^(CS-)') THEN 'Portugal'\n      WHEN regexp_matches(reg, '^(SX-)') THEN 'Greece'\n      WHEN regexp_matches(reg, '^(TC-)') THEN 'Türkiye'\n      WHEN regexp_matches(reg, '^(9H-)') THEN 'Malta'\n      WHEN regexp_matches(reg, '^(LX-)') THEN 'Luxembourg'\n      WHEN regexp_matches(reg, '^(YR-)') THEN 'Romania'\n      WHEN regexp_matches(reg, '^(HA-)') THEN 'Hungary'\n      WHEN regexp_matches(reg, '^(LZ-)') THEN 'Bulgaria'\n      WHEN regexp_matches(reg, '^(9A-)') THEN 'Croatia'\n      WHEN regexp_matches(reg, '^(OM-)') THEN 'Slovakia'\n      WHEN regexp_matches(reg, '^(LY-)') THEN 'Lithuania'\n      WHEN regexp_matches(reg, '^(YL-)') THEN 'Latvia'\n      WHEN regexp_matches(reg, '^(ES-)') THEN 'Estonia'\n      WHEN regexp_matches(reg, '^(TF-)') THEN 'Iceland'\n      WHEN regexp_matches(reg, '^(RA-)') THEN 'Russia'\n      WHEN regexp_matches(reg, '^(UR-)') THEN 'Ukraine'\n      WHEN regexp_matches(reg, '^(4X-)') THEN 'Israel'\n      WHEN regexp_matches(reg, '^(A6-)') THEN 'United Arab Emirates'\n      WHEN regexp_matches(reg, '^(A7-)') THEN 'Qatar'\n      WHEN regexp_matches(reg, '^(HZ-)') THEN 'Saudi Arabia'\n      WHEN regexp_matches(reg, '^(A9C-)') THEN 'Bahrain'\n      WHEN regexp_matches(reg, '^(A4O-)') THEN 'Oman'\n      WHEN regexp_matches(reg, '^(9K-)') THEN 'Kuwait'\n      WHEN regexp_matches(reg, '^(SU-)') THEN 'Egypt'\n      WHEN regexp_matches(reg, '^(CN-)') THEN 'Morocco'\n      WHEN regexp_matches(reg, '^(ET-)') THEN 'Ethiopia'\n      WHEN regexp_matches(reg, '^(5Y-)') THEN 'Kenya'\n      WHEN regexp_matches(reg, '^(ZS-)') THEN 'South Africa'\n      WHEN regexp_matches(reg, '^(VT-)') THEN 'India'\n      WHEN regexp_matches(reg, '^(AP-)') THEN 'Pakistan'\n      WHEN regexp_matches(reg, '^(B-)') THEN 'China / Taiwan'\n      WHEN regexp_matches(reg, '^(JA)') THEN 'Japan'\n      WHEN regexp_matches(reg, '^(HL[0-9])') THEN 'South Korea'\n      WHEN regexp_matches(reg, '^(9V-)') THEN 'Singapore'\n      WHEN regexp_matches(reg, '^(9M-)') THEN 'Malaysia'\n      WHEN regexp_matches(reg, '^(PK-)') THEN 'Indonesia'\n      WHEN regexp_matches(reg, '^(HS-)') THEN 'Thailand'\n      WHEN regexp_matches(reg, '^(RP-)') THEN 'Philippines'\n      WHEN regexp_matches(reg, '^(VN-)') THEN 'Vietnam'\n      WHEN regexp_matches(reg, '^(VH-)') THEN 'Australia'\n      WHEN regexp_matches(reg, '^(ZK-)') THEN 'New Zealand'\n      WHEN regexp_matches(reg, '^(PP-|PR-|PS-|PT-|PU-)') THEN 'Brazil'\n      WHEN regexp_matches(reg, '^(LV-)') THEN 'Argentina'\n      WHEN regexp_matches(reg, '^(CC-)') THEN 'Chile'\n      WHEN regexp_matches(reg, '^(HK-)') THEN 'Colombia'\n      WHEN regexp_matches(reg, '^(HC-)') THEN 'Ecuador'\n      WHEN regexp_matches(reg, '^(OB-)') THEN 'Peru'\n      WHEN regexp_matches(reg, '^(YV-)') THEN 'Venezuela'\n      WHEN regexp_matches(reg, '^(CX-)') THEN 'Uruguay'\n      WHEN regexp_matches(reg, '^(TI-)') THEN 'Costa Rica'\n      WHEN regexp_matches(reg, '^(HP-)') THEN 'Panama'\n      WHEN regexp_matches(reg, '^(VP-B|VQ-B)') THEN 'Bermuda'\n      WHEN regexp_matches(reg, '^(M-)') THEN 'Isle of Man'\n      WHEN regexp_matches(reg, '^(2-)') THEN 'Guernsey'\n      WHEN reg IS NULL THEN 'Unknown'\n      ELSE 'Other'\n    END AS country\n  FROM read_parquet([${files:singlequote}], union_by_name = true)\n  WHERE ts BETWEEN $__timeFrom() AND $__timeTo()\n)\nSELECT type AS value, type AS label, count(DISTINCT hex) AS aircraft\nFROM recorded\nWHERE type IS NOT NULL\n  AND (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\n  AND (${airline:sqlstring} = '' OR airline = ${airline:sqlstring})\n  AND (${altband:sqlstring} = '' OR altband = ${altband:sqlstring})\n  AND (${country:sqlstring} = '' OR country = ${country:sqlstring})\nGROUP BY ALL\nORDER BY aircraft DESC\nLIMIT 15"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "ICAO type designators. Click a bar to filter.",
+          "id": 9,
+          "links": [],
+          "title": "Aircraft types",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\n// Distinct aircraft by ICAO type designator.\n// A click on a bar filters the whole dashboard by it ($$model); a click on the\n// picked bar clears the filter.\nconst VAR = 'model';\nconst COLORS = {};\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('aircraft').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} aircraft\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text, width: 150, overflow: 'truncate' },\n           axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Aircraft', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#00A6CA', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 4,
+              "width": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 4,
+              "width": 12,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 20,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 9,
+              "width": 6,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 9,
+              "width": 6,
+              "x": 6,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-11"
+              },
+              "height": 9,
+              "width": 12,
+              "x": 12,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 0,
+              "y": 33
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 8,
+              "y": 33
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-10"
+              },
+              "height": 11,
+              "width": 8,
+              "x": 16,
+              "y": 33
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 14,
+              "width": 12,
+              "x": 0,
+              "y": 44
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 14,
+              "width": 12,
+              "x": 12,
+              "y": 44
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-12"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 58
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "info",
+        "includeVars": false,
+        "keepTime": true,
+        "tags": [],
+        "targetBlank": false,
+        "title": "Clear filters",
+        "tooltip": "Clear every filter the charts and maps have set",
+        "type": "link",
+        "url": "?var-kind=\u0026var-airline=\u0026var-model=\u0026var-altband=\u0026var-country=\u0026var-hex=\u0026var-area="
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "plus",
+      "business-charts",
+      "aviation",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-30m",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Air traffic, worldwide",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The recording's files that overlap the time range, from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded files",
+          "multi": true,
+          "name": "files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/flights/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" \u003e= $__timeFrom() AND \"from\" \u003c= $__timeTo()\nUNION ALL SELECT 'http://feeds/recordings/flights-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "20",
+            "value": "20"
+          },
+          "description": "How many times taller than real the main map draws altitude: at world scale a 35,000 ft cruise is invisible otherwise. The card on the map shows this drawn height; the tooltip, the real altitude in feet.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Vertical exaggeration",
+          "multi": false,
+          "name": "zscale",
+          "options": [],
+          "query": "1,2,5,10,20,50,100",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Kind of flight: click a bar in \"Kind of flight\", or clear the box.",
+          "hide": "dontHide",
+          "label": "Kind",
+          "name": "kind",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "ICAO airline prefix, such as AAL or RYR: click a bar in \"Airlines\".",
+          "hide": "dontHide",
+          "label": "Airline",
+          "name": "airline",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "ICAO aircraft type designator, such as A320 or B738: click a bar in \"Aircraft types\".",
+          "hide": "dontHide",
+          "label": "Type",
+          "name": "model",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Altitude band: click a bar in \"Altitude\".",
+          "hide": "dontHide",
+          "label": "Altitude",
+          "name": "altband",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Country of registration: click a bar in \"Country of registration\".",
+          "hide": "dontHide",
+          "label": "Country",
+          "name": "country",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The 24-bit ICAO address of the aircraft to follow: click one on a map, or type it.",
+          "hide": "dontHide",
+          "label": "Aircraft (ICAO hex)",
+          "name": "hex",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The area drawn on the tracks map, as WKT.",
+          "hide": "hideVariable",
+          "label": "Area",
+          "name": "area",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

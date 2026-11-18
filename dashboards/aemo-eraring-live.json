@@ -1,0 +1,1106 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "aemo-eraring-live"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Australia’s largest power station in 3D on its satellite image, each of its four 720 MW units in the colour of what it is doing now, from AEMO’s five-minute SCADA readings, with the station’s output, each unit’s output and what each did over the day.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "What you are looking at",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "Eraring Power Station on Lake Macquarie, New South Wales: Australia's largest power station, four coal-fired units of 720 MW, due to close in 2027. Each unit's output as AEMO's SCADA reads it, every five minutes, as the market's operator publishes it for every generator on the grid; the recorder keeps a week of it. On the map the station stands on its satellite image in 3D, each unit in the colour of what it is doing now: off, at low load (under half of 720 MW), running, or at full load (90 % and more). Around midday Eraring often turns down, or stops units, while rooftop and utility solar cover the demand. Tilt and turn the map with the right button or Ctrl+drag; hover a unit for its reading.\n\nData: [AEMO NEMweb](https://nemweb.com.au/Reports/Current/Dispatch_SCADA/), dispatch SCADA, five-minute intervals in market time (AEST, UTC+10), used under AEMO's copyright permissions. The model is a schematic drawn on the station's footprint in OpenStreetMap (via Overture Maps, ODbL): which end of the block is unit 1, the houses' heights and where the two chimneys stand are not surveyed.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The station's latest reading: its output, the share of its 2,880 MW, the\n-- units running, and how old the reading is (AEMO publishes every five\n-- minutes; over a quarter of an hour means the recorder or AEMO is late).\nWITH latest AS (\n  SELECT duid, arg_max(mw, ts) AS mw, max(ts) AS ts\n  FROM read_parquet([${files:singlequote}])\n  WHERE duid IN ('ER01', 'ER02', 'ER03', 'ER04')\n  GROUP BY duid\n)\nSELECT round(sum(greatest(mw, 0))) AS \"Output (MW)\",\n       round(100 * sum(greatest(mw, 0)) / 2880) AS \"Of capacity\",\n       count(*) FILTER (WHERE mw \u003e= 10) || ' of 4' AS \"Units running\",\n       -- AEMO stamps a reading with the end of its five-minute interval and\n       -- publishes it before that end: the age runs from the interval's start.\n       greatest(round(date_diff('second', max(ts) - INTERVAL 5 MINUTE, now()) / 60), 0) AS \"Reading age\"\nFROM latest\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 2,
+          "links": [],
+          "title": "The station now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Of capacity"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Reading age"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "m"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "green",
+                              "value": null
+                            },
+                            {
+                              "color": "orange",
+                              "value": 15
+                            },
+                            {
+                              "color": "red",
+                              "value": 60
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "textMode": "value_and_name"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each unit's latest reading and what it is doing. Every row carries the\n-- model's origin (datasets/eraring/build.sh), which places it; duid names\n-- the unit's part of model.glb. The reading is text, not a time, so the map's\n-- time settings leave the units alone.\nWITH latest AS (\n  SELECT duid, arg_max(mw, ts) AS mw, max(ts) AS ts\n  FROM read_parquet([${files:singlequote}])\n  WHERE duid IN ('ER01', 'ER02', 'ER03', 'ER04')\n  GROUP BY duid\n)\nSELECT u.duid, u.name, round(coalesce(l.mw, 0), 1) AS mw,\n       round(100 * greatest(coalesce(l.mw, 0), 0) / u.capacity_mw) AS load_pct,\n       CASE WHEN l.mw IS NULL THEN 'No reading' WHEN l.mw \u003c 10 THEN 'Offline' WHEN l.mw \u003c 360.0 THEN 'Low load' WHEN l.mw \u003c 648.0 THEN 'Running' ELSE 'Full load' END AS state,\n       strftime(make_timestamp(epoch_us(l.ts) + 36000000000), '%-d %b %H:%M AEST') AS reading,\n       u.origin_latitude AS latitude, u.origin_longitude AS longitude\nFROM 'http://feeds/datasets/eraring/units.parquet' u LEFT JOIN latest l USING (duid)\nORDER BY u.duid\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each unit's output every five minutes over the time range, for its card on\n-- the map: a dot over its part of the block (units.parquet), at the height of\n-- its boiler house, coloured by its output now, and its series on hover.\nSELECT r.ts AS time, u.duid, replace(u.name, 'Eraring unit', 'Unit') AS name,\n       u.latitude, u.longitude, 75 AS altitude, round(r.mw) AS mw\nFROM read_parquet([${files:singlequote}]) r\nJOIN 'http://feeds/datasets/eraring/units.parquet' u USING (duid)\nWHERE r.ts BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY u.duid, r.ts\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The station in 3D on its satellite image; each unit coloured by its latest SCADA reading, with a dot over it and its output over the range on its card.",
+          "id": 3,
+          "links": [],
+          "title": "Eraring now, each unit in the colour of what it is doing",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "fieldMappings": {},
+                "fitOnVariables": [],
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": true,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -62,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -33.0607,
+                      "longitude": 151.5192,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 58,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 16.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "styleType": "grafana-satellite",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "label": true,
+                        "road": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": null,
+                                "name": "name"
+                              },
+                              {
+                                "format": null,
+                                "name": "duid"
+                              },
+                              {
+                                "format": null,
+                                "name": "state"
+                              },
+                              {
+                                "format": null,
+                                "name": "mw"
+                              },
+                              {
+                                "format": null,
+                                "name": "load_pct"
+                              },
+                              {
+                                "format": null,
+                                "name": "reading"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "eraring-trends",
+                        "eraring-units"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Each unit over the range",
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    10,
+                                    "#6e7076"
+                                  ],
+                                  [
+                                    360.0,
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    648.0,
+                                    "#37872d"
+                                  ],
+                                  [
+                                    null,
+                                    "#73bf69"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#6e7076",
+                                  "#5794f2",
+                                  "#37872d",
+                                  "#73bf69"
+                                ],
+                                "name": "Unit output",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "rowsAsset": "auto",
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 0.9,
+                              "sparkCards": "auto",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 7,
+                              "sparkDots": true,
+                              "sparkDotsOnTop": true,
+                              "sparkFill": true,
+                              "sparkMax": 720,
+                              "sparkMin": 0,
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "some",
+                              "sparkPublishCrosshair": false,
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": " MW"
+                            }
+                          },
+                          "id": "eraring-trends",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mw",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              112,
+                              118
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Eraring units",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Full load",
+                                    "#73bf69"
+                                  ],
+                                  [
+                                    "Running",
+                                    "#37872d"
+                                  ],
+                                  [
+                                    "Low load",
+                                    "#5794f2"
+                                  ],
+                                  [
+                                    "Offline",
+                                    "#6e7076"
+                                  ],
+                                  [
+                                    "No reading",
+                                    "#e02f44"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#73bf69",
+                                  "#37872d",
+                                  "#5794f2",
+                                  "#6e7076",
+                                  "#e02f44"
+                                ],
+                                "name": "Unit state",
+                                "type": "custom"
+                              },
+                              "modelAltitude": 0,
+                              "modelBuiltColour": "layer",
+                              "modelFinishField": "auto",
+                              "modelFuture": "ghost",
+                              "modelHeading": 0,
+                              "modelIdField": "duid",
+                              "modelStartField": "auto",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/eraring/model.glb",
+                              "opacity": 1
+                            }
+                          },
+                          "id": "eraring-units",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 5,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "timeVariables": {
+                  "from": "",
+                  "to": ""
+                },
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each unit's latest output against its 720 MW.\nWITH latest AS (\n  SELECT duid, arg_max(mw, ts) AS mw, max(ts) AS ts\n  FROM read_parquet([${files:singlequote}])\n  WHERE duid IN ('ER01', 'ER02', 'ER03', 'ER04')\n  GROUP BY duid\n)\nSELECT round(greatest(max(mw) FILTER (WHERE duid = 'ER01'), 0)) AS \"Unit 1\",\n       round(greatest(max(mw) FILTER (WHERE duid = 'ER02'), 0)) AS \"Unit 2\",\n       round(greatest(max(mw) FILTER (WHERE duid = 'ER03'), 0)) AS \"Unit 3\",\n       round(greatest(max(mw) FILTER (WHERE duid = 'ER04'), 0)) AS \"Unit 4\"\nFROM latest\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "Each unit now (MW, of 720)",
+          "vizConfig": {
+            "group": "bargauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "max": 720,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#6e7076",
+                        "value": null
+                      },
+                      {
+                        "color": "#5794f2",
+                        "value": 10
+                      },
+                      {
+                        "color": "#37872d",
+                        "value": 360.0
+                      },
+                      {
+                        "color": "#73bf69",
+                        "value": 648.0
+                      }
+                    ]
+                  },
+                  "unit": "MW"
+                },
+                "overrides": []
+              },
+              "options": {
+                "displayMode": "gradient",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "maxVizHeight": 40,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "text": {
+                  "titleSize": 15,
+                  "valueSize": 20
+                },
+                "valueMode": "color"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Each unit's output over the time range, from the recorder's week of AEMO's SCADA.\nSELECT ts AS time,\n       max(mw) FILTER (WHERE duid = 'ER01') AS \"Unit 1\",\n       max(mw) FILTER (WHERE duid = 'ER02') AS \"Unit 2\",\n       max(mw) FILTER (WHERE duid = 'ER03') AS \"Unit 3\",\n       max(mw) FILTER (WHERE duid = 'ER04') AS \"Unit 4\"\nFROM read_parquet([${files:singlequote}])\nWHERE duid LIKE 'ER0_' AND ts BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY ts\nORDER BY ts\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "Output by unit, every five minutes (MW)",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "axisSoftMax": 720,
+                    "axisSoftMin": 0,
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 8,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "max": 720,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "transparent",
+                        "value": null
+                      }
+                    ]
+                  },
+                  "unit": "MW"
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- What each unit did over the time range, from its output each interval:\n-- off, low load (under half), running, full load (90 % and more).\nSELECT ts AS time,\n       CASE WHEN max(mw) FILTER (WHERE duid = 'ER01') IS NULL THEN 'No reading' WHEN max(mw) FILTER (WHERE duid = 'ER01') \u003c 10 THEN 'Offline' WHEN max(mw) FILTER (WHERE duid = 'ER01') \u003c 360.0 THEN 'Low load' WHEN max(mw) FILTER (WHERE duid = 'ER01') \u003c 648.0 THEN 'Running' ELSE 'Full load' END AS \"Unit 1\",\n       CASE WHEN max(mw) FILTER (WHERE duid = 'ER02') IS NULL THEN 'No reading' WHEN max(mw) FILTER (WHERE duid = 'ER02') \u003c 10 THEN 'Offline' WHEN max(mw) FILTER (WHERE duid = 'ER02') \u003c 360.0 THEN 'Low load' WHEN max(mw) FILTER (WHERE duid = 'ER02') \u003c 648.0 THEN 'Running' ELSE 'Full load' END AS \"Unit 2\",\n       CASE WHEN max(mw) FILTER (WHERE duid = 'ER03') IS NULL THEN 'No reading' WHEN max(mw) FILTER (WHERE duid = 'ER03') \u003c 10 THEN 'Offline' WHEN max(mw) FILTER (WHERE duid = 'ER03') \u003c 360.0 THEN 'Low load' WHEN max(mw) FILTER (WHERE duid = 'ER03') \u003c 648.0 THEN 'Running' ELSE 'Full load' END AS \"Unit 3\",\n       CASE WHEN max(mw) FILTER (WHERE duid = 'ER04') IS NULL THEN 'No reading' WHEN max(mw) FILTER (WHERE duid = 'ER04') \u003c 10 THEN 'Offline' WHEN max(mw) FILTER (WHERE duid = 'ER04') \u003c 360.0 THEN 'Low load' WHEN max(mw) FILTER (WHERE duid = 'ER04') \u003c 648.0 THEN 'Running' ELSE 'Full load' END AS \"Unit 4\"\nFROM read_parquet([${files:singlequote}])\nWHERE duid LIKE 'ER0_' AND ts BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY ts\nORDER BY ts\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 6,
+          "links": [],
+          "title": "What each unit did",
+          "vizConfig": {
+            "group": "state-timeline",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#6e7076",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "axisPlacement": "auto",
+                    "fillOpacity": 80,
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": 900000,
+                    "lineWidth": 0,
+                    "spanNulls": false
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "Full load": {
+                          "color": "#73bf69",
+                          "index": 0,
+                          "text": "Full load"
+                        },
+                        "Low load": {
+                          "color": "#5794f2",
+                          "index": 2,
+                          "text": "Low load"
+                        },
+                        "No reading": {
+                          "color": "#e02f44",
+                          "index": 4,
+                          "text": "No reading"
+                        },
+                        "Offline": {
+                          "color": "#6e7076",
+                          "index": 3,
+                          "text": "Offline"
+                        },
+                        "Running": {
+                          "color": "#37872d",
+                          "index": 1,
+                          "text": "Running"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alignValue": "left",
+                "legend": {
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "mergeValues": true,
+                "rowHeight": 0.8,
+                "showValue": "never",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 19,
+              "width": 15,
+              "x": 0,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 8,
+              "width": 9,
+              "x": 15,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 11,
+              "width": 9,
+              "x": 15,
+              "y": 18
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 29
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "energy",
+      "kepler",
+      "live",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "1m",
+        "5m",
+        "15m",
+        "30m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "Australia/Brisbane",
+      "to": "now"
+    },
+    "title": "Eraring Power Station, live: four units on AEMO’s SCADA",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The recording's files that overlap the time range, from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded files",
+          "multi": true,
+          "name": "files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/aemo-scada/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" \u003e= $__timeFrom() AND \"from\" \u003c= $__timeTo()\nUNION ALL SELECT 'http://feeds/recordings/aemo-scada-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

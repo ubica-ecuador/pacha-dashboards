@@ -1,0 +1,3558 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "trimet-live-fleet"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "TriMet's real-time dashboard (Portland) on the Kepler Plus fleet layer, every panel answered in the browser by Chaski: punctuality, service changes and alerts.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### TriMet in real time, Portland, Oregon — fleet edition\n\nTriMet's live dashboard rebuilt on two of our own pieces: the **Fleet** layer of Kepler Plus and **Chaski**, DuckDB in your browser. Every vehicle TriMet is tracking right now, how late it runs, which trips skip stops and what riders are being warned about. **On time** follows TriMet's own yardstick: from one minute early to five minutes late.\n\nOn every refresh the server reads each TriMet feed once, through a 15 s cache that also adds the API key, and hands the rows to Chaski; the routes and stops load once per visit. From there every panel is answered in your browser: the filters at the top — **mode, route, punctuality and traffic** — recompute the whole page without going back to the server (punctuality and traffic only narrow the maps). Nothing is stored, so there is no history.\n\nOn the map each vehicle is a fleet asset, drawn as a 3D model of its kind — bus, MAX train or WES train — with a beacon in the colour of its punctuality: turned to its heading, it glides to its new position on each refresh, and the map remembers its last positions to draw the trail behind it — the feed itself only brings the latest one. Keep the page open for a few refreshes to see the trails grow. **Click a vehicle**, or a row of the delayed table, and the *Vehicle cam* rides behind it.\n\n\u003csmall\u003eData: TriMet Web Services. Unofficial dashboard, not endorsed by or affiliated with TriMet. TriMet and TransitTracker are registered trademarks of TriMet.\u003c/small\u003e",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT CASE WHEN load_pct IS NULL THEN 'Not reported'\n            WHEN load_pct \u003c 25     THEN 'Under 25 %'\n            WHEN load_pct \u003c 50     THEN '25–50 %'\n            WHEN load_pct \u003c 70     THEN '50–70 %'\n            WHEN load_pct \u003c 90     THEN '70–90 %'\n            ELSE '90 % or more' END      AS \"Load\",\n       count(*)::BIGINT                  AS \"Buses\"\nFROM $vehicles\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n  AND type = 'bus'\nGROUP BY 1\nORDER BY min(coalesce(load_pct, 1000))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buses by the share of capacity they report being used (an experimental TriMet field; trains do not report it, and some buses do not either).",
+          "id": 10,
+          "links": [],
+          "title": "How full the buses are",
+          "vizConfig": {
+            "group": "bargauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#58a6ff",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "displayMode": "basic",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 10,
+                "minVizWidth": 8,
+                "namePlacement": "left",
+                "orientation": "horizontal",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Buses$/",
+                  "values": true
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The fleet within the four filters, as on the main map; the camera follows\n-- $vehicle, written by a click on either map or a row of the delayed table.\nSELECT v.vehicle, v.vehicle AS unit, v.route, v.mode, v.type, v.sign, v.punctuality,\n       v.delay_min, s.name AS next_stop, v.load_pct, v.in_traffic, v.age_s,\n       v.heading, v.latitude, v.longitude, v.time\nFROM $vehicles v LEFT JOIN $stops s ON s.locid = v.next_loc\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND ('__all__' IN ($punctuality) OR punctuality IN ($punctuality))\n    AND ('__all__' IN ($in_traffic) OR in_traffic IN ($in_traffic))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The camera rides behind the vehicle clicked on the main map or picked in the delayed table, facing its heading, and follows it on every refresh. Click another vehicle, here or on the main map, to switch. Dragging pauses the camera for ten seconds; the chip at the top switches between chase, orbit and follow.",
+          "id": 11,
+          "links": [],
+          "title": "Vehicle cam — the vehicle clicked on the map",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 69.24219999999548,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 45.5188,
+                      "longitude": -122.6795,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 60,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 16.785659230734893
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-liberty",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "3d building": false,
+                        "label": false,
+                        "poi": false,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "route"
+                              },
+                              {
+                                "name": "vehicle"
+                              },
+                              {
+                                "name": "sign"
+                              },
+                              {
+                                "name": "punctuality"
+                              },
+                              {
+                                "name": "delay_min"
+                              },
+                              {
+                                "name": "next_stop"
+                              },
+                              {
+                                "name": "load_pct"
+                              },
+                              {
+                                "name": "in_traffic"
+                              },
+                              {
+                                "name": "age_s"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "plus-fleet-grafana-A"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              23,
+                              184,
+                              190
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Fleet · followed vehicle",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "unit",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Early \u003e 1 min",
+                                    "#58a6ff"
+                                  ],
+                                  [
+                                    "On time",
+                                    "#3fb950"
+                                  ],
+                                  [
+                                    "Late 5–10 min",
+                                    "#d29922"
+                                  ],
+                                  [
+                                    "Late \u003e 10 min",
+                                    "#f85149"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#58a6ff",
+                                  "#3fb950",
+                                  "#d29922",
+                                  "#f85149"
+                                ],
+                                "name": "Punctuality",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "vehicle",
+                              "fleetCard": false,
+                              "fleetCardMinutes": 60,
+                              "fleetCardSize": "M",
+                              "fleetCardWindow": "auto",
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "$vehicle",
+                              "fleetFollowMode": "chase",
+                              "fleetHeadingField": "heading",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{}",
+                              "fleetLabel": "name",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "beacon",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetRemember": "on",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": false,
+                              "fleetSize": 48,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 34800,
+                              "fleetSpeedField": "none",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 5,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": true,
+                              "fleetStopSpeed": 2,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "live",
+                              "fleetTrail": 1,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailFade": true,
+                              "fleetTrailOpacity": 0.8,
+                              "fleetTrailShow": false,
+                              "fleetTrailWidth": 2,
+                              "fleetTypeField": "type",
+                              "fleetZoomRate": 0.5,
+                              "fleetZoomRef": 14,
+                              "fleetZoomScale": false,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "plus-fleet-grafana-A",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "punctuality",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 2,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "vehicle",
+                    "source": "click",
+                    "variable": "vehicle"
+                  }
+                ]
+              }
+            },
+            "version": "1.4.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH v AS (SELECT * FROM $vehicles WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT\n  -- About the feed, so it reads the unfiltered rows.\n  (SELECT round((epoch_ms(now()) - max(feed_ms)) / 1000.0)::BIGINT FROM $vehicles) AS \"Feed age\",\n  count(*)::BIGINT                                                     AS \"Vehicles in service\",\n  100.0 * count(*) FILTER (WHERE delay_s BETWEEN -60 AND 300) / nullif(count(*), 0) AS \"On time\",\n  median(delay_s) / 60.0                                               AS \"Median delay\",\n  count(*) FILTER (WHERE delay_s \u003e 300)::BIGINT                        AS \"More than 5 min late\",\n  count(*) FILTER (WHERE delay_s \u003c -60)::BIGINT                        AS \"More than 1 min early\",\n  count(*) FILTER (WHERE in_traffic = 'Congested')::BIGINT             AS \"Stuck in traffic\",\n  quantile_cont(age_s, 0.9)                                            AS \"Position age (p90)\"\nFROM v"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Vehicles reporting a position on a route, after the mode and route filters. Feed age: how long ago TriMet answered, over every vehicle. On time: between 1 minute early and 5 minutes late, TriMet's definition. Stuck in traffic: buses reporting that they are not moving in congestion (an experimental TriMet field). Position age: 90 % of positions are younger than this.",
+          "id": 2,
+          "links": [],
+          "title": "Service right now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "On time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "red",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 70
+                            },
+                            {
+                              "color": "green",
+                              "value": 85
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Median delay"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "m"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Position age (p90)"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "suffix: s"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Feed age"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "s"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "green",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 60
+                            },
+                            {
+                              "color": "red",
+                              "value": 120
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH t AS (SELECT * FROM $trips WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT count(*) FILTER (WHERE canceled \u003e 0)::BIGINT AS \"Trips with canceled stops\"\nFROM t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips running now or starting within the hour with at least one canceled stop — detours, closures, short turns.",
+          "id": 3,
+          "links": [],
+          "title": "Trips skipping stops",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#d29922",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "0",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Only what the fleet layer and the tooltip read, within the four filters.\nSELECT v.vehicle, v.vehicle AS unit, v.route, v.mode, v.type, v.sign, v.punctuality,\n       v.delay_min, s.name AS next_stop, v.load_pct, v.in_traffic, v.age_s,\n       v.heading, v.latitude, v.longitude, v.time\nFROM $vehicles v LEFT JOIN $stops s ON s.locid = v.next_loc\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND ('__all__' IN ($punctuality) OR punctuality IN ($punctuality))\n    AND ('__all__' IN ($in_traffic) OR in_traffic IN ($in_traffic))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The routes in their public colours, within the mode and route filters.\nSELECT route AS line, mode AS kind, color, width, geojson\nFROM $routes\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Stops named in an alert, within the route filter, like the alerts table.\nSELECT alert, affects, stop, latitude, longitude\nFROM $alert_stops\nWHERE '__all__' IN ($route)\n   OR id IN (SELECT id FROM $alert_routes WHERE route IN ($route))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The vehicle picked on the map or in the delayed table, so the ring follows\n-- it on every refresh. Empty until then, which matches nothing.\nSELECT latitude, longitude, vehicle AS picked\nFROM $vehicles\nWHERE vehicle = $vehicle"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Where each vehicle is headed: from where it is now to its next two stops,\n-- drawn as arrows. Only stops TriMet expects it at within five minutes, where\n-- the estimate is freshest and the arrow stays close to its bus. A vehicle\n-- that has not served a stop of its trip yet is on its way to the terminal or\n-- on layover, and a line from it to the first stop would not be a route, so\n-- it gets no arrow; nor does one silent for two minutes. A MAX train is two\n-- cars on one trip, and one arrow is enough. Within the same four filters as\n-- the vehicles.\nWITH veh AS (\n  SELECT trip, route, latitude AS lat, longitude AS lng, feed_ms AS qt\n  FROM $vehicles\n  WHERE last_seq IS NOT NULL AND age_s \u003c 120\n    AND mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n    AND ('__all__' IN ($punctuality) OR punctuality IN ($punctuality))\n    AND ('__all__' IN ($in_traffic) OR in_traffic IN ($in_traffic))\n  QUALIFY row_number() OVER (PARTITION BY trip ORDER BY time DESC) = 1\n),\nahead AS (\n  SELECT v.trip, u.seq, u.locid\n  FROM $tripstops u JOIN veh v ON v.trip = u.trip\n  WHERE u.status \u003c\u003e 'canceled'\n    AND coalesce(u.adjusted_ms, u.aimed_ms) \u003e v.qt\n    AND coalesce(u.adjusted_ms, u.aimed_ms) \u003c= v.qt + 300000\n  QUALIFY row_number() OVER (PARTITION BY v.trip ORDER BY u.seq) \u003c= 2\n),\npts AS (\n  SELECT trip, 0 AS seq, lat, lng FROM veh WHERE trip IN (SELECT trip FROM ahead)\n  UNION ALL\n  SELECT a.trip, a.seq, s.lat, s.lng FROM ahead a JOIN $stops s ON s.locid = a.locid\n),\nhop AS (\n  SELECT trip, lat, lng, lead(lat) OVER w AS lat1, lead(lng) OVER w AS lng1\n  FROM pts WINDOW w AS (PARTITION BY trip ORDER BY seq)\n)\nSELECT h.lat  AS origin_lat,\n       h.lng  AS origin_lng,\n       h.lat1 AS dest_lat,\n       h.lng1 AS dest_lng,\n       count(*)::BIGINT   AS trips,\n       any_value(v.route) AS route\nFROM hop h JOIN veh v USING (trip)\nWHERE h.lat1 IS NOT NULL\nGROUP BY 1, 2, 3, 4"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each vehicle from TriMet's vehicle feed is a fleet asset: a 3D model of a bus, a MAX train or a WES train, turned to the heading it reports and topped by a beacon, gliding to its new position on every refresh, with a trail of where it went over the last minutes — remembered by the map while the page stays open. Blue: more than a minute early; green: on time; amber: 5–10 minutes late; red: later. Lines are the routes in their public colours, drawn stop to stop rather than along the street. Amber rings are stops named in a service alert, and the cyan ring the selected vehicle. Click a vehicle to follow it in the Vehicle cam and list its next stops. Moving arrows run from each vehicle to its next two stops, where TriMet expects it within five minutes.",
+          "id": 4,
+          "links": [],
+          "title": "Fleet now — colored by punctuality",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -20,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 45.5175,
+                      "longitude": -122.6705,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 50,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 12.8
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-liberty",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {
+                        "label": false,
+                        "poi": false,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "route"
+                              },
+                              {
+                                "name": "vehicle"
+                              },
+                              {
+                                "name": "sign"
+                              },
+                              {
+                                "name": "punctuality"
+                              },
+                              {
+                                "name": "delay_min"
+                              },
+                              {
+                                "name": "next_stop"
+                              },
+                              {
+                                "name": "load_pct"
+                              },
+                              {
+                                "name": "in_traffic"
+                              },
+                              {
+                                "name": "age_s"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "line"
+                              },
+                              {
+                                "name": "kind"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "stop"
+                              },
+                              {
+                                "name": "affects"
+                              },
+                              {
+                                "name": "alert"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "picked"
+                              }
+                            ],
+                            "grafana-E": [
+                              {
+                                "name": "route"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "plus-fleet-grafana-A",
+                        "picked",
+                        "alerts",
+                        "next-stops",
+                        "lines"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              23,
+                              184,
+                              190
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Fleet · heading, trail and punctuality",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Early \u003e 1 min",
+                                    "#58a6ff"
+                                  ],
+                                  [
+                                    "On time",
+                                    "#3fb950"
+                                  ],
+                                  [
+                                    "Late 5–10 min",
+                                    "#d29922"
+                                  ],
+                                  [
+                                    "Late \u003e 10 min",
+                                    "#f85149"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#58a6ff",
+                                  "#3fb950",
+                                  "#d29922",
+                                  "#f85149"
+                                ],
+                                "name": "Punctuality",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "vehicle",
+                              "fleetCard": true,
+                              "fleetCardField": "speed",
+                              "fleetCardMinutes": 60,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "S",
+                              "fleetCardUnit": "",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "neutral",
+                              "fleetCrossValue": true,
+                              "fleetCrosshair": true,
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "",
+                              "fleetFollowMode": "follow",
+                              "fleetGhost": true,
+                              "fleetHeadingField": "heading",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "beacon",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetReckon": false,
+                              "fleetRemember": "on",
+                              "fleetRememberMin": 10,
+                              "fleetShadow": true,
+                              "fleetSize": 32,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 34800,
+                              "fleetSpeedField": "none",
+                              "fleetSpeedUnit": "km/h",
+                              "fleetStaleAfter": 5,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": true,
+                              "fleetStopSpeed": 2,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "live",
+                              "fleetTrail": 1,
+                              "fleetTrailAnimate": true,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
+                              "fleetTrailOpacity": 0.7,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 40,
+                              "fleetTrailStyle": "comets",
+                              "fleetTrailWidth": 4,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
+                              "fleetTypeField": "type",
+                              "fleetZoomRate": 0.5,
+                              "fleetZoomRef": 14,
+                              "fleetZoomScale": true,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "plus-fleet-grafana-A",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "punctuality",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              0,
+                              229,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Selected vehicle",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": false,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": false,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 70,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                0,
+                                229,
+                                255
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 3
+                            }
+                          },
+                          "id": "picked",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              210,
+                              153,
+                              34
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Stops named in a service alert",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "filled": false,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 45,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                210,
+                                153,
+                                34
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "alerts",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              119,
+                              110,
+                              87
+                            ],
+                            "columnMode": "LAT_LNG",
+                            "columns": {
+                              "count": "count",
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": false,
+                            "label": "Next two stops of each vehicle",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "darkBaseMapEnabled": true,
+                              "flowAdaptiveScalesEnabled": true,
+                              "flowClusteringEnabled": false,
+                              "flowFadeAmount": 50,
+                              "flowFadeEnabled": true,
+                              "flowLineCurviness": 1,
+                              "flowLineThicknessScale": 1,
+                              "flowLinesRenderingMode": "animated-straight",
+                              "flowLocationTotalsEnabled": false,
+                              "maxTopFlowsDisplayNum": 5000,
+                              "opacity": 1
+                            }
+                          },
+                          "id": "next-stops",
+                          "type": "flow",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              70,
+                              121,
+                              170
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Routes · stop to stop",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 0.8,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0.5,
+                                3.5
+                              ],
+                              "strokeColor": [
+                                70,
+                                121,
+                                170
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "#4679AA",
+                                    "#4679AA"
+                                  ],
+                                  [
+                                    "#1359AE",
+                                    "#1359AE"
+                                  ],
+                                  [
+                                    "#008342",
+                                    "#008342"
+                                  ],
+                                  [
+                                    "#D05F27",
+                                    "#D05F27"
+                                  ],
+                                  [
+                                    "#C41F3E",
+                                    "#C41F3E"
+                                  ],
+                                  [
+                                    "#FFC52F",
+                                    "#FFC52F"
+                                  ],
+                                  [
+                                    "#6E6E6E",
+                                    "#6E6E6E"
+                                  ],
+                                  [
+                                    "#72A130",
+                                    "#72A130"
+                                  ],
+                                  [
+                                    "#D91965",
+                                    "#D91965"
+                                  ],
+                                  [
+                                    "#4650BE",
+                                    "#4650BE"
+                                  ],
+                                  [
+                                    "#898E91",
+                                    "#898E91"
+                                  ],
+                                  [
+                                    "#61A60E",
+                                    "#61A60E"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4679AA",
+                                  "#1359AE",
+                                  "#008342",
+                                  "#D05F27",
+                                  "#C41F3E",
+                                  "#FFC52F",
+                                  "#6E6E6E",
+                                  "#72A130",
+                                  "#D91965",
+                                  "#4650BE",
+                                  "#898E91",
+                                  "#61A60E"
+                                ],
+                                "name": "Route colors",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 0.7,
+                              "stroked": true,
+                              "thickness": 1,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "lines",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeField": {
+                              "name": "width",
+                              "type": "integer"
+                            },
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "color",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 7,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "vehicle",
+                    "source": "click",
+                    "variable": "vehicle"
+                  },
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "lat",
+                    "variableTo": "lng",
+                    "zoom": 15
+                  }
+                ]
+              }
+            },
+            "version": "1.4.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT v.route                      AS \"Route\",\n       v.vehicle                    AS \"Vehicle\",\n       v.sign                       AS \"Headsign\",\n       v.delay_min                  AS \"Late (min)\",\n       coalesce(s.name, '')         AS \"Next stop\",\n       -- Text, not numbers: a data link interpolates the cell's formatted\n       -- value, and the table's automatic decimals would round the position.\n       printf('%.6f', v.latitude)   AS center_lat,\n       printf('%.6f', v.longitude)  AS center_lng\nFROM $vehicles v LEFT JOIN $stops s ON s.locid = v.next_loc\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\n  AND v.delay_s \u003e 60\nORDER BY v.delay_s DESC\nLIMIT 25"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The 25 vehicles furthest behind schedule. Click a row to follow it in the Vehicle cam, find it on the map and list its next stops.",
+          "id": 5,
+          "links": [],
+          "title": "Most delayed vehicles now",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "links": [
+                    {
+                      "title": "Follow it and list its next stops",
+                      "url": "/d/trimet-live-fleet${__url.params:exclude:var-vehicle,var-lat,var-lng}\u0026var-vehicle=${__data.fields.Vehicle}\u0026var-lat=${__data.fields.center_lat}\u0026var-lng=${__data.fields.center_lng}"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Late (min)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "text",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 5
+                            },
+                            {
+                              "color": "red",
+                              "value": 10
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Vehicle"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "center_lat"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "center_lng"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- $vehicle is written by a click on the map or on the delayed table; empty\n-- until then, which matches nothing. The trip it is running, stop by stop.\nSELECT coalesce(s.name, u.locid::VARCHAR)    AS \"Stop\",\n       to_timestamp(u.aimed_ms / 1000)       AS \"Scheduled\",\n       to_timestamp(u.adjusted_ms / 1000)    AS \"Expected\",\n       round(u.delay_s / 60.0, 1)            AS \"Late (min)\",\n       CASE u.status WHEN 'canceled' THEN 'Canceled'\n                     WHEN 'dropOffOnly' THEN 'Drop-off only'\n                     ELSE '' END             AS \"Note\"\nFROM $tripstops u LEFT JOIN $stops s ON s.locid = u.locid\nWHERE u.trip IN (SELECT trip FROM $vehicles WHERE vehicle = $vehicle)\nORDER BY u.seq"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From TriMet's trip status feed for the trip the selected vehicle is running. Late: minutes behind the scheduled arrival at that stop. Empty until a vehicle is picked.",
+          "id": 6,
+          "links": [],
+          "title": "Next stops of the selected vehicle",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "noValue": "Click a vehicle on the map",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Scheduled"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:HH:mm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 85
+                      },
+                      {
+                        "id": "noValue",
+                        "value": "—"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Expected"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:HH:mm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 85
+                      },
+                      {
+                        "id": "noValue",
+                        "value": "—"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Late (min)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "noValue",
+                        "value": "—"
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "text",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 5
+                            },
+                            {
+                              "color": "red",
+                              "value": 10
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Note"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      },
+                      {
+                        "id": "noValue",
+                        "value": " "
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT route                                                             AS \"Route\",\n       mode                                                              AS \"Mode\",\n       count(*)::BIGINT                                                  AS \"Vehicles\",\n       100.0 * count(*) FILTER (WHERE delay_s BETWEEN -60 AND 300) / count(*) AS \"On time\",\n       round(median(delay_s) / 60.0, 1)                                  AS \"Median late (min)\",\n       round(max(delay_s) / 60.0, 1)                                     AS \"Worst (min)\"\nFROM $vehicles\nWHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route))\nGROUP BY route, mode\nORDER BY \"On time\", \"Median late (min)\" DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Per route, from the vehicles on it right now. On time: from 1 minute early to 5 minutes late.",
+          "id": 7,
+          "links": [],
+          "title": "Routes by punctuality — worst first",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "On time"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "color-background"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "red",
+                              "value": 0
+                            },
+                            {
+                              "color": "orange",
+                              "value": 70
+                            },
+                            {
+                              "color": "green",
+                              "value": 85
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Vehicles"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 75
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Median late (min)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Worst (min)"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 95
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Mode"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 150
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH t AS (SELECT * FROM $trips WHERE mode IN ($mode)\n    AND ('__all__' IN ($route) OR route IN ($route)))\nSELECT t.route                                   AS \"Route\",\n       t.destination                             AS \"To\",\n       to_timestamp(t.begin_ms / 1000)           AS \"Starts\",\n       t.canceled::BIGINT                        AS \"Canceled stops\",\n       t.n_stops::BIGINT                         AS \"Of\",\n       coalesce(s.name, '')                      AS \"First canceled\",\n       CASE WHEN t.canceled = t.n_stops THEN 'Canceled'\n            WHEN t.extra THEN 'Extra' ELSE '' END AS \"Trip\"\nFROM t LEFT JOIN $stops s ON s.locid = t.first_canceled\nWHERE t.canceled \u003e 0\nORDER BY t.begin_ms"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips running now or starting within the hour that will not serve one or more of their stops, from TriMet's trip status feed. Canceled: every stop is skipped. Extra: a trip added outside the published schedule.",
+          "id": 8,
+          "links": [],
+          "title": "Service changes — trips skipping stops",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Starts"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:HH:mm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 65
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Canceled stops"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 115
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Of"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 45
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Trip"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 75
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Follows the route filter; system-wide alerts always show.\nSELECT CASE WHEN system_wide THEN 'System-wide' ELSE routes END AS \"Routes\",\n       alert                                                     AS \"Alert\",\n       to_timestamp(since_ms / 1000)                             AS \"Since\",\n       n_stops::BIGINT                                           AS \"Stops\"\nFROM $alerts\nWHERE system_wide\n   OR '__all__' IN ($route)\n   OR id IN (SELECT id FROM $alert_routes WHERE route IN ($route))\nORDER BY since_ms DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Alerts in effect now, newest first. Follows the route filter; system-wide alerts always show.",
+          "id": 9,
+          "links": [],
+          "title": "Active service alerts",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "wrapText": true
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Routes"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 190
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Since"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:MMM D"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Stops"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 55
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-1"
+                        },
+                        "height": 7,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Intro"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
+                        },
+                        "height": 4,
+                        "width": 19,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        },
+                        "height": 4,
+                        "width": 5,
+                        "x": 19,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        },
+                        "height": 20,
+                        "width": 15,
+                        "x": 0,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-11"
+                        },
+                        "height": 11,
+                        "width": 9,
+                        "x": 15,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 15,
+                        "y": 15
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
+                        },
+                        "height": 9,
+                        "width": 15,
+                        "x": 0,
+                        "y": 24
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 15,
+                        "y": 24
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Right now · live"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        },
+                        "height": 10,
+                        "width": 12,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        },
+                        "height": 10,
+                        "width": 12,
+                        "x": 12,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9"
+                        },
+                        "height": 9,
+                        "width": 24,
+                        "x": 0,
+                        "y": 10
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Routes, service changes and alerts · live"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "kepler",
+      "plus",
+      "transit",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "30s",
+      "autoRefreshIntervals": [
+        "15s",
+        "30s",
+        "1m",
+        "5m",
+        "15m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-1h",
+      "hideTimepicker": false,
+      "timezone": "America/Los_Angeles",
+      "to": "now"
+    },
+    "title": "Real-time public transit — TriMet, Portland",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Vehicles (one row each)",
+          "multi": false,
+          "name": "vehicles",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "vehicles",
+              "refId": "vehicles",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: TriMet wants an AppID, which no browser may see, so DuckDB in\n-- the grafana container reads it through the gateway, which adds the key and\n-- keeps each answer 15 s (see gateway/feeds.conf); every panel then filters\n-- these rows in the browser. One row per vehicle; `vehicle` is the fleet\n-- layer's asset and `time` its ping, so the map remembers each vehicle's last\n-- positions across refreshes and draws its trail. Not `vehicle_id`: the panel\n-- would read that as a trip.\n-- One request per feed: read_text fetches the whole answer at once, and the\n-- JSON is parsed from memory. The gateway hands it over gunzipped, with no\n-- length, ETag or ranges, so there is nothing to read in passes and nothing\n-- to check against a renewed cache. (http_get takes five times as long over\n-- the 11 MB trip status.) The other TriMet datasets read it the same way.\nWITH feed AS MATERIALIZED (\n  SELECT from_json((SELECT content FROM read_text('http://feeds/trimet/ws/v2/vehicles')),\n                   '{\"resultSet\": {\"queryTime\": \"BIGINT\", \"vehicle\": [{\"vehicleID\": \"BIGINT\", \"routeNumber\": \"BIGINT\", \"routeSubType\": \"VARCHAR\", \"tripID\": \"VARCHAR\", \"signMessageLong\": \"VARCHAR\", \"delay\": \"BIGINT\", \"loadPercentage\": \"BIGINT\", \"inCongestion\": \"BOOLEAN\", \"nextLocID\": \"BIGINT\", \"lastStopSeq\": \"BIGINT\", \"latitude\": \"DOUBLE\", \"longitude\": \"DOUBLE\", \"bearing\": \"BIGINT\", \"time\": \"BIGINT\"}]}}').resultSet AS rs\n),\nveh AS (SELECT rs.queryTime AS qt, unnest(rs.vehicle) AS v FROM feed),\nroutes AS (\n  SELECT r.route AS num, r.\"desc\" AS route, r.routeSubType AS subtype\n  FROM (SELECT unnest(from_json((SELECT content FROM read_text('http://feeds/trimet/ws/V1/routeConfig?json=true')),\n                                '{\"resultSet\": {\"route\": [{\"route\": \"BIGINT\", \"desc\": \"VARCHAR\", \"routeSubType\": \"VARCHAR\"}]}}').resultSet.route) AS r)\n)\nSELECT v.vehicleID::VARCHAR                       AS vehicle,\n       v.routeNumber                              AS num,\n       coalesce(r.route, v.routeNumber::VARCHAR)  AS route,\n       CASE v.routeSubType WHEN 'Light Rail' THEN 'MAX light rail' WHEN 'BRT' THEN 'FX bus rapid transit' WHEN 'Commuter Rail' THEN 'WES commuter rail' WHEN 'Streetcar' THEN 'Streetcar' WHEN 'Aerial Tram' THEN 'Aerial tram' ELSE 'Bus' END AS mode,\n       -- Picks the 3D model: a bus, a tram for MAX (light rail) and a train\n       -- for WES (commuter rail).\n       CASE v.routeSubType WHEN 'Light Rail' THEN 'light rail' WHEN 'Commuter Rail' THEN 'commuter rail'\n                           WHEN 'Streetcar' THEN 'streetcar' WHEN 'Aerial Tram' THEN 'aerial tram' ELSE 'bus' END AS type,\n       v.tripID                                   AS trip,\n       v.signMessageLong                          AS sign,\n       -- TriMet counts a late vehicle as negative; flipped so late is positive,\n       -- as in GTFS and in TriMet's own trip status feed.\n       -v.delay                                   AS delay_s,\n       round(-v.delay / 60.0, 1)                  AS delay_min,\n       -- TriMet's yardstick: on time is from one minute early to five late.\n       CASE WHEN -v.delay \u003c -60  THEN 'Early \u003e 1 min'\n            WHEN -v.delay \u003c= 300 THEN 'On time'\n            WHEN -v.delay \u003c= 600 THEN 'Late 5–10 min'\n            ELSE 'Late \u003e 10 min' END              AS punctuality,\n       v.loadPercentage                           AS load_pct,\n       CASE WHEN v.inCongestion THEN 'Congested' WHEN NOT v.inCongestion THEN 'Clear' END AS in_traffic,\n       v.nextLocID                                AS next_loc,\n       v.lastStopSeq                              AS last_seq,\n       v.bearing::DOUBLE                          AS heading,\n       v.latitude,\n       v.longitude,\n       to_timestamp(v.time / 1000.0)              AS time,\n       round((qt - v.time) / 1000.0)::BIGINT      AS age_s,\n       qt                                         AS feed_ms\nFROM veh LEFT JOIN routes r ON r.num = v.routeNumber\nWHERE v.latitude IS NOT NULL",
+                  "refId": "vehicles"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Trips running or due within the hour",
+          "multi": false,
+          "name": "trips",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "trips",
+              "refId": "trips",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: TriMet's trip status, 11 MB of JSON (1 MB as the gateway\n-- keeps it), one row per trip, with the stops it will not serve already\n-- counted here: the browser gets a thousand rows, not every stop.\nWITH feed AS MATERIALIZED (\n  SELECT from_json((SELECT content FROM read_text('http://feeds/trimet/ws/v2/tripStatus?showRoutes=false')),\n                   '{\"resultSet\": {\"queryTime\": \"BIGINT\", \"trip\": [{\"tripID\": \"VARCHAR\", \"routeNumber\": \"VARCHAR\", \"destination\": \"VARCHAR\", \"extraTrip\": \"BOOLEAN\", \"tripBeginTime\": \"BIGINT\", \"tripEndTime\": \"BIGINT\", \"stop\": [{\"locid\": \"BIGINT\", \"stopSequence\": \"BIGINT\", \"isPassed\": \"BOOLEAN\", \"aimedArrival\": \"BIGINT\", \"adjustedArrival\": \"BIGINT\", \"arrivalDelay\": \"BIGINT\", \"status\": \"VARCHAR\"}]}]}}').resultSet AS rs\n),\n-- The feed also carries hundreds of trips that ended hours or months ago;\n-- kept are those running now or starting within the hour, and a trip\n-- scheduled to have ended less than an hour ago (a late bus is still out\n-- there).\nt AS (\n  SELECT * FROM (SELECT rs.queryTime AS qt, unnest(rs.trip) AS t FROM feed)\n  WHERE t.tripEndTime \u003e= qt - 3600000 AND t.tripBeginTime \u003c= qt + 3600000\n),\nroutes AS (\n  SELECT r.route AS num, r.\"desc\" AS route, r.routeSubType AS subtype\n  FROM (SELECT unnest(from_json((SELECT content FROM read_text('http://feeds/trimet/ws/V1/routeConfig?json=true')),\n                                '{\"resultSet\": {\"route\": [{\"route\": \"BIGINT\", \"desc\": \"VARCHAR\", \"routeSubType\": \"VARCHAR\"}]}}').resultSet.route) AS r)\n)\nSELECT t.tripID                                              AS trip,\n       coalesce(r.route, t.routeNumber)                      AS route,\n       CASE r.subtype WHEN 'Light Rail' THEN 'MAX light rail' WHEN 'BRT' THEN 'FX bus rapid transit' WHEN 'Commuter Rail' THEN 'WES commuter rail' WHEN 'Streetcar' THEN 'Streetcar' WHEN 'Aerial Tram' THEN 'Aerial tram' ELSE 'Bus' END AS mode,\n       t.destination,\n       t.extraTrip                                           AS extra,\n       t.tripBeginTime                                       AS begin_ms,\n       len(t.stop)                                           AS n_stops,\n       len(list_filter(t.stop, s -\u003e s.status = 'canceled'))  AS canceled,\n       list_filter(t.stop, s -\u003e s.status = 'canceled')[1].locid AS first_canceled\nFROM t LEFT JOIN routes r ON r.num = try_cast(t.routeNumber AS BIGINT)",
+                  "refId": "trips"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Next stops of each trip",
+          "multi": false,
+          "name": "tripstops",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "tripstops",
+              "refId": "tripstops",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the next fifteen stops of each trip, from the same feed as\n-- the trips: the selected vehicle's next stops and every vehicle's arrows.\nWITH feed AS MATERIALIZED (\n  SELECT from_json((SELECT content FROM read_text('http://feeds/trimet/ws/v2/tripStatus?showRoutes=false')),\n                   '{\"resultSet\": {\"queryTime\": \"BIGINT\", \"trip\": [{\"tripID\": \"VARCHAR\", \"routeNumber\": \"VARCHAR\", \"destination\": \"VARCHAR\", \"extraTrip\": \"BOOLEAN\", \"tripBeginTime\": \"BIGINT\", \"tripEndTime\": \"BIGINT\", \"stop\": [{\"locid\": \"BIGINT\", \"stopSequence\": \"BIGINT\", \"isPassed\": \"BOOLEAN\", \"aimedArrival\": \"BIGINT\", \"adjustedArrival\": \"BIGINT\", \"arrivalDelay\": \"BIGINT\", \"status\": \"VARCHAR\"}]}]}}').resultSet AS rs\n),\n-- The feed also carries hundreds of trips that ended hours or months ago;\n-- kept are those running now or starting within the hour, and a trip\n-- scheduled to have ended less than an hour ago (a late bus is still out\n-- there).\nt AS (\n  SELECT * FROM (SELECT rs.queryTime AS qt, unnest(rs.trip) AS t FROM feed)\n  WHERE t.tripEndTime \u003e= qt - 3600000 AND t.tripBeginTime \u003c= qt + 3600000\n),\ns AS (SELECT t.tripID AS trip, unnest(t.stop) AS s FROM t)\nSELECT trip,\n       s.stopSequence     AS seq,\n       s.locid,\n       s.aimedArrival     AS aimed_ms,\n       s.adjustedArrival  AS adjusted_ms,\n       s.arrivalDelay     AS delay_s,\n       s.status\nFROM s\nWHERE NOT s.isPassed\nQUALIFY row_number() OVER (PARTITION BY trip ORDER BY s.stopSequence) \u003c= 15",
+                  "refId": "tripstops"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Alerts in effect",
+          "multi": false,
+          "name": "alerts",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "alerts",
+              "refId": "alerts",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the alerts in effect now, one row each. The routes they name\n-- are in alert_routes, the stops in alert_stops: one row per route or stop,\n-- since the browser gets rows, not lists.\nWITH feed AS MATERIALIZED (\n  SELECT from_json((SELECT content FROM read_text('http://feeds/trimet/ws/v2/alerts')),\n                   '{\"resultSet\": {\"alert\": [{\"id\": \"BIGINT\", \"desc\": \"VARCHAR\", \"begin\": \"BIGINT\", \"system_wide_flag\": \"BOOLEAN\", \"route\": [{\"route\": \"BIGINT\", \"desc\": \"VARCHAR\"}], \"location\": [{\"id\": \"BIGINT\", \"desc\": \"VARCHAR\", \"lat\": \"DOUBLE\", \"lng\": \"DOUBLE\"}]}]}}').resultSet AS rs\n),\nal AS (SELECT unnest(rs.alert) AS a FROM feed)\nSELECT a.id,\n       trim(a.\"desc\", chr(10) || ' ')                                                  AS alert,\n       a.begin                                                                         AS since_ms,\n       coalesce(a.system_wide_flag, false)                                             AS system_wide,\n       array_to_string(list_sort(list_distinct(list_transform(a.route, x -\u003e x.\"desc\"))), ', ') AS routes,\n       coalesce(len(a.location), 0)                                                    AS n_stops\nFROM al",
+                  "refId": "alerts"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Routes named by each alert",
+          "multi": false,
+          "name": "alert_routes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "alert_routes",
+              "refId": "alert_routes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: one row per alert and route it names, for the route filter.\nWITH feed AS MATERIALIZED (\n  SELECT from_json((SELECT content FROM read_text('http://feeds/trimet/ws/v2/alerts')),\n                   '{\"resultSet\": {\"alert\": [{\"id\": \"BIGINT\", \"desc\": \"VARCHAR\", \"begin\": \"BIGINT\", \"system_wide_flag\": \"BOOLEAN\", \"route\": [{\"route\": \"BIGINT\", \"desc\": \"VARCHAR\"}], \"location\": [{\"id\": \"BIGINT\", \"desc\": \"VARCHAR\", \"lat\": \"DOUBLE\", \"lng\": \"DOUBLE\"}]}]}}').resultSet AS rs\n),\nal AS (SELECT unnest(rs.alert) AS a FROM feed)\nSELECT DISTINCT a.id, r.\"desc\" AS route\nFROM (SELECT a, unnest(a.route) AS r FROM al)",
+                  "refId": "alert_routes"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Stops named by each alert",
+          "multi": false,
+          "name": "alert_stops",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "alert_stops",
+              "refId": "alert_stops",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: one row per alert and stop it names, drawn as rings on the map.\nWITH feed AS MATERIALIZED (\n  SELECT from_json((SELECT content FROM read_text('http://feeds/trimet/ws/v2/alerts')),\n                   '{\"resultSet\": {\"alert\": [{\"id\": \"BIGINT\", \"desc\": \"VARCHAR\", \"begin\": \"BIGINT\", \"system_wide_flag\": \"BOOLEAN\", \"route\": [{\"route\": \"BIGINT\", \"desc\": \"VARCHAR\"}], \"location\": [{\"id\": \"BIGINT\", \"desc\": \"VARCHAR\", \"lat\": \"DOUBLE\", \"lng\": \"DOUBLE\"}]}]}}').resultSet AS rs\n),\nal AS (SELECT unnest(rs.alert) AS a FROM feed)\nSELECT a.id,\n       trim(a.\"desc\", chr(10) || ' ')                                                  AS alert,\n       array_to_string(list_sort(list_distinct(list_transform(a.route, x -\u003e x.\"desc\"))), ', ') AS affects,\n       l.\"desc\"                                                                        AS stop,\n       l.lat                                                                           AS latitude,\n       l.lng                                                                           AS longitude\nFROM (SELECT a, unnest(a.location) AS l FROM al)",
+                  "refId": "alert_stops"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Routes, one row per direction",
+          "multi": false,
+          "name": "routes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "routes",
+              "refId": "routes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every route, one row per direction, drawn stop\n-- to stop from the route configuration rather than along the street (the\n-- street geometry lives in the GTFS zip, whose shapes take ~17 s to read).\n-- Also the Route variable's list, in TriMet's own order.\nWITH rcs AS (SELECT unnest(from_json((SELECT content FROM read_text('http://feeds/trimet/ws/V1/routeConfig?json=true\u0026dir=true\u0026stops=true')),\n                         '{\"resultSet\": {\"route\": [{\"route\": \"BIGINT\", \"desc\": \"VARCHAR\", \"routeSubType\": \"VARCHAR\", \"routeColor\": \"VARCHAR\", \"routeSortOrder\": \"BIGINT\", \"dir\": [{\"dir\": \"BIGINT\", \"stop\": [{\"locid\": \"BIGINT\", \"desc\": \"VARCHAR\", \"lat\": \"DOUBLE\", \"lng\": \"DOUBLE\", \"seq\": \"BIGINT\"}]}]}]}}').resultSet.route) AS r),\nst AS (\n  SELECT r.route AS num, r.\"desc\" AS route, r.routeSubType AS subtype, r.routeColor AS hex,\n         r.routeSortOrder AS sort_order, d.dir, unnest(d.stop) AS s\n  FROM (SELECT r, unnest(r.dir) AS d FROM rcs)\n)\nSELECT num,\n       route,\n       CASE subtype WHEN 'Light Rail' THEN 'MAX light rail' WHEN 'BRT' THEN 'FX bus rapid transit' WHEN 'Commuter Rail' THEN 'WES commuter rail' WHEN 'Streetcar' THEN 'Streetcar' WHEN 'Aerial Tram' THEN 'Aerial tram' ELSE 'Bus' END AS mode,\n       sort_order,\n       dir,\n       '#' || coalesce(hex, '4679AA')                                 AS color,\n       CASE subtype WHEN 'Bus' THEN 1 WHEN 'BRT' THEN 2 ELSE 3 END     AS width,\n       '{\"type\":\"LineString\",\"coordinates\":[' ||\n         string_agg('[' || s.lng || ',' || s.lat || ']', ',' ORDER BY s.seq) || ']}' AS geojson\nFROM st\nGROUP BY ALL\nHAVING count(*) \u003e 1",
+                  "refId": "routes"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Stops",
+          "multi": false,
+          "name": "stops",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "stops",
+              "refId": "stops",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: every stop with its name and position, from\n-- the route configuration. A stop served by several routes is listed once.\nWITH rcs AS (SELECT unnest(from_json((SELECT content FROM read_text('http://feeds/trimet/ws/V1/routeConfig?json=true\u0026dir=true\u0026stops=true')),\n                         '{\"resultSet\": {\"route\": [{\"route\": \"BIGINT\", \"desc\": \"VARCHAR\", \"routeSubType\": \"VARCHAR\", \"routeColor\": \"VARCHAR\", \"routeSortOrder\": \"BIGINT\", \"dir\": [{\"dir\": \"BIGINT\", \"stop\": [{\"locid\": \"BIGINT\", \"desc\": \"VARCHAR\", \"lat\": \"DOUBLE\", \"lng\": \"DOUBLE\", \"seq\": \"BIGINT\"}]}]}]}}').resultSet.route) AS r),\ns AS (SELECT unnest(d.stop) AS s FROM (SELECT unnest(r.dir) AS d FROM rcs))\nSELECT s.locid,\n       any_value(s.\"desc\") AS name,\n       any_value(s.lat)    AS lat,\n       any_value(s.lng)    AS lng\nFROM s\nGROUP BY 1",
+                  "refId": "stops"
+                }
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "Streetcar and aerial tram have no vehicles in this feed; their routes still draw.",
+          "hide": "dontHide",
+          "includeAll": true,
+          "label": "Mode",
+          "multi": true,
+          "name": "mode",
+          "options": [],
+          "query": "MAX light rail,FX bus rapid transit,Bus,WES commuter rail,Streetcar,Aerial tram",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allValue": "'__all__'",
+          "allowCustomValue": true,
+          "current": {
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "dontHide",
+          "includeAll": true,
+          "label": "Route",
+          "multi": true,
+          "name": "route",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "route",
+              "sql": "-- Every route TriMet publishes, within the modes picked, in TriMet's order.\nSELECT route FROM (\n  SELECT route, min(sort_order) AS sort_order FROM $routes\n  WHERE mode IN (${mode:sqlstring})\n  GROUP BY route\n)\nORDER BY sort_order"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allValue": "'__all__'",
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "Narrows the vehicles and their arrows on the fleet maps. On time runs from one minute early to five minutes late.",
+          "hide": "dontHide",
+          "includeAll": true,
+          "label": "Punctuality",
+          "multi": true,
+          "name": "punctuality",
+          "options": [],
+          "query": "Early \u003e 1 min,On time,Late 5–10 min,Late \u003e 10 min",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allValue": "'__all__'",
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "Narrows the vehicles and their arrows on the fleet maps, by whether TriMet reports the vehicle held up in congestion. Vehicles that report neither, as MAX trains do, drop out once a value is picked.",
+          "hide": "dontHide",
+          "includeAll": true,
+          "label": "In traffic",
+          "multi": true,
+          "name": "in_traffic",
+          "options": [],
+          "query": "Congested,Clear",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Vehicle (map click or delayed row)",
+          "name": "vehicle",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Vehicle latitude (delayed row)",
+          "name": "lat",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Vehicle longitude (delayed row)",
+          "name": "lng",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

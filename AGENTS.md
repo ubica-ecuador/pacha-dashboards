@@ -23,7 +23,8 @@ New dashboards are made here, not in Pacha.
   read in Pacha's `gateway/feeds.conf`; cache zones, `map`s and throttle servers in
   `gateway/http/<feed>.conf.template`. Name zones and paths after the feed: they share one
   nginx with Pacha's routes. A key is `${FEED_<NAME>}` in the template and `FEED_<NAME>` in
-  Pacha's `.env`. Routes load only when the gateway starts: validate with
+  Pacha's `.env` (TriMet's and FRED's keep the names Pacha's compose passes:
+  `TRIMET_APP_ID`, `FRED_API_KEY`). Routes load only when the gateway starts: validate with
   `docker compose run --rm --no-deps -T gateway nginx -t` from Pacha, and ask before restarting
   the gateway.
 - **A dataset:** `datasets/<name>/build.sh`, as in Pacha; the files it writes are git-ignored
@@ -31,11 +32,15 @@ New dashboards are made here, not in Pacha.
   Pacha's own datasets of the same name, so pick a name Pacha does not use. A `.tif` (a COG
   for Pacha's tile server, `/titiler`) is served on the feeds server only, by
   `gateway/datasets-tif.conf.template`: a map reads `http://feeds/datasets/<name>/<file>.tif`.
-- **A recorded feed:** `recorder/feeds/<feed>.sql`, as in Pacha's `recorder/feeds/` (a poll,
-  `daily`, `listing` or `stream` from a websocket: Pacha's `images/recorder/recorder.py`); kept
-  under `http://feeds/recordings/<feed>/`, its files named by `manifest.json`. Name it apart from
-  Pacha's feeds: a name both use stops the recorder. A feed starts when the recorder does: ask
+- **A recorded feed:** `recorder/feeds/<feed>.sql` (a poll, `daily`, `listing` or `stream`
+  from a websocket: Pacha's `images/recorder/recorder.py`; Pacha has no feed of its own); kept
+  under `http://feeds/recordings/<feed>/`, its files named by `manifest.json`. Until the
+  recorder has written one, the gateway serves its empty recording from `recorder/fallback/`
+  (a `manifest.json` naming an empty file of the feed's columns; `recorder/make-empty.sh`
+  writes them). A feed parked in `recorder/feeds/parked/` is not recorded. A feed starts when the recorder does: ask
   before recreating it (`docker compose up -d --no-deps recorder` from Pacha).
+- **An alert rule:** `grafana/alerting/<rule>.yaml`, Grafana's file provisioning (folder
+  `Alerts`), mounted over Pacha's empty `provisioning/alerting/`; Grafana reads it at start.
 - **Its card on the home page:** Pacha's home lists this folder's dashboards with the Gallery
   (and those tagged `plus` with Plus). Its picture is `screenshots/<uid>.jpg`, a 16:9 crop of
   the map about 700 × 394 (Pacha's `scripts/screenshots.mjs` takes one; move it here). Without

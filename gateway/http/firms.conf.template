@@ -1,0 +1,5 @@
+# The fires near the grid, behind wildfires-power-grid: NASA FIRMS's active
+# fires from the three VIIRS satellites, a week per region. The grid itself is
+# a file each instance builds once (datasets/power-grid).
+proxy_cache_path /var/cache/nginx/wildfires levels=1:2 keys_zone=wildfires:10m
+                 max_size=500m inactive=60d use_temp_path=off;

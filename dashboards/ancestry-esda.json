@@ -1,0 +1,1836 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "ancestry-esda"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Where each ancestry group clusters, state by state: global and local Moran's I (LISA) of a group's share across census tracts, with a Moran scatter plot, histograms and the reference distribution of Moran's I drawn by Mosaic and linked to the maps, computed in the browser from the ACS 2024.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "**Data.** The share of each census tract's residents who report an ancestry or origin, from the American Community Survey 2020–2024 five-year estimates (tables B04006, B03001, B02015; published by the U.S. Census Bureau in 2025, public domain), with the tract polygons of the TIGER 2024 cartographic boundary files, built once per instance by `datasets/ancestry/build.sh`. Tracts with fewer than 100 residents are left out (about 650 of 85,044): a share of 30 people swings by a third with one household. ACS margins of error are not used.\n\n**Neighbours.** Built in the same step from the polygons as published, within each state. *Queen contiguity*: two tracts touch at a border or a corner (a tract with none is an island and gets no LISA). *6 nearest*: the six tracts with the nearest interior points, which links islands but not symmetrically. Weights are row-standardised, so a tract's spatial lag is the mean of its neighbours' values.\n\n**Statistics.** Global Moran's I with its expectation and variance under randomisation, and its reference distribution: I again with the shares shuffled among the tracts, as many times as *Permutations* says, as PySAL's `esda.Moran` gets its pseudo p-value. Local Moran's I for every tract, with a pseudo p-value from conditional permutations: the tract keeps its value and its neighbours are replaced by tracts drawn at random from the rest of the state, as many times as *Permutations* says. As in PySAL, each permutation draws one random set shared by all tracts, without replacement; the draws come from a hash, so every visit gets the same p-values. Checked against PySAL esda 2.10 on Illinois and California: the same I, z and local I to 14 digits, and counts of significant tracts within the spread of PySAL's own permutation runs.\n\n**Reading it.** A LISA map is exploratory, not a test of segregation: with thousands of tracts some pass p ≤ 0.05 by chance (pick *FDR 5 %* to control that), the clusters depend on the neighbours chosen and on the tracts' size and shape, and a share says nothing about where people choose to live. ACS ancestry is self-reported and multiple-response. The scatter plot and the histograms are drawn by [Mosaic](https://idl.uw.edu/mosaic/) on the same browser tables as everything else.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-clusters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count_if(cluster = 'High-High')::DOUBLE AS \"High-High\",\n       count_if(cluster = 'Low-Low')::DOUBLE AS \"Low-Low\",\n       count_if(cluster = 'High-Low')::DOUBLE AS \"High-Low\",\n       count_if(cluster = 'Low-High')::DOUBLE AS \"Low-High\",\n       count_if(cluster = 'Not significant')::DOUBLE AS \"Not significant\"\nFROM $clusters"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How many tracts fall in each LISA cluster at the significance picked. High-High: a high share among high shares (a hot spot); Low-Low: a cold spot; High-Low and Low-High: a tract unlike its neighbours.",
+          "id": 3,
+          "links": [],
+          "title": "Tracts by cluster",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "High-High"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#e8423f",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Low-Low"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3a7bd5",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "High-Low"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#f5a3a3",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Low-High"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#9cc3f0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Not significant"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8e9096",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-intro": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "content": "# Where ancestry groups cluster\n\nExploratory spatial data analysis of the **American Community Survey 2024**, one state at a time: is a group's share of residents high where its neighbours' is high too? **Moran's I** answers for the whole state; **local Moran's I** (LISA) finds where: the *High-High* hot spots, the *Low-Low* cold spots, and the outliers that differ from the tracts around them. Everything is computed in your browser, with the same method as [PySAL](https://pysal.org/esda/) and [GeoDa](https://geodacenter.github.io/).\n\n**Drag a box on the scatter plot**, or a range on the share histogram, to select the tracts in it: both maps dim the rest and the histograms show where the selection falls. **Click a tract** on a map to find it on the plot, **Shift+click** to add more, click empty map to clear. Change the neighbours, the permutations or the significance to see how much the clusters depend on them.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-lisa-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The cluster map: every tract coloured by its LISA cluster (dataset clusters).\n-- `selected` is the box brushed on the scatter plot and the share histogram, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The LISA cluster map: each tract coloured by its local Moran's I quadrant where the pseudo p-value clears the significance picked, from conditional permutations. Only significant tracts get a colour; a cluster's core is the coloured tract, its neighbours are part of the pattern too. Click a tract to select it, Shift+click to add one; the rest of the map dims around the selection.",
+          "id": 5,
+          "links": [],
+          "title": "Local clusters · ${grupo} in ${state:text}",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": true,
+                "fitOnVariables": [
+                  "state"
+                ],
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "county"
+                              },
+                              {
+                                "name": "share"
+                              },
+                              {
+                                "name": "cluster"
+                              },
+                              {
+                                "name": "p"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              128,
+                              128,
+                              128
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "LISA cluster",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "High-High",
+                                    "#e8423f"
+                                  ],
+                                  [
+                                    "Low-Low",
+                                    "#3a7bd5"
+                                  ],
+                                  [
+                                    "High-Low",
+                                    "#f5a3a3"
+                                  ],
+                                  [
+                                    "Low-High",
+                                    "#9cc3f0"
+                                  ],
+                                  [
+                                    "Not significant",
+                                    "#3b3e45"
+                                  ],
+                                  [
+                                    "No neighbours",
+                                    "#77797f"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#e8423f",
+                                  "#3a7bd5",
+                                  "#f5a3a3",
+                                  "#9cc3f0",
+                                  "#3b3e45",
+                                  "#77797f"
+                                ],
+                                "name": "LISA clusters",
+                                "type": "custom"
+                              },
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.85,
+                              "strokeOpacity": 0.3,
+                              "stroked": false,
+                              "thickness": 0.2,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "lisa",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "cluster",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "selectionField": "selected",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "geoid",
+                    "source": "click",
+                    "variable": "sel"
+                  }
+                ],
+                "windDensity": 9000
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-moran": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Global Moran's I over the tracts of $lisa, with its expectation and\n-- variance under randomisation (Cliff and Ord 1981), as PySAL's esda.Moran\n-- reports them (EI, VI_rand, z_rand, p_rand two-sided). Row-standardised\n-- weights w_ij = 1/k_i; S0, S1 and S2 are the usual sums over them.\nWITH t AS (\n  SELECT geoid, z, lag, k FROM $lisa\n),\nw AS (\n  SELECT l.i, l.j, 1.0 / count(*) OVER (PARTITION BY l.i) AS wij\n  FROM $links l\n  WHERE l.i IN (SELECT geoid FROM t) AND l.j IN (SELECT geoid FROM t)\n),\npairs AS (\n  SELECT coalesce(a.wij, 0) + coalesce(b.wij, 0) AS s\n  FROM w a FULL JOIN w b ON a.i = b.j AND a.j = b.i\n),\nmargins AS (\n  SELECT t.geoid, CASE WHEN t.k \u003e 0 THEN 1.0 ELSE 0.0 END AS row_sum,\n         coalesce((SELECT sum(w.wij) FROM w WHERE w.j = t.geoid), 0) AS col_sum\n  FROM t\n),\ns AS (\n  SELECT (SELECT count(*) FROM t) AS n,\n         (SELECT count(*) FILTER (WHERE k \u003e 0) FROM t)::DOUBLE AS s0,\n         (SELECT 0.5 * sum(s * s) FROM pairs) AS s1,\n         (SELECT sum(power(row_sum + col_sum, 2)) FROM margins) AS s2,\n         (SELECT sum(z * lag) FILTER (WHERE k \u003e 0) FROM t) AS zlag,\n         (SELECT sum(z * z) FROM t) AS z2,\n         (SELECT sum(power(z, 4)) FROM t) AS z4\n),\nm AS (\n  SELECT n, s0, s1, s2,\n         n / s0 * zlag / z2 AS i,\n         -1.0 / (n - 1) AS ei,\n         n * z4 / (z2 * z2) AS b2\n  FROM s\n),\nv AS (\n  SELECT *,\n         (n * ((n * n - 3 * n + 3) * s1 - n * s2 + 3 * s0 * s0)\n          - b2 * ((n * n - n) * s1 - 2 * n * s2 + 6 * s0 * s0))\n         / ((n - 1) * (n - 2) * (n - 3) * s0 * s0) - ei * ei AS vi\n  FROM m\n),\nzz AS (\n  SELECT *, (i - ei) / sqrt(vi) AS z_rand FROM v\n),\n-- Two-sided p from the normal tail, by Abramowitz and Stegun's erfc 7.1.26\n-- (error below 1.5e-7): DuckDB has no erf.\ntail AS (\n  SELECT *, abs(z_rand) / sqrt(2) AS x, 1 / (1 + 0.3275911 * abs(z_rand) / sqrt(2)) AS t FROM zz\n),\nres AS (\n  SELECT *, t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))))\n            * exp(-x * x) AS p_rand\n  FROM tail\n)\nSELECT round(i, 3) AS \"Moran's I\", round(z_rand, 1) AS \"z\",\n       CASE WHEN p_rand \u003c 0.001 THEN '\u003c 0.001' ELSE printf('%.3f', p_rand) END AS \"p\",\n       n::DOUBLE AS \"Tracts\"\nFROM res"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Moran's I of the group's share across the state's tracts, with row-standardised weights, and its z-score and two-sided p under randomisation (Cliff and Ord), as PySAL's esda.Moran reports them. Near 0: no spatial pattern; towards 1: tracts with similar shares sit together; below 0: neighbours tend to differ.",
+          "id": 2,
+          "links": [],
+          "title": "Global Moran's I",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 3,
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "z"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tracts"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-p-hist": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each tract's LISA pseudo p-value (grey; orange: the selection) and the significance cut. With no clustering they would spread evenly between 0 and 0.5 (PySAL folds them on the smaller tail); a pile at the left is the signal, and how many tracts sit just under the cut is what FDR guards against.",
+          "id": 11,
+          "links": [],
+          "title": "Pseudo p-values",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The tracts' pseudo p-values (grey: all with neighbours; orange: the\n# selection) and the significance cut. Folded as in PySAL (the smaller tail),\n# so with no clustering they would spread evenly from 0 to 0.5; a pile at the\n# left is the signal.\nparams:\n  box: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: clusters }\n    x: { bin: p, steps: 40 }\n    y: { count: }\n    fill: 'rgba(128, 128, 128, 0.35)'\n    inset: 0.5\n  - mark: rectY\n    data: { from: clusters, filterBy: $box }\n    x: { bin: p, steps: 40 }\n    y: { count: }\n    fill: '#FF9830'\n    inset: 0.5\n  - mark: ruleX\n    data: { from: clusters }\n    x: { max: cut }\n    stroke: '#e8423f'\n    strokeWidth: 1.5\n  - mark: text\n    data: { from: clusters }\n    x: { max: cut }\n    text: { sql: \"printf('p ≤ %.3g', max(cut))\" }\n    frameAnchor: top\n    textAnchor: start\n    dx: 4\n    dy: 4\n    fill: '#e8423f'\nxDomain: [0, 0.5]\nyScale: sqrt\nxLabel: Pseudo p-value →\nyLabel: ↑ Tracts\nmarginLeft: 44\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-refdist": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Global Moran's I again after shuffling the shares among the state's tracts, as many times as Permutations says (bars), against the observed I (line): the permutation test of PySAL's esda.Moran.",
+          "id": 12,
+          "links": [],
+          "title": "Reference distribution of Moran's I",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Global Moran's I of the shares shuffled among the tracts (bars), against\n# the observed one (line): how far the state's pattern is from chance.\nplot:\n  - mark: rectY\n    data: { from: refdist }\n    x: { bin: i, steps: 30 }\n    y: { count: }\n    fill: '#5794F2'\n    inset: 0.5\n  - mark: ruleX\n    data: { from: refdist }\n    x: { max: observed }\n    stroke: '#e8423f'\n    strokeWidth: 2\n  - mark: ruleX\n    data: [0]\n    stroke: currentColor\n    strokeOpacity: 0.25\n  - mark: text\n    data: { from: refdist }\n    x: { max: observed }\n    text: { sql: \"printf('observed I = %.3f%s%.0f sd from the shuffles%spseudo p = %.4g', max(observed), chr(10), abs(max(observed) - avg(i)) / stddev_samp(i), chr(10), (count_if(i \u003e= observed) + 1) / (count(*) + 1))\" }\n    frameAnchor: top\n    textAnchor: end\n    lineAnchor: top\n    dx: -6\n    dy: 4\n    fill: '#e8423f'\nxLabel: Moran's I with the shares shuffled →\nyLabel: ↑ Permutations\nmarginLeft: 44\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-scatter": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each tract's standardised share against the mean of its neighbours' (the spatial lag), coloured by cluster; the slope of the fitted line is about Moran's I. Drag a box to select every tract in it, click outside it to clear. Tracts picked on a map are ringed. Drawn by Mosaic in the browser.",
+          "id": 6,
+          "links": [],
+          "title": "Moran scatter plot",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "- param: picked\n  column: geoid\n  values: sel\n",
+                "spec": "# The Moran scatter plot: each tract's standardised share (z) against the mean\n# of its neighbours' (lag). A box dragged here, and one along the share\n# histogram, are clauses of the selection box; the dots light up inside both,\n# and the tracts picked on a map (sel) are ringed.\nparams:\n  box: { select: crossfilter }\n  lit: { select: intersect, include: [$box] }\n  picked: { select: intersect, empty: true }\nplot:\n  - mark: ruleX\n    data: [0]\n    stroke: currentColor\n    strokeOpacity: 0.25\n  - mark: ruleY\n    data: [0]\n    stroke: currentColor\n    strokeOpacity: 0.25\n  - mark: dot\n    data: { from: clusters }\n    x: z\n    y: lag\n    fill: cluster\n    r: 2.4\n    stroke: none\n    fillOpacity: 0.9\n  - select: highlight\n    by: $lit\n  - select: intervalXY\n    as: $box\n    brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\n  - mark: regressionY\n    data: { from: clusters }\n    x: z\n    y: lag\n    stroke: currentColor\n    strokeWidth: 1.5\n  - mark: dot\n    data: { from: clusters, filterBy: $picked }\n    x: z\n    y: lag\n    r: 6\n    fill: none\n    stroke: currentColor\n    strokeWidth: 2\n  - mark: text\n    data: { from: clusters }\n    text: { sql: \"printf('Moran''s I = %.3f', sum(z * lag) / count(lag))\" }\n    frameAnchor: top-left\n    dx: 6\n    dy: 4\n    fontSize: 13\nxyDomain: Fixed\ncolorDomain: [High-High, Low-Low, High-Low, Low-High, Not significant, No neighbours]\ncolorRange: ['#e8423f', '#3a7bd5', '#f5a3a3', '#9cc3f0', 'rgba(128, 128, 128, 0.35)', 'rgba(128, 128, 128, 0.35)']\nxLabel: Share, standardised (z) →\nyLabel: ↑ Neighbours' mean z (spatial lag)\nmarginLeft: 44\n",
+                "variables": "- param: box\n  column: [z, lag]\n  from: [bx0, by0]\n  to: [bx1, by1]\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-selection": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Pooled shares: the group's residents over all residents, not a mean of tract shares.\nWITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter\n  -- plot and the share histogram (both, when both are)\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false)\n),\nt AS (SELECT v.geoid, v.people, s.total_pop FROM $tractvals v JOIN $shapes s USING (geoid))\nSELECT (SELECT count(*) FROM picked)::DOUBLE AS \"Selected\",\n       (SELECT 100 * sum(people) / nullif(sum(total_pop), 0) FROM t WHERE geoid IN (SELECT geoid FROM picked)) AS \"Their share\",\n       (SELECT 100 * sum(people) / sum(total_pop) FROM t) AS \"State\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The tracts selected on the scatter plot (a box, a lasso, a click) or on a map (click, Shift+click): how many, and the group's share of all their residents, against the share in the whole state.",
+          "id": 4,
+          "links": [],
+          "title": "Selection",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "unit": "percent"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Selected"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "vertical",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-share-hist": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The group's share in every tract of the state (grey) and in the selection (orange). Brush a range to select the tracts in it, alone or with the box on the scatter plot.",
+          "id": 10,
+          "links": [],
+          "title": "Tracts by share · ${grupo}",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The group's share across the state's tracts (grey) and in the selection\n# (orange). Brushing a range here selects the tracts in it, with the box.\nparams:\n  box: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: clusters }\n    x: { bin: share, steps: 30 }\n    y: { count: }\n    fill: 'rgba(128, 128, 128, 0.35)'\n    inset: 0.5\n  - mark: rectY\n    data: { from: clusters, filterBy: $box }\n    x: { bin: share, steps: 30 }\n    y: { count: }\n    fill: '#FF9830'\n    inset: 0.5\n  - select: intervalX\n    as: $box\n    brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.6 }\nxDomain: Fixed\nyScale: sqrt\nxLabel: Share of residents (%) →\nyLabel: ↑ Tracts\nmarginLeft: 44\n",
+                "variables": "- param: box\n  column: share\n  from: sh0\n  to: sh1\n"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-share-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The choropleth of the share itself, to read the clusters against.\n-- `selected` is the box brushed on the scatter plot and the share histogram, which the map marks and\n-- dims the rest around (selectionField). The tracts clicked one by one (sel)\n-- the map rings by itself; filtering on either would leave nothing to dim.\nSELECT c.geoid, s.name, s.county, round(c.share, 2) AS share, c.cluster, round(c.p, 3) AS p,\n       coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false) AS selected, s.geojson\nFROM $clusters c JOIN $shapes s USING (geoid)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The value the statistics are computed on: the group's share of each tract's residents, in %, in seven quantile classes. Click a tract to select it, Shift+click to add one; the rest of the map dims around the selection.",
+          "id": 7,
+          "links": [],
+          "title": "Share of residents · ${grupo}",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": true,
+                "fitOnVariables": [
+                  "state"
+                ],
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": true,
+                          "show": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "county"
+                              },
+                              {
+                                "name": "share"
+                              },
+                              {
+                                "name": "cluster"
+                              },
+                              {
+                                "name": "p"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              128,
+                              128,
+                              128
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Share of residents (%)",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#2a1a3f",
+                                  "#4f2266",
+                                  "#7c2d7a",
+                                  "#ad3f7a",
+                                  "#dc5f6a",
+                                  "#f7956a",
+                                  "#fbd18c"
+                                ],
+                                "name": "Share",
+                                "type": "custom"
+                              },
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.9,
+                              "strokeOpacity": 0.3,
+                              "stroked": false,
+                              "thickness": 0.2,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "share",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "share",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "selectionField": "selected",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "geoid",
+                    "source": "click",
+                    "variable": "sel"
+                  }
+                ],
+                "windDensity": 9000
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-table": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH sel AS (SELECT unnest([${sel:singlequote}]::VARCHAR[]) AS geoid),\npicked AS (\n  -- the selection: tracts picked one by one (sel), and the box brushed on the scatter\n  -- plot and the share histogram (both, when both are)\n  SELECT c.geoid FROM $clusters c\n  WHERE c.geoid IN (SELECT geoid FROM sel) OR coalesce((try_cast($bx0 AS DOUBLE) IS NOT NULL OR try_cast($sh0 AS DOUBLE) IS NOT NULL)\n         AND (try_cast($bx0 AS DOUBLE) IS NULL OR (c.z BETWEEN try_cast($bx0 AS DOUBLE) AND try_cast($bx1 AS DOUBLE) AND c.lag BETWEEN try_cast($by0 AS DOUBLE) AND try_cast($by1 AS DOUBLE)))\n         AND (try_cast($sh0 AS DOUBLE) IS NULL OR c.share BETWEEN try_cast($sh0 AS DOUBLE) AND try_cast($sh1 AS DOUBLE)), false)\n)\nSELECT replace(s.name, 'Census Tract ', '') AS \"Tract\", replace(s.county, ' County', '') AS \"County\",\n       c.share AS \"Share %\", c.lag AS \"Neighbours' z\", c.p AS \"p\", c.cluster AS \"Cluster\"\nFROM $clusters c JOIN $shapes s USING (geoid)\nWHERE CASE WHEN (SELECT count(*) FROM picked) \u003e 0\n           THEN c.geoid IN (SELECT geoid FROM picked)\n           ELSE c.cluster IN ('High-High', 'High-Low') END\nORDER BY c.p, c.share DESC\nLIMIT 1000"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The selected tracts; with none selected, the significant High-High and High-Low tracts, most significant first. Neighbours' z is the spatial lag: the mean standardised share of the tract's neighbours.",
+          "id": 8,
+          "links": [],
+          "title": "Tracts in the selection, or the high-share cores",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "filterable": false,
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Cluster"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "High-High": {
+                                "color": "#e8423f",
+                                "index": 0
+                              },
+                              "High-Low": {
+                                "color": "#f5a3a3",
+                                "index": 2
+                              },
+                              "Low-High": {
+                                "color": "#9cc3f0",
+                                "index": 3
+                              },
+                              "Low-Low": {
+                                "color": "#3a7bd5",
+                                "index": 1
+                              },
+                              "No neighbours": {
+                                "color": "#77797f",
+                                "index": 5
+                              },
+                              "Not significant": {
+                                "color": "#8e9096",
+                                "index": 4
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tract"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "County"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 130
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Share %"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Neighbours' z"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "p"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true,
+                "sortBy": []
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-intro"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-moran"
+              },
+              "height": 4,
+              "width": 8,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-clusters"
+              },
+              "height": 4,
+              "width": 10,
+              "x": 8,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-selection"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-lisa-map"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-scatter"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 12,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-share-map"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 26
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-share-hist"
+              },
+              "height": 8,
+              "width": 12,
+              "x": 12,
+              "y": 26
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-p-hist"
+              },
+              "height": 8,
+              "width": 12,
+              "x": 12,
+              "y": 34
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-table"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 0,
+              "y": 42
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-refdist"
+              },
+              "height": 12,
+              "width": 12,
+              "x": 12,
+              "y": 42
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 54
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "demographics"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-6h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Ancestry clusters — local Moran's I by census tract (ACS 2024)",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "Polish",
+            "value": "Polish"
+          },
+          "definition": "Grupos ordenados por población nacional",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Group",
+          "multi": false,
+          "name": "grupo",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "SELECT ancestry FROM read_parquet('http://feeds/datasets/ancestry/ancestries.parquet') ORDER BY national_total DESC"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Illinois",
+            "value": "IL"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "State",
+          "multi": false,
+          "name": "state",
+          "options": [],
+          "query": "Alabama : AL,Alaska : AK,Arizona : AZ,Arkansas : AR,California : CA,Colorado : CO,Connecticut : CT,Delaware : DE,District of Columbia : DC,Florida : FL,Georgia : GA,Hawaii : HI,Idaho : ID,Illinois : IL,Indiana : IN,Iowa : IA,Kansas : KS,Kentucky : KY,Louisiana : LA,Maine : ME,Maryland : MD,Massachusetts : MA,Michigan : MI,Minnesota : MN,Mississippi : MS,Missouri : MO,Montana : MT,Nebraska : NE,Nevada : NV,New Hampshire : NH,New Jersey : NJ,New Mexico : NM,New York : NY,North Carolina : NC,North Dakota : ND,Ohio : OH,Oklahoma : OK,Oregon : OR,Pennsylvania : PA,Puerto Rico : PR,Rhode Island : RI,South Carolina : SC,South Dakota : SD,Tennessee : TN,Texas : TX,Utah : UT,Vermont : VT,Virginia : VA,Washington : WA,West Virginia : WV,Wisconsin : WI,Wyoming : WY",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Queen contiguity",
+            "value": "queen"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Neighbours",
+          "multi": false,
+          "name": "weights",
+          "options": [],
+          "query": "Queen contiguity : queen,6 nearest : knn6",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "999",
+            "value": "999"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Permutations",
+          "multi": false,
+          "name": "perms",
+          "options": [],
+          "query": "99,499,999",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "p ≤ 0.05",
+            "value": "0.05"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Significance",
+          "multi": false,
+          "name": "alpha",
+          "options": [],
+          "query": "p ≤ 0.05 : 0.05,p ≤ 0.01 : 0.01,p ≤ 0.001 : 0.001,FDR 5 % : fdr",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [],
+            "value": []
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Selected tracts",
+          "multi": true,
+          "name": "sel",
+          "options": [],
+          "query": "",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "shapes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "shapes",
+              "refId": "shapes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per state: the outline of every tract the analysis covers\n-- (those of at least 100 residents, which is every tract the weights list:\n-- datasets/ancestry/build.sql, step 7), as GeoJSON text for the maps, with its\n-- name, county and population.\nSELECT t.geoid, t.name, t.county, t.total_pop::DOUBLE AS total_pop,\n       CAST(ST_AsGeoJSON(g.geometry) AS VARCHAR) AS geojson\nFROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet') t\nJOIN read_parquet('http://feeds/datasets/ancestry/tracts-geom.parquet') g USING (geoid)\nWHERE t.geoid IN (SELECT i FROM read_parquet('http://feeds/datasets/ancestry/weights.parquet') WHERE kind = 'knn6' AND state = $state)",
+                  "refId": "shapes"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "tractvals",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "tractvals",
+              "refId": "tractvals",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per state and group: the group's share of each tract's\n-- residents, in %, and 0 where the ACS counts none of them (it leaves those\n-- rows out). The value every statistic below is computed on.\nSELECT t.geoid, 100 * coalesce(a.pct, 0) AS share, coalesce(a.estimate, 0)::DOUBLE AS people\nFROM read_parquet('http://feeds/datasets/ancestry/tracts.parquet') t\nLEFT JOIN read_parquet('http://feeds/datasets/ancestry/tract-ancestry.parquet') a ON a.geoid = t.geoid AND a.ancestry = $grupo\nWHERE t.geoid IN (SELECT i FROM read_parquet('http://feeds/datasets/ancestry/weights.parquet') WHERE kind = 'knn6' AND state = $state)",
+                  "refId": "tractvals"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "links",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "links",
+              "refId": "links",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per state and kind of neighbours: who neighbours whom, as\n-- directed pairs (i, j), built from the tract polygons by\n-- datasets/ancestry/build.sql, step 7. Queen: sharing a border or a corner;\n-- knn6: the six nearest.\nSELECT i, j FROM read_parquet('http://feeds/datasets/ancestry/weights.parquet') WHERE kind = $weights AND state = $state",
+                  "refId": "links"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "lisa",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "lisa",
+              "refId": "lisa",
+              "source": {
+                "sql": "-- Local Moran's I (LISA) for every tract, in the browser, from two datasets:\n-- $tractvals (geoid, share) and $links (i, j: who neighbours whom). Weights\n-- are row-standardised, as GeoDa and PySAL use by default: a tract's spatial\n-- lag is the mean z of its neighbours. ii is PySAL's Is, (n - 1) z lag / sum z².\n--\n-- Significance by conditional permutation (Anselin 1995), the way PySAL's\n-- esda does it: each permutation draws one random set of k_max positions among\n-- the n - 1 \"other\" tracts, shared by every tract, and tract i reads the first\n-- k_i of them as its neighbours. Without replacement. The set is the k_max\n-- positions with the smallest hash(permutation, position), not random(), so\n-- every load and every viewer gets the same p-values. With the sets shared, a\n-- permuted lag is a prefix sum of the set, and only the few permutations\n-- whose set contains i's own position need a correction (the n-th tract\n-- stands in for it: \"others\" of i are positions 1..n with i's swapped for n).\nWITH x AS (\n  SELECT geoid, share AS x FROM $tractvals\n),\nz AS (\n  SELECT geoid, x,\n         (x - avg(x) OVER ()) / nullif(stddev_pop(x) OVER (), 0) AS z,\n         row_number() OVER (ORDER BY geoid) AS rn\n  FROM x\n),\nw AS (\n  SELECT i, j, 1.0 / count(*) OVER (PARTITION BY i) AS wij\n  FROM $links\n  WHERE i IN (SELECT geoid FROM z) AND j IN (SELECT geoid FROM z)\n),\nlag AS (\n  SELECT w.i AS geoid, sum(w.wij * z.z) AS lag, count(*) AS k\n  FROM w JOIN z ON z.geoid = w.j\n  GROUP BY w.i\n),\nobs AS (\n  SELECT z.geoid, z.x, z.z, z.rn, lag.lag, coalesce(lag.k, 0) AS k\n  FROM z LEFT JOIN lag USING (geoid)\n),\nn AS (\n  SELECT count(*) AS n, max(k) AS kmax, max(rn) AS last FROM obs\n),\nperms AS (\n  SELECT coalesce(try_cast($perms AS BIGINT), 499) AS p\n),\nsets AS (\n  -- 64 is a ceiling on k_max: the most neighbours any tract has is 34 (queen)\n  SELECT s.p, min_by(m.m, hash(s.p * 4294967296 + m.m), 64) AS picks\n  FROM perms, range(perms.p) s(p), n, range(1, n.n) m(m)\n  GROUP BY s.p\n),\ndraws AS (\n  SELECT p, unnest(picks) AS pick, generate_subscripts(picks, 1) AS r FROM sets\n),\nprefix AS (\n  -- the sum of z over the first k picks of each permutation\n  SELECT d.p, d.r AS k, sum(z.z) OVER (PARTITION BY d.p ORDER BY d.r) AS s\n  FROM draws d JOIN z ON z.rn = d.pick\n  WHERE d.r \u003c= (SELECT kmax FROM n)\n),\nown AS (\n  -- the permutations whose first k_i picks hit tract i's own position\n  SELECT o.rn, d.p\n  FROM draws d JOIN obs o ON o.rn = d.pick AND d.r \u003c= o.k\n),\nsim AS (\n  SELECT o.rn,\n         count_if(o.z * (pf.s + CASE WHEN own.p IS NULL THEN 0 ELSE stand_in.z - o.z END) / o.k\n                  \u003e= o.z * o.lag) AS larger\n  FROM obs o\n  JOIN prefix pf ON pf.k = o.k\n  LEFT JOIN own ON own.rn = o.rn AND own.p = pf.p\n  CROSS JOIN (SELECT z.z FROM z, n WHERE z.rn = n.last) stand_in\n  WHERE o.k \u003e 0\n  GROUP BY o.rn\n)\nSELECT o.geoid, o.x AS share, o.z, o.lag, o.k,\n       (n.n - 1) * o.z * o.lag / n.n AS ii,\n       (least(s.larger, perms.p - s.larger) + 1) / (perms.p + 1) AS p,\n       CASE WHEN o.k = 0 THEN 'none'\n            WHEN o.z \u003e= 0 AND o.lag \u003e= 0 THEN 'HH'\n            WHEN o.z \u003c 0 AND o.lag \u003c 0 THEN 'LL'\n            WHEN o.z \u003e= 0 THEN 'HL'\n            ELSE 'LH' END AS quadrant\nFROM obs o\nLEFT JOIN sim s USING (rn)\nCROSS JOIN n\nCROSS JOIN perms",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "clusters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "clusters",
+              "refId": "clusters",
+              "source": {
+                "sql": "-- What the maps and charts colour by: each tract's LISA quadrant where its\n-- pseudo p-value clears the significance picked, \"Not significant\" where it\n-- does not. FDR is Benjamini and Hochberg's false discovery rate at 5 %, over\n-- the tracts with neighbours: with thousands of tests, p ≤ 0.05 alone lets\n-- about one tract in twenty through by chance.\nWITH tested AS (\n  SELECT p, row_number() OVER (ORDER BY p) AS rnk, count(*) OVER () AS m\n  FROM $lisa WHERE k \u003e 0\n),\ncut AS (\n  SELECT CASE WHEN $alpha = 'fdr'\n              THEN coalesce((SELECT max(p) FROM tested WHERE p \u003c= 0.05 * rnk / m), 0)\n              ELSE coalesce(try_cast($alpha AS DOUBLE), 0.05) END AS cut\n)\nSELECT l.geoid, l.share, l.z, l.lag, l.k, l.ii, l.p, cut.cut,\n       CASE WHEN l.k = 0 THEN 'No neighbours'\n            WHEN l.p \u003e cut.cut THEN 'Not significant'\n            WHEN l.quadrant = 'HH' THEN 'High-High'\n            WHEN l.quadrant = 'LL' THEN 'Low-Low'\n            WHEN l.quadrant = 'HL' THEN 'High-Low'\n            ELSE 'Low-High' END AS cluster\nFROM $lisa l, cut\n-- the significant tracts last, so the Mosaic scatter plot draws them on top\nORDER BY l.p DESC",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "refdist",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "refdist",
+              "refId": "refdist",
+              "source": {
+                "sql": "-- The reference distribution of global Moran's I: I again for each\n-- permutation of the z values among the tracts (all of them, islands too), as\n-- PySAL's esda.Moran draws its pseudo p-value. Permutation p puts at position\n-- rn the z of the tract ranked rn by hash(p, rn), not random(), so every visit\n-- gets the same distribution. I = n / S0 * sum w_ij z_i z_j / sum z^2 with\n-- row-standardised weights, as the Global Moran's I panel computes it.\n-- Each permutation is one list of z read by position: a join per link and\n-- permutation would cost five times as long.\nWITH t AS (\n  SELECT geoid, z, k, row_number() OVER (ORDER BY geoid) AS rn FROM $lisa\n),\ns AS (\n  SELECT count(*) AS n, count(*) FILTER (WHERE k \u003e 0)::DOUBLE AS s0, sum(z * z) AS z2 FROM t\n),\nw AS (\n  SELECT a.rn AS ri, b.rn AS rj, 1.0 / count(*) OVER (PARTITION BY l.i) AS wij\n  FROM $links l JOIN t a ON a.geoid = l.i JOIN t b ON b.geoid = l.j\n),\nperms AS (\n  SELECT coalesce(try_cast($perms AS BIGINT), 499) AS p\n),\nshuffled AS (\n  SELECT q.p, list(t.z ORDER BY hash(q.p * 4294967296 + t.rn)) AS zs\n  FROM perms, range(perms.p) q(p), t\n  GROUP BY q.p\n),\nip AS (\n  SELECT p, sum(w.wij * zs[w.ri] * zs[w.rj]) AS zlag FROM shuffled, w GROUP BY p\n),\nobs AS (\n  SELECT sum(w.wij * a.z * b.z) AS zlag FROM w JOIN t a ON a.rn = w.ri JOIN t b ON b.rn = w.rj\n)\nSELECT ip.p AS perm, s.n / s.s0 * ip.zlag / s.z2 AS i, s.n / s.s0 * obs.zlag / s.z2 AS observed\nFROM ip, s, obs",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, z from",
+          "name": "bx0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, z to",
+          "name": "bx1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, lag from",
+          "name": "by0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Box, lag to",
+          "name": "by1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Share from",
+          "name": "sh0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Share to",
+          "name": "sh1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

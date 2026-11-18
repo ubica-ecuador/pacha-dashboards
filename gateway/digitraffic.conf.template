@@ -1,0 +1,20 @@
+    # Digitraffic (Fintraffic, Finland's traffic agency): every ship its AIS
+    # network hears in the Baltic, the latest position of each (locations) and
+    # its name, type and destination (vessels). Open data, no key; it asks for a
+    # Digitraffic-User header naming the application, and for gzip. Kept 30 s:
+    # the cable-watch alert rule and the dashboard read it every minute, and
+    # Digitraffic gets at most two requests a minute per path from us.
+    location ~ "^/digitraffic/ais/(locations|vessels)$" {
+        set $digitraffic meri.digitraffic.fi;
+        proxy_pass https://$digitraffic/api/ais/v1/$1$is_args$args;
+        proxy_http_version 1.1;
+        proxy_set_header Host $digitraffic;
+        proxy_set_header Digitraffic-User "Pacha/1.0";
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache digitraffic;
+        proxy_cache_valid 200 30s;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

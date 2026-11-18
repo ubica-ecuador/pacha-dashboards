@@ -1,0 +1,21 @@
+    # Cuenca's travel times behind cuenca-accessibility: iso-cuenca, a bridge
+    # that asks the R5 instance of Cuenca (Conveyal) for the travel-time surface
+    # from an origin and serves it as cells, isochrones and an accessibility
+    # curve. Like elnino it is a container on ubica_network, which the gateway
+    # shares only on pacha.ubica.dev; elsewhere this answers 502. Only its GET
+    # endpoints: the service keeps each surface on disk, and this keeps the
+    # answers a month, keyed by the whole query string, so a second visit to an
+    # origin never reaches R5. Anyone viewing a dashboard can send SQL to
+    # DuckDB, so a miss costs an R5 computation (about a second): every request,
+    # cached or not, is held to two a second with a burst of sixty, which a
+    # visit (a few requests for each of two origins) never meets.
+    location ~ ^/r5/(cells\.json|iso\.geojson|accessibility\.json|health)$ {
+        set $iso_cuenca iso-cuenca:8099;
+        limit_req zone=r5_upstream burst=60 nodelay;
+        proxy_pass http://$iso_cuenca/$1$is_args$args;
+        proxy_cache r5;
+        proxy_cache_key $request_uri;
+        proxy_cache_valid 200 30d;
+        proxy_read_timeout 60s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

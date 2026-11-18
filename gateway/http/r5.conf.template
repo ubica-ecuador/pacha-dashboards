@@ -1,0 +1,9 @@
+# Cuenca's travel times behind cuenca-accessibility, from iso-cuenca, a
+# bridge to the R5 instance of Cuenca (Conveyal): a month's cache, and a limit
+# on what reaches R5.
+proxy_cache_path /var/cache/nginx/r5 levels=1:2 keys_zone=r5:10m
+                 max_size=2g inactive=30d use_temp_path=off;
+map $host $r5_bucket {
+    default r5;
+}
+limit_req_zone $r5_bucket zone=r5_upstream:1m rate=120r/m;

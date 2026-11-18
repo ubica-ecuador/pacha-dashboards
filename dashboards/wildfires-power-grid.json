@@ -1,0 +1,2676 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "wildfires-power-grid"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "NASA FIRMS's satellite fire detections (VIIRS, the last week) against the high-voltage grid of OpenStreetMap, in one of four regions: how far every fire fell from the nearest line of 200 kV or more, which lines and how many kilometres of them a fire came within reach of, played pass by pass. Distances are measured on the server in an equal-area projection; the week then loads into your browser, where a timeline, Mosaic histograms and filters cross-filter the map, the cards and the table with DuckDB-WASM. Data: NASA FIRMS, OpenStreetMap contributors via Overture Maps (ODbL).",
+    "editable": true,
+    "elements": {
+      "card-detections": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "VIIRS detections the filters keep. One detection is a 375 m pixel flagged hot on one pass: a fire seen on three passes counts three times.",
+          "id": 20,
+          "links": [],
+          "title": "Fire detections",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fireFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: fires, filterBy: $fireFilters }\n    text: { count: }\n    frameAnchor: middle\n    fill: currentColor\n    fontSize: 40\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 50,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Fires.** [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) active fire detections from the VIIRS instrument on\nSuomi NPP, NOAA-20 and NOAA-21 (collection 2, 375 m), the last seven days of the region's file, read through the\ngateway, which caches them. A detection is one pixel flagged as hot on one pass, not a fire's outline: a fire burning\nfor days counts again on every pass. **Fire radiative power** (FRP, MW) is the rate at which the pixel radiates heat.\nConfidence is FIRMS's own (low, nominal, high); low-confidence pixels include sun glint and hot surfaces.\n\n**The grid.** Overhead lines and cables of 200 kV and more from [OpenStreetMap](https://www.openstreetmap.org/copyright)\n(ODbL), as the base theme of an [Overture Maps](https://overturemaps.org/) release carries them, with the voltage,\nname and operator tagged on the way. Each instance builds the file once with `datasets/power-grid/build.sh`. A line is\nan OSM way: long circuits are several ways, so \"lines reached\" counts sections. Mapping is uneven: where a line is\nmissing, the fires near it read as far from the grid.\n\n**Distances** are measured on the server in an equal-area projection of the region (Albers for South America,\nAfrica, Australia and California) with DuckDB's `spatial` extension: to the nearest line for every detection (up to 50 km),\nand to every line within the chosen distance for the stretches and the table. The stretch a fire reaches is the part of\nthe line within that distance of it; a line's km reached joins the stretches of all the fires the filters keep, so\noverlaps count once.\n\n**In your browser.** The three tables (grid, detections, detection-line pairs) load once per region into DuckDB-WASM\n(Chaski); the timeline, the histograms, the filters and the map's GPU filter cross-filter them through one Mosaic\nselection, with no further request to the server. Changing *Near means within* reloads the pairs.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-distance": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How far each detection within 20 km of a line of 200 kV or more fell from the nearest one, in half-kilometre bins (the rest, farther, are grey on the map). Drag across it to keep a band of distance (0 to 5 km: the fires near the grid): every other panel follows.",
+          "id": 30,
+          "links": [],
+          "title": "Distance to the nearest line, within 20 km",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fireFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: near, filterBy: $fireFilters }\n    x: { bin: line_km, step: 0.5 }\n    y: { count: }\n    fill: band\n    inset: 0.5\n  - select: intervalX\n    as: $fireFilters\ncolorDomain: ['under 1 km', '1-2 km', '2-5 km', '5-10 km', '10-20 km', '20 km or more']\ncolorRange: ['#F2495C', '#FF7383', '#FF9830', '#FADE2A', '#8AB8FF', '#6E7681']\nxDomain: [0, 20]\nyGrid: true\nyTickFormat: '~s'\nxLabel: km to the nearest line →\nyLabel: null\nmarginLeft: 40\n",
+                "variables": "- param: fireFilters\n  column: line_km\n  from: dist_lo\n  to: dist_hi\n"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-filters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every filter of the dashboard, each counting what the others leave: distance to the nearest line, fire radiative power, the voltage of the nearest line, day or night, satellite, confidence and an area drawn on the map. Brush a histogram or pick values; × clears one filter, Clear all every one.",
+          "id": 11,
+          "links": [],
+          "title": "Filters",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 25,
+                "filters": "fireFilters",
+                "layout": "auto",
+                "maxValues": 8,
+                "noun": "detections",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-km": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH iv AS (\n  SELECT line_id, a_km AS a, b_km AS b FROM $pairs WHERE $__crossfilter($pairFilters)\n),\no AS (\n  SELECT *, max(b) OVER (PARTITION BY line_id ORDER BY a, b ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS seen\n  FROM iv\n),\nruns AS (\n  SELECT *, sum(CASE WHEN seen IS NULL OR a \u003e seen THEN 1 ELSE 0 END)\n              OVER (PARTITION BY line_id ORDER BY a, b ROWS UNBOUNDED PRECEDING) AS run\n  FROM o\n),\nreached AS (\n  SELECT line_id, sum(len) AS km FROM (SELECT line_id, run, max(b) - min(a) AS len FROM runs GROUP BY ALL) GROUP BY line_id\n)\nSELECT round(sum(km))::DOUBLE AS km FROM reached"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Length of line within the chosen distance of a detection the filters keep, overlaps counted once: the red stretches on the map, summed.",
+          "id": 23,
+          "links": [],
+          "title": "Km of line reached",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F2495C",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- In epoch milliseconds: a stat reduces numbers, not times.\nSELECT epoch_ms(max(time))::DOUBLE AS time FROM $fires"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How long ago the newest detection in the region was made. FIRMS publishes within about three hours of a pass; the dashboard reads the files when it opens, so reload for the newest.",
+          "id": 26,
+          "links": [],
+          "title": "Latest pass",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-lines": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(DISTINCT line_id)::DOUBLE AS lines FROM $pairs WHERE $__crossfilter($pairFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Lines (OpenStreetMap ways, so sections of a circuit) with at least one detection the filters keep within the chosen distance.",
+          "id": 22,
+          "links": [],
+          "title": "Lines reached",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F2495C",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every detection of the week, once: time, distance, power, satellite, day or\n-- night, confidence and voltage are filtered in the map, on the GPU, where the\n-- clauses of the fireFilters selection land.\nSELECT time, latitude, longitude, frp, frp_log, satellite, daynight, confidence, line_km, band, voltage\nFROM $fires"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT id, name, operator, kv, voltage, kind, km, geom FROM $grid"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The stretches of line within the chosen distance of a fire, one per line and\n-- kilometre along it, where the filters keep at least one detection.\nWITH kept AS (\n  SELECT line_id, cell, count(*)::DOUBLE AS detections, min(fire_km) AS fire_km, max(frp) AS frp,\n         max(time) AS last_seen\n  FROM $pairs\n  WHERE $__crossfilter($pairFilters)\n  GROUP BY line_id, cell\n)\nSELECT p.line_id, p.line AS name, p.operator, p.kv, k.detections, k.fire_km, k.frp, k.last_seen, p.geom\nFROM $pairs AS p\nJOIN kept AS k ON k.line_id = p.line_id AND k.cell = p.cell\nWHERE p.geom IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every VIIRS detection of the week, coloured by its distance to the nearest line of 200 kV or more (red under 1 km, grey 20 km or more), over the grid in blue; the stretches of line within the chosen distance of a fire the filters keep are drawn bright red. The timeline, the histograms and the other filters cut the points on the GPU. Draw an area (the polygon tool) to filter every panel to it.",
+          "id": 3,
+          "links": [],
+          "title": "Fires near the grid",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "fireArea",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapStyle": {
+                      "styleType": "dark-matter"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "window",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "count",
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "timezone": "UTC",
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "distance",
+                          "name": [
+                            "line_km"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            0,
+                            50
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "frp",
+                          "name": [
+                            "frp_log"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            -1,
+                            4
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "voltage",
+                          "name": [
+                            "voltage"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "daynight",
+                          "name": [
+                            "daynight"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "satellite",
+                          "name": [
+                            "satellite"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "confidence",
+                          "name": [
+                            "confidence"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "multiSelect",
+                          "value": [],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "time"
+                                },
+                                {
+                                  "name": "frp"
+                                },
+                                {
+                                  "name": "line_km"
+                                },
+                                {
+                                  "name": "voltage"
+                                },
+                                {
+                                  "name": "satellite"
+                                },
+                                {
+                                  "name": "daynight"
+                                },
+                                {
+                                  "name": "confidence"
+                                }
+                              ],
+                              "grafana-B": [
+                                {
+                                  "name": "name"
+                                },
+                                {
+                                  "name": "operator"
+                                },
+                                {
+                                  "name": "kv"
+                                },
+                                {
+                                  "name": "kind"
+                                },
+                                {
+                                  "name": "km"
+                                }
+                              ],
+                              "grafana-C": [
+                                {
+                                  "name": "name"
+                                },
+                                {
+                                  "name": "operator"
+                                },
+                                {
+                                  "name": "kv"
+                                },
+                                {
+                                  "name": "detections"
+                                },
+                                {
+                                  "name": "fire_km"
+                                },
+                                {
+                                  "name": "frp"
+                                },
+                                {
+                                  "name": "last_seen"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "fires",
+                        "exposed",
+                        "grid"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Fire detections, by distance to the nearest line",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "under 1 km",
+                                    "#F2495C"
+                                  ],
+                                  [
+                                    "1-2 km",
+                                    "#FF7383"
+                                  ],
+                                  [
+                                    "2-5 km",
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    "5-10 km",
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    "10-20 km",
+                                    "#8AB8FF"
+                                  ],
+                                  [
+                                    "20 km or more",
+                                    "#6E7681"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#F2495C",
+                                  "#FF7383",
+                                  "#FF9830",
+                                  "#FADE2A",
+                                  "#8AB8FF",
+                                  "#6E7681"
+                                ],
+                                "name": "Distance to the nearest line",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 2.5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "fires",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "band",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeField": null,
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              73,
+                              92
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Stretches within the distance of a fire",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.95,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                242,
+                                73,
+                                92
+                              ],
+                              "strokeOpacity": 0.95,
+                              "stroked": true,
+                              "thickness": 3,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "exposed",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              110,
+                              159,
+                              255
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Lines of 200 kV and more",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.6,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                110,
+                                159,
+                                255
+                              ],
+                              "strokeOpacity": 0.6,
+                              "stroked": true,
+                              "thickness": 1,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "grid",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicColumns": "longitude, latitude",
+                "mosaicSelection": "fireFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "lat",
+                    "variableTo": "lng",
+                    "zoom": 4.6
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-mapped": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT round(sum(km))::DOUBLE AS km FROM $grid"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Length of the lines of 200 kV and more in the region, as OpenStreetMap maps them (through Overture Maps). Coverage varies by country: a gap on the map may be a line nobody has mapped.",
+          "id": 25,
+          "links": [],
+          "title": "Km of line mapped",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-near": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) FILTER (WHERE line_km \u003c= try_cast($km AS DOUBLE))::DOUBLE AS near\nFROM $fires WHERE $__crossfilter($fireFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Detections the filters keep whose nearest line of 200 kV or more is within the chosen distance.",
+          "id": 21,
+          "links": [],
+          "title": "Within ${km} km of a line",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FF9830",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-power": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each detection within 20 km of a line placed by its distance to the nearest one (across) and its fire radiative power (up, in decades of MW: 1 is 10 MW, 2 is 100 MW), as density. It follows every filter.",
+          "id": 31,
+          "links": [],
+          "title": "Fire power by distance to the grid",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fireFilters: { select: crossfilter }\nplot:\n  - mark: raster\n    data: { from: near, filterBy: $fireFilters }\n    x: line_km\n    y: frp_log\n    fill: density\n    bandwidth: 0\n    pixelSize: 3\nxDomain: [0, 20]\nyDomain: [-0.5, 3]\ncolorScale: sqrt\ncolorScheme: inferno\nxLabel: km to the nearest line →\nyLabel: ↑ log₁₀ MW\nmarginLeft: 40\n",
+                "variables": ""
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-strongest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(frp) FILTER (WHERE line_km \u003c= try_cast($km AS DOUBLE))::DOUBLE AS frp\nFROM $fires WHERE $__crossfilter($fireFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The highest fire radiative power among the detections the filters keep within the chosen distance of a line.",
+          "id": 24,
+          "links": [],
+          "title": "Strongest near a line, MW",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-table": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "WITH iv AS (\n  SELECT line_id, a_km AS a, b_km AS b FROM $pairs WHERE $__crossfilter($pairFilters)\n),\no AS (\n  SELECT *, max(b) OVER (PARTITION BY line_id ORDER BY a, b ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS seen\n  FROM iv\n),\nruns AS (\n  SELECT *, sum(CASE WHEN seen IS NULL OR a \u003e seen THEN 1 ELSE 0 END)\n              OVER (PARTITION BY line_id ORDER BY a, b ROWS UNBOUNDED PRECEDING) AS run\n  FROM o\n),\nreached AS (\n  SELECT line_id, sum(len) AS km FROM (SELECT line_id, run, max(b) - min(a) AS len FROM runs GROUP BY ALL) GROUP BY line_id\n)\nSELECT any_value(p.line) AS \"Line\", any_value(p.osm_way) AS osm_way, any_value(p.operator) AS \"Operator\",\n       any_value(p.kv) AS \"kV\", count(*)::DOUBLE AS \"Near\", round(any_value(x.km), 1) AS \"Km reached\",\n       any_value(p.line_length_km) AS \"Length, km\", min(p.fire_km) AS \"Closest, km\",\n       round(max(p.frp)) AS \"Max MW\", max(p.time) AS \"Last seen\"\nFROM $pairs AS p\nJOIN reached AS x USING (line_id)\nWHERE $__crossfilter($pairFilters)\nGROUP BY p.line_id\nORDER BY \"Near\" DESC, \"Closest, km\"\nLIMIT 100"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The lines with the most detections within the chosen distance (Near) that the filters keep. Km reached is the length of the line within that distance of any of them, overlaps counted once; Closest is the nearest detection, Max MW the strongest. A line name opens its way in OpenStreetMap.",
+          "id": 40,
+          "links": [],
+          "title": "Lines with fires near",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "minWidth": 50
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "osm_way"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Near"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2495C",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Last seen"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeFromNow"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Line"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 220
+                      },
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "targetBlank": true,
+                            "title": "The way in OpenStreetMap",
+                            "url": "https://www.openstreetmap.org/way/${__data.fields.osm_way}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Operator"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 240
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Near"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "kV"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Detections per hour over the week, coloured by how far each fell from the nearest line. VIIRS sees a place about four times a day, so the bars come in passes, by day and by night. Drag across it to pick a window, or press play to run one through the week: the map, the charts, the cards and the table follow.",
+          "id": 10,
+          "links": [],
+          "title": "Timeline",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 84,
+                "filters": "fireFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "detections",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-voltage": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Detections the filters keep by the voltage of their nearest line, coloured by distance. Click a bar to keep that voltage.",
+          "id": 32,
+          "links": [],
+          "title": "Detections by voltage of the nearest line",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  fireFilters: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: fires, filterBy: $fireFilters }\n    x: { count: }\n    y: voltage\n    fill: band\n    inset: 0.5\n  - select: toggleY\n    as: $fireFilters\ncolorDomain: ['under 1 km', '1-2 km', '2-5 km', '5-10 km', '10-20 km', '20 km or more']\ncolorRange: ['#F2495C', '#FF7383', '#FF9830', '#FADE2A', '#8AB8FF', '#6E7681']\nyDomain: ['200-299 kV', '300-399 kV', '400-599 kV', '600 kV and more', 'none within 50 km']\nxTickFormat: '~s'\nxGrid: true\nxLabel: null\nyLabel: null\nmarginLeft: 120\n",
+                "variables": "- param: fireFilters\n  column: voltage\n  variable: voltage\n"
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-timeline"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-filters"
+              },
+              "height": 21,
+              "width": 5,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 21,
+              "width": 13,
+              "x": 5,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-detections"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-near"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-lines"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 12
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-km"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 15
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-strongest"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 18
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-mapped"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 21
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-latest"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 18,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-distance"
+              },
+              "height": 10,
+              "width": 9,
+              "x": 0,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-power"
+              },
+              "height": 10,
+              "width": 7,
+              "x": 9,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-voltage"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 16,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-table"
+              },
+              "height": 12,
+              "width": 24,
+              "x": 0,
+              "y": 37
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 9,
+              "width": 24,
+              "x": 0,
+              "y": 49
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus",
+      "energy",
+      "satellite"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "15m",
+        "30m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-7d",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Wildfires near the power grid",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Central Brazil",
+            "value": "central-brazil"
+          },
+          "description": "The region whose fires and grid are shown.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Region",
+          "multi": false,
+          "name": "region",
+          "options": [
+            {
+              "selected": true,
+              "text": "Central Brazil",
+              "value": "central-brazil"
+            },
+            {
+              "selected": false,
+              "text": "Southern Africa",
+              "value": "southern-africa"
+            },
+            {
+              "selected": false,
+              "text": "Eastern Australia",
+              "value": "eastern-australia"
+            },
+            {
+              "selected": false,
+              "text": "California",
+              "value": "california"
+            }
+          ],
+          "query": "Central Brazil : central-brazil, Southern Africa : southern-africa, Eastern Australia : eastern-australia, California : california",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "5",
+            "value": "5"
+          },
+          "description": "How close a fire has to be to a line to count as near it: the stretches of line on the map, the lines in the table and the near counts follow it. Changing it reloads the stretches.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Near means within (km)",
+          "multi": false,
+          "name": "km",
+          "options": [
+            {
+              "selected": false,
+              "text": "1",
+              "value": "1"
+            },
+            {
+              "selected": false,
+              "text": "2",
+              "value": "2"
+            },
+            {
+              "selected": true,
+              "text": "5",
+              "value": "5"
+            },
+            {
+              "selected": false,
+              "text": "10",
+              "value": "10"
+            },
+            {
+              "selected": false,
+              "text": "20",
+              "value": "20"
+            }
+          ],
+          "query": "1 : 1, 2 : 2, 5 : 5, 10 : 10, 20 : 20",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "",
+          "description": "FIRMS's name for the file that covers the region.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "FIRMS region",
+          "multi": false,
+          "name": "firms",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "SELECT firms FROM (SELECT * FROM (VALUES\n    ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n    ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n    ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n    ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n) v(region, firms, crs, s, w, n, e, lat, lng)) WHERE region = ${region:sqlstring}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "",
+          "description": "Where the map goes when the region changes.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Centre latitude",
+          "multi": false,
+          "name": "lat",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "SELECT lat FROM (SELECT * FROM (VALUES\n    ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n    ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n    ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n    ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n) v(region, firms, crs, s, w, n, e, lat, lng)) WHERE region = ${region:sqlstring}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "definition": "",
+          "description": "Where the map goes when the region changes.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Centre longitude",
+          "multi": false,
+          "name": "lng",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "SELECT lng FROM (SELECT * FROM (VALUES\n    ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n    ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n    ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n    ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n) v(region, firms, crs, s, w, n, e, lat, lng)) WHERE region = ${region:sqlstring}"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The high-voltage lines of the region, loaded into the browser once per region.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "grid",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "grid",
+              "refId": "grid",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the high-voltage grid of the region, once per region, for the map.\n-- Geometry simplified to about 200 m.\nWITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The lines of 200 kV and more, built once per instance from Overture\n-- Maps (the power lines of OpenStreetMap) by datasets/power-grid/build.sh, measured\n-- in an equal-area projection of the region.\ngrid AS (\n  SELECT l.id, l.osm_way, l.name, l.operator, l.kv, l.kind, l.km, l.geometry AS geom,\n         CASE WHEN l.kv \u003e= 600 THEN '600 kV and more' WHEN l.kv \u003e= 400 THEN '400-599 kV'\n              WHEN l.kv \u003e= 300 THEN '300-399 kV' ELSE '200-299 kV' END AS voltage,\n         ST_Transform(l.geometry, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_parquet('http://feeds/datasets/power-grid/lines.parquet') AS l, r\n  WHERE l.xmax \u003e= r.w AND l.xmin \u003c= r.e AND l.ymax \u003e= r.s AND l.ymin \u003c= r.n\n)\nSELECT id, name, operator, kv, voltage, kind, km,\n       ST_AsGeoJSON(ST_SimplifyPreserveTopology(geom, 0.002))::VARCHAR AS geom\nFROM grid",
+                  "refId": "grid"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The week of detections in the region with their distance to the grid, loaded into the browser once per region.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "fires",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "fires",
+              "refId": "fires",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: one row per detection, with its distance to the nearest line of\n-- the grid, measured in an equal-area projection of the region up to 50 km (50\n-- stands for 50 km or more). Loaded once per region: the timeline, the\n-- histograms and the map filter it in your browser.\nWITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The lines of 200 kV and more, built once per instance from Overture\n-- Maps (the power lines of OpenStreetMap) by datasets/power-grid/build.sh, measured\n-- in an equal-area projection of the region.\ngrid AS (\n  SELECT l.id, l.osm_way, l.name, l.operator, l.kv, l.kind, l.km, l.geometry AS geom,\n         CASE WHEN l.kv \u003e= 600 THEN '600 kV and more' WHEN l.kv \u003e= 400 THEN '400-599 kV'\n              WHEN l.kv \u003e= 300 THEN '300-399 kV' ELSE '200-299 kV' END AS voltage,\n         ST_Transform(l.geometry, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_parquet('http://feeds/datasets/power-grid/lines.parquet') AS l, r\n  WHERE l.xmax \u003e= r.w AND l.xmin \u003c= r.e AND l.ymax \u003e= r.s AND l.ymin \u003c= r.n\n),\n-- Every VIIRS detection of the last seven days in the region, from the three\n-- satellites, as FIRMS publishes them (through the gateway, cached).\nfires AS (\n  SELECT row_number() OVER () AS fire,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M') AS time,\n         latitude, longitude, frp, satellite, daynight, confidence::VARCHAR AS confidence,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n),\nnearest AS (\n  SELECT f.fire, arg_min(g.id, ST_Distance(f.xy, g.xy)) AS line_id, min(ST_Distance(f.xy, g.xy)) / 1000 AS km\n  FROM fires AS f JOIN grid AS g ON ST_DWithin(f.xy, g.xy, 50000)\n  GROUP BY f.fire\n)\nSELECT f.time, f.latitude, f.longitude, round(f.frp, 1) AS frp,\n       round(log10(greatest(f.frp, 0.1)), 3) AS frp_log,\n       CASE f.satellite WHEN 'N' THEN 'Suomi NPP' WHEN 'N20' THEN 'NOAA-20' WHEN 'N21' THEN 'NOAA-21'\n                        ELSE f.satellite END AS satellite,\n       CASE f.daynight WHEN 'N' THEN 'Night' ELSE 'Day' END AS daynight,\n       f.confidence,\n       round(least(coalesce(n.km, 50), 50), 2) AS line_km,\n       CASE WHEN coalesce(n.km, 50) \u003c 1 THEN 'under 1 km' WHEN coalesce(n.km, 50) \u003c 2 THEN '1-2 km' WHEN coalesce(n.km, 50) \u003c 5 THEN '2-5 km'\n            WHEN coalesce(n.km, 50) \u003c 10 THEN '5-10 km' WHEN coalesce(n.km, 50) \u003c 20 THEN '10-20 km' ELSE '20 km or more' END AS band,\n       coalesce(g.voltage, 'none within 50 km') AS voltage\nFROM fires AS f\nLEFT JOIN nearest AS n USING (fire)\nLEFT JOIN grid AS g ON g.id = n.line_id\nORDER BY f.time",
+                  "refId": "fires"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The detections within 20 km of a line, for the distance charts: a copy of part of fires, in the browser.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "near",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "near",
+              "refId": "near",
+              "source": {
+                "sql": "-- The detections within 20 km of a line, for the two distance charts: without\n-- the far ones (most of them), their bars keep a readable scale. Brushing them\n-- filters fires too: the Mosaic selection cuts any table with the column.\nSELECT * FROM $fires WHERE line_km \u003c 20",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Each detection and line within the chosen distance of each other, loaded into the browser once per region and distance.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "pairs",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "pairs",
+              "refId": "pairs",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: one row per detection and line within the chosen distance\n-- (${km} km) of each other: a fire between two lines counts for both. a_km and\n-- b_km bound the stretch of line within that distance of the fire, as\n-- kilometres along the line; the browser joins the stretches of a line to\n-- measure how much of it was reached. cell is the kilometre of line the fire\n-- faces, and one row per cell carries geom, the stretch that the fires of the\n-- cell reach together, for the map. line_km, band and the fire columns repeat\n-- those of fires, so the same filters cut both.\nWITH r AS (\n  SELECT * FROM (VALUES\n      ('central-brazil', 'South_America', 'ESRI:102033', -25, -60, -2, -38, -13.5, -49),\n      ('southern-africa', 'Southern_Africa', 'ESRI:102022', -22, 12, -5, 42, -13.5, 27),\n      ('eastern-australia', 'Australia_NewZealand', 'EPSG:3577', -39, 138, -10, 154, -24.5, 146),\n      ('california', 'USA_contiguous_and_Hawaii', 'EPSG:3310', 32.5, -124.5, 42, -114, 37.2, -119.3)\n  ) v(region, firms, crs, s, w, n, e, lat, lng)\n  WHERE region = ${region:sqlstring}\n),\n-- The lines of 200 kV and more, built once per instance from Overture\n-- Maps (the power lines of OpenStreetMap) by datasets/power-grid/build.sh, measured\n-- in an equal-area projection of the region.\ngrid AS (\n  SELECT l.id, l.osm_way, l.name, l.operator, l.kv, l.kind, l.km, l.geometry AS geom,\n         CASE WHEN l.kv \u003e= 600 THEN '600 kV and more' WHEN l.kv \u003e= 400 THEN '400-599 kV'\n              WHEN l.kv \u003e= 300 THEN '300-399 kV' ELSE '200-299 kV' END AS voltage,\n         ST_Transform(l.geometry, 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_parquet('http://feeds/datasets/power-grid/lines.parquet') AS l, r\n  WHERE l.xmax \u003e= r.w AND l.xmin \u003c= r.e AND l.ymax \u003e= r.s AND l.ymin \u003c= r.n\n),\n-- Every VIIRS detection of the last seven days in the region, from the three\n-- satellites, as FIRMS publishes them (through the gateway, cached).\nfires AS (\n  SELECT row_number() OVER () AS fire,\n         strptime(acq_date::VARCHAR || lpad(acq_time::VARCHAR, 4, '0'), '%Y-%m-%d%H%M') AS time,\n         latitude, longitude, frp, satellite, daynight, confidence::VARCHAR AS confidence,\n         ST_Transform(ST_Point(longitude, latitude), 'EPSG:4326', r.crs, always_xy := true) AS xy\n  FROM read_csv(['http://feeds/firms/noaa-20-viirs-c2/J1_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/noaa-21-viirs-c2/J2_VIIRS_C2_${firms:raw}_7d.csv',\n                 'http://feeds/firms/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_${firms:raw}_7d.csv'], union_by_name = true), r\n  WHERE latitude BETWEEN r.s AND r.n AND longitude BETWEEN r.w AND r.e\n),\npairs AS (\n  SELECT f.fire, g.id AS line_id, ST_Distance(f.xy, g.xy) AS d, ST_Length(g.xy) AS len,\n         ST_LineLocatePoint(g.xy, f.xy) * ST_Length(g.xy) AS pos\n  FROM fires AS f JOIN grid AS g ON ST_DWithin(f.xy, g.xy, ${km:raw} * 1000)\n),\nreach AS (\n  SELECT *, min(d) OVER (PARTITION BY fire) AS nearest, floor(pos / 1000) AS cell,\n         greatest(pos - sqrt(greatest(pow(${km:raw} * 1000, 2) - d * d, 0)), 0) AS a,\n         least(pos + sqrt(greatest(pow(${km:raw} * 1000, 2) - d * d, 0)), len) AS b\n  FROM pairs\n),\ncells AS (\n  SELECT line_id, cell, min(fire) AS fire, min(a) AS a, max(b) AS b, any_value(len) AS len\n  FROM reach GROUP BY line_id, cell\n),\nshapes AS (\n  SELECT c.line_id, c.fire,\n         ST_AsGeoJSON(ST_Transform(ST_Simplify(ST_LineSubstring(g.xy, c.a / nullif(c.len, 0), c.b / nullif(c.len, 0)), 50),\n                                   r.crs, 'EPSG:4326', always_xy := true))::VARCHAR AS geom\n  FROM cells AS c JOIN grid AS g ON g.id = c.line_id, r\n)\nSELECT f.time, f.latitude, f.longitude, round(f.frp, 1) AS frp,\n       round(log10(greatest(f.frp, 0.1)), 3) AS frp_log,\n       CASE f.satellite WHEN 'N' THEN 'Suomi NPP' WHEN 'N20' THEN 'NOAA-20' WHEN 'N21' THEN 'NOAA-21'\n                        ELSE f.satellite END AS satellite,\n       CASE f.daynight WHEN 'N' THEN 'Night' ELSE 'Day' END AS daynight,\n       f.confidence,\n       round(p.nearest / 1000, 2) AS line_km,\n       CASE WHEN p.nearest / 1000 \u003c 1 THEN 'under 1 km' WHEN p.nearest / 1000 \u003c 2 THEN '1-2 km' WHEN p.nearest / 1000 \u003c 5 THEN '2-5 km'\n            WHEN p.nearest / 1000 \u003c 10 THEN '5-10 km' WHEN p.nearest / 1000 \u003c 20 THEN '10-20 km' ELSE '20 km or more' END AS band,\n       g.voltage, p.line_id, g.osm_way, g.name AS line, g.operator, g.kv, round(p.len / 1000, 1) AS line_length_km,\n       round(p.d / 1000, 2) AS fire_km, p.cell, round(p.a / 1000, 3) AS a_km, round(p.b / 1000, 3) AS b_km,\n       s.geom\nFROM reach AS p\nJOIN fires AS f USING (fire)\nJOIN grid AS g ON g.id = p.line_id\nLEFT JOIN shapes AS s ON s.line_id = p.line_id AND s.fire = p.fire\nORDER BY f.time",
+                  "refId": "pairs"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "From",
+          "name": "fireFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "To",
+          "name": "fireTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Distance from",
+          "name": "dist_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Distance to",
+          "name": "dist_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "FRP from",
+          "name": "frp_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "FRP to",
+          "name": "frp_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Drawn area",
+          "name": "fireArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Voltage",
+          "multi": true,
+          "name": "voltage",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "voltage",
+              "sql": "SELECT DISTINCT voltage AS value FROM $fires WHERE voltage IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Day or night",
+          "multi": true,
+          "name": "daynight",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "daynight",
+              "sql": "SELECT DISTINCT daynight AS value FROM $fires WHERE daynight IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Satellite",
+          "multi": true,
+          "name": "satellite",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "satellite",
+              "sql": "SELECT DISTINCT satellite AS value FROM $fires WHERE satellite IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Confidence",
+          "multi": true,
+          "name": "confidence",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "confidence",
+              "sql": "SELECT DISTINCT confidence AS value FROM $fires WHERE confidence IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "fireFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$fires",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$fireFrom",
+                  "label": "Time (UTC)",
+                  "name": "time",
+                  "to": "$fireTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "line_km",
+                  "from": "$dist_lo",
+                  "label": "Distance to the nearest line (km)",
+                  "name": "distance",
+                  "to": "$dist_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "frp_log",
+                  "from": "$frp_lo",
+                  "label": "Fire radiative power (log₁₀ MW)",
+                  "name": "frp",
+                  "to": "$frp_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "voltage",
+                  "label": "Voltage of the nearest line",
+                  "name": "voltage",
+                  "type": "in",
+                  "variable": "$voltage"
+                },
+                {
+                  "column": "daynight",
+                  "label": "Day or night",
+                  "name": "daynight",
+                  "type": "in",
+                  "variable": "$daynight"
+                },
+                {
+                  "column": "satellite",
+                  "label": "Satellite",
+                  "name": "satellite",
+                  "type": "in",
+                  "variable": "$satellite"
+                },
+                {
+                  "column": "confidence",
+                  "label": "Confidence",
+                  "name": "confidence",
+                  "type": "in",
+                  "variable": "$confidence"
+                },
+                {
+                  "label": "Drawn area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$fireArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "fireFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "pairFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$pairs",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$fireFrom",
+                  "label": "Time (UTC)",
+                  "name": "time",
+                  "to": "$fireTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "line_km",
+                  "from": "$dist_lo",
+                  "label": "Distance to the nearest line (km)",
+                  "name": "distance",
+                  "to": "$dist_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "frp_log",
+                  "from": "$frp_lo",
+                  "label": "Fire radiative power (log₁₀ MW)",
+                  "name": "frp",
+                  "to": "$frp_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "voltage",
+                  "label": "Voltage of the line",
+                  "name": "voltage",
+                  "type": "in",
+                  "variable": "$voltage"
+                },
+                {
+                  "column": "daynight",
+                  "label": "Day or night",
+                  "name": "daynight",
+                  "type": "in",
+                  "variable": "$daynight"
+                },
+                {
+                  "column": "satellite",
+                  "label": "Satellite",
+                  "name": "satellite",
+                  "type": "in",
+                  "variable": "$satellite"
+                },
+                {
+                  "column": "confidence",
+                  "label": "Confidence",
+                  "name": "confidence",
+                  "type": "in",
+                  "variable": "$confidence"
+                },
+                {
+                  "label": "Drawn area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$fireArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "pairFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

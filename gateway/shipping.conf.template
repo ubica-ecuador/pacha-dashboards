@@ -1,0 +1,23 @@
+    # PortWatch datasets as CSV, by ArcGIS Hub item id, from the address the
+    # Hub's download link redirects to. Rebuilt weekly, so a day's cache.
+    location ~ "^/portwatch/items/([0-9a-f]{32})\.csv$" {
+        set $arcgis_hub hub.arcgis.com;
+        proxy_pass https://$arcgis_hub/api/v3/datasets/$1_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1;
+        proxy_set_header Host $arcgis_hub;
+        proxy_cache shipping;
+        proxy_cache_valid 200 1d;
+        proxy_read_timeout 120s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+
+    # FRED series, observations as JSON, by series id. A BLS price index gains
+    # one value a month, so a day's cache. The cache key is the path, without
+    # the api_key, so the API key never reaches a cache entry or a dashboard.
+    location ~ ^/fred/series/([A-Z0-9]+)$ {
+        set $fred api.stlouisfed.org;
+        proxy_pass https://$fred/fred/series/observations?series_id=$1&file_type=json&api_key=${FRED_API_KEY};
+        proxy_set_header Host $fred;
+        proxy_cache shipping;
+        proxy_cache_valid 200 1d;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

@@ -1,0 +1,12 @@
+# TriMet (Portland), behind trimet-live and trimet-live-fleet, whose every
+# call needs an AppID in the query string. This is where it is added, so no
+# dashboard carries it: not in git, and not in the query inspector of a public
+# instance. It comes from TRIMET_APP_ID in .env, which Pacha's gateway writes
+# into this template at start (its NGINX_ENVSUBST_FILTER lets TRIMET_* through;
+# nginx's own variables stay as they are). Without it TriMet answers 403.
+proxy_cache_path /var/cache/nginx/trimet levels=1:2 keys_zone=trimet:10m
+                 max_size=200m inactive=2h use_temp_path=off;
+map $args $trimet_args {
+    ''      'appID=${TRIMET_APP_ID}';
+    default 'appID=${TRIMET_APP_ID}&$args';
+}

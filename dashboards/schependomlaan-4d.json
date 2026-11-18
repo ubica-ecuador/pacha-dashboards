@@ -1,0 +1,1323 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "schependomlaan-4d"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "A 2015 apartment block in Nijmegen as its contractor planned it: the IFC model’s 3,505 elements drawn by Kepler Plus’s 4D Model layer on the day their tasks start and finish, played with the Time Brush, with the counts, the schedule and the S-curve in Mosaic following every frame, and the elements the as-built log has finished late.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "What you are looking at",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "An apartment block of ten homes on the Schependomlaan in Nijmegen, built in 2015, as its contractor planned it: the architect's IFC model (3,505 elements) linked to the construction schedule, a 4D model. Brush the days or press play: the map shows the building at the brush's end, each element still to build as a faint outline, under construction in amber while its task runs, and built in the colour picked above, by kind of element or by the as-built log, which marks in red the elements whose task finished late. The counts, the schedule (amber as a task runs, grey once it is done) and the S-curve follow every frame, all in your browser. Tilt and turn the map with the right button or Ctrl+drag; hover an element for its task.\n\nData: [Dataset Schependomlaan](https://github.com/openBIMstandards/Archive-DataSetSchependomlaan) (TU Eindhoven, Hendriks Bouw en Ontwikkeling, ROOT, TNO, RAAMAC), CC BY 4.0: the as-planned IFC exported from Synchro, the planned and the as-built event logs (task names are the contractor's Dutch ones, in English beside them). The model stands on the building's outline in the Dutch building register (BAG); its colours are Pacha's, by kind of element. A planned schedule: the dates are the plan's, and the as-built log only says on time or late.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Elements under construction each day, shell and structure apart from fit-out.\n-- The brush's end is the instant the map, the counts, the schedule and the\n-- S-curve show; it reaches the Mosaic panels through the build Selection.\nSELECT time, active_shell AS \"Shell and structure\", active_fitout AS \"Fit-out\"\nFROM $daily\nORDER BY time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bars: elements under construction each day, shell and structure apart from fit-out.",
+          "id": 2,
+          "links": [],
+          "title": "Days of the build: brush or press play",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "auto",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Shell and structure"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#e39a2d",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Fit-out"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#c9c3b5",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1d",
+                "cursorColor": "",
+                "cursorFollow": false,
+                "cursorPublish": false,
+                "density": "comfortable",
+                "domain": "data",
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": false,
+                "instantVariable": "",
+                "loop": false,
+                "mosaicColumn": "time",
+                "mosaicSelection": "build",
+                "output": "variables",
+                "outsideOpacity": 35,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 200,
+                "publishWhileDragging": true,
+                "publishWhilePlaying": false,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 120,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "incremental",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The elements, coloured once built by the pick above (colour_by).\nSELECT guid, task, task_nl, kind, ifc_class, as_built,\n       CASE WHEN '${colour:raw}' = 'as_built' THEN as_built ELSE kind END AS colour_by,\n       time, finish_date, latitude, longitude\nFROM $parts\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each element of the IFC model, drawn from model.glb and placed on the building's BAG outline.",
+          "id": 3,
+          "links": [],
+          "title": "The building at the brush’s end",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "fieldMappings": {},
+                "fitOnVariables": [],
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "gazetteer": "public/gazetteer/countries.json",
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": true,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 5.311266168215042,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 51.84195107678219,
+                      "longitude": 5.836159716850254,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 62.826411469760224,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 19.5405467990271
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-liberty",
+                      "threeDBuildingColor": [
+                        230.92517894351974,
+                        227.2005792831404,
+                        223.47597962276103
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": true,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "count",
+                            "defaultTimeFormat": "L",
+                            "interval": "1-day",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1424649600000,
+                            1438646400000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "task"
+                              },
+                              {
+                                "name": "task_nl"
+                              },
+                              {
+                                "name": "time"
+                              },
+                              {
+                                "name": "finish_date"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "as_built"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "schependomlaan-4d"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              139,
+                              144,
+                              151
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Schependomlaan",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Brickwork",
+                                    "#9c5a44"
+                                  ],
+                                  [
+                                    "Concrete",
+                                    "#a3a29c"
+                                  ],
+                                  [
+                                    "Windows and doors",
+                                    "#5f7f95"
+                                  ],
+                                  [
+                                    "Finishes",
+                                    "#c9c3b5"
+                                  ],
+                                  [
+                                    "Other",
+                                    "#7d8288"
+                                  ],
+                                  [
+                                    "On time",
+                                    "#8b9097"
+                                  ],
+                                  [
+                                    "Finished late",
+                                    "#d4483e"
+                                  ],
+                                  [
+                                    "No as-built record",
+                                    "#c9c3b5"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#9c5a44",
+                                  "#a3a29c",
+                                  "#5f7f95",
+                                  "#c9c3b5",
+                                  "#7d8288",
+                                  "#8b9097",
+                                  "#d4483e",
+                                  "#c9c3b5"
+                                ],
+                                "name": "Schependomlaan",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "modelActiveColour": [
+                                227,
+                                154,
+                                45
+                              ],
+                              "modelAltitude": 0,
+                              "modelBuiltColour": "layer",
+                              "modelFinishField": "finish_date",
+                              "modelFuture": "ghost",
+                              "modelHeading": 339.5,
+                              "modelIdField": "guid",
+                              "modelStartField": "auto",
+                              "modelUnscheduled": true,
+                              "modelUrl": "https://pacha.ubica.dev/datasets/schependomlaan/model.glb",
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "schependomlaan-4d",
+                          "type": "model4d",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "colour_by",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 5,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Elements whose tasks have all finished by the brush’s end.",
+          "id": 4,
+          "links": [],
+          "title": "Built",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Elements whose tasks have all finished by the brush’s end.\nparams:\n  build: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: daily, filterBy: $build }\n    text: { max: built_n }\n    frameAnchor: middle\n    fill: \"currentColor\"\n    fontSize: 36\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Elements with a task running at the brush’s end.",
+          "id": 5,
+          "links": [],
+          "title": "Under construction",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Elements with a task running at the brush’s end.\nparams:\n  build: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: daily, filterBy: $build }\n    text: { argmax: [active_n, time] }\n    frameAnchor: middle\n    fill: \"#e39a2d\"\n    fontSize: 36\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Elements whose first task has not started by the brush’s end.",
+          "id": 6,
+          "links": [],
+          "title": "Still to build",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Elements whose first task has not started by the brush’s end.\nparams:\n  build: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: daily, filterBy: $build }\n    text: { min: still_n }\n    frameAnchor: middle\n    fill: \"#8b9097\"\n    fontSize: 36\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Built elements the as-built log has finished late.",
+          "id": 7,
+          "links": [],
+          "title": "Built late",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# Built elements the as-built log has finished late.\nparams:\n  build: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: daily, filterBy: $build }\n    text: { max: late_n }\n    frameAnchor: middle\n    fill: \"#d4483e\"\n    fontSize: 36\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The contractor’s tasks from first start to last finish: amber up to the brush’s end while a task runs, grey once it has finished. Red: elements the as-built log has finished late.",
+          "id": 8,
+          "links": [],
+          "title": "The schedule, filled up to the brush’s end",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The contractor's tasks from first start to last finish (faint), filled day by\n# day up to the brush's end (amber) and grey once the task has finished; the line\n# is the brush's end. Red: elements of the task the as-built log has late.\nparams:\n  build: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: tasks }\n    x1: start\n    x2: finish_end\n    y: task\n    fill: \"#8b9097\"\n    fillOpacity: 0.16\n    inset: 2\n  - mark: barX\n    data: { from: taskdays, filterBy: $build }\n    x1: { min: time }\n    x2: { max: day_end }\n    y: task\n    fill: \"#e39a2d\"\n    inset: 2\n  - mark: barX\n    data: { from: tasks, filterBy: $build }\n    x1: start\n    x2: finish_end\n    y: task\n    fill: \"#8b9097\"\n    inset: 2\n  - mark: text\n    data: { from: tasks }\n    x: finish_end\n    y: task\n    text: late_label\n    textAnchor: start\n    dx: 4\n    fill: \"#d4483e\"\n    fontWeight: 600\n  - mark: ruleX\n    data: { from: daily, filterBy: $build }\n    x: { max: time }\n    stroke: currentColor\n    strokeWidth: 1.5\nyDomain: [\"Set up supports\", \"Formwork, lift shaft walls\", \"Foundation formwork and footings\", \"Pour foundations\", \"Masonry below grade\", \"Lay hollow-core ground floor\", \"Top pour, hollow-core floor\", \"Place steel columns\", \"Sand-lime block walls\", \"Lay precast floor plates\", \"Steel beams\", \"Precast stairs and landings\", \"Glue sand-lime elements\", \"Erect\", \"Concrete pour\", \"Outer facade\", \"Place window frames\", \"Brickwork\", \"Precast stairs, 2nd floor\", \"Roof steelwork\", \"Lift shaft blockwork\", \"Pitched roof, gutters, flat roofs\", \"Roof windows\", \"Zinc dormer cladding\", \"Flat roof covering\", \"Fit-out\", \"Zinc gutters\"]\nxDomain: Fixed\nyLabel: null\nxLabel: null\nyTickSize: 0\nmarginLeft: 175\nmarginRight: 26\nmarginTop: 8\nmarginBottom: 26\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Day by day, the share of the model’s elements whose tasks have started and finished, as planned, drawn up to the brush’s end over the whole plan.",
+          "id": 9,
+          "links": [],
+          "title": "The S-curve: share of the building started (amber) and built (grey)",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# The planned S-curve: the share of elements started (amber) and built (grey),\n# faint over the whole plan and drawn up to the brush's end, the line.\nparams:\n  build: { select: crossfilter }\nplot:\n  - mark: lineY\n    data: { from: daily }\n    x: time\n    y: started_pct\n    stroke: \"#e39a2d\"\n    strokeOpacity: 0.25\n  - mark: lineY\n    data: { from: daily }\n    x: time\n    y: built_pct\n    stroke: \"#8b9097\"\n    strokeOpacity: 0.3\n  - mark: areaY\n    data: { from: daily, filterBy: $build }\n    x: time\n    y: built_pct\n    fill: \"#8b9097\"\n    fillOpacity: 0.25\n  - mark: lineY\n    data: { from: daily, filterBy: $build }\n    x: time\n    y: built_pct\n    stroke: \"#8b9097\"\n    strokeWidth: 2\n  - mark: lineY\n    data: { from: daily, filterBy: $build }\n    x: time\n    y: started_pct\n    stroke: \"#e39a2d\"\n    strokeWidth: 2\n  - mark: ruleX\n    data: { from: daily, filterBy: $build }\n    x: { max: time }\n    stroke: currentColor\n    strokeWidth: 1.5\nxDomain: Fixed\nyDomain: [0, 100]\nxLabel: null\nyLabel: ↑ Share of the elements (%)\nmarginLeft: 44\nmarginRight: 16\nmarginTop: 18\nmarginBottom: 26\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 0,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 6,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 12,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 6
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 18,
+              "width": 15,
+              "x": 0,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 6,
+              "width": 9,
+              "x": 15,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              },
+              "height": 19,
+              "width": 9,
+              "x": 15,
+              "y": 16
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              },
+              "height": 7,
+              "width": 15,
+              "x": 0,
+              "y": 28
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2015-02-20T00:00:00.000Z",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "2016-01-06T00:00:00.000Z"
+    },
+    "title": "Schependomlaan in 4D: an apartment block built task by task",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Kind of element",
+            "value": "kind"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Built elements coloured by",
+          "multi": false,
+          "name": "colour",
+          "options": [],
+          "query": "Kind of element : kind, As-built log : as_built",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "parts",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "parts",
+              "refId": "parts",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- One row per IFC element of the model (datasets/schependomlaan/build.sh): its\n-- GlobalId names its part in model.glb, time and finish_date are its tasks' span\n-- in the contractor's schedule. Every row carries the model's origin, which\n-- places it: the centre of its plan, fitted to the building's outline in the\n-- Dutch building register (BAG pand 0268100000084949).\nSELECT guid, task, task_nl, kind, ifc_class, as_built,\n       start_date::TIMESTAMP AS time, finish_date::TIMESTAMP AS finish_date,\n       51.8418694 AS latitude, 5.8361778 AS longitude\nFROM 'http://feeds/datasets/schependomlaan/parts.parquet'\n",
+                  "refId": "clouds"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "daily",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "daily",
+              "refId": "daily",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Each day of the build, where the elements stand at its start, as the map\n-- draws them: started, built (their tasks finished), under construction (a task\n-- running), still to build, built late (the as-built log), and the shares. The\n-- brush keeps the days up to its end, so the largest count kept is the count at\n-- the brush's end (and arg_max for the one that goes down again).\nWITH p AS (SELECT *, start_date::TIMESTAMP AS s, finish_date::TIMESTAMP AS f FROM 'http://feeds/datasets/schependomlaan/parts.parquet'),\nn AS (SELECT count(*) AS total FROM p)\nSELECT d AS time,\n       count(*) FILTER (WHERE s \u003c= d) AS started_n,\n       count(*) FILTER (WHERE f \u003c d) AS built_n,\n       count(*) FILTER (WHERE s \u003c= d AND f \u003e= d) AS active_n,\n       count(*) FILTER (WHERE s \u003e d) AS still_n,\n       count(*) FILTER (WHERE f \u003c d AND as_built = 'Finished late') AS late_n,\n       count(*) FILTER (WHERE s \u003c= d AND f \u003e= d AND task \u003c\u003e 'Fit-out') AS active_shell,\n       count(*) FILTER (WHERE s \u003c= d AND f \u003e= d AND task = 'Fit-out') AS active_fitout,\n       100.0 * count(*) FILTER (WHERE s \u003c= d) / any_value(total) AS started_pct,\n       100.0 * count(*) FILTER (WHERE f \u003c d) / any_value(total) AS built_pct\nFROM generate_series(TIMESTAMP '2015-02-23', TIMESTAMP '2016-01-04', INTERVAL 1 DAY) AS g(d) CROSS JOIN n CROSS JOIN p\nGROUP BY d\nORDER BY d\n",
+                  "refId": "clouds"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "tasks",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "tasks",
+              "refId": "tasks",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- The contractor's tasks, each stamped (time) with its last day, so the brush\n-- keeps the tasks that have finished by its end; finish_end closes the bar.\nSELECT task, task_nl, start_date::TIMESTAMP AS start, finish_date::TIMESTAMP AS time,\n       (finish_date + 1)::TIMESTAMP AS finish_end, elements, late,\n       CASE WHEN late \u003e 0 THEN late::VARCHAR ELSE '' END AS late_label\nFROM 'http://feeds/datasets/schependomlaan/tasks.parquet'\n",
+                  "refId": "clouds"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "taskdays",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "taskdays",
+              "refId": "taskdays",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- One row per task and day it runs: the brush keeps the days up to its end, and\n-- the schedule fills each task's bar that far.\nSELECT task, time, time + INTERVAL 1 DAY AS day_end\nFROM (SELECT task, unnest(generate_series(start_date::TIMESTAMP, finish_date::TIMESTAMP, INTERVAL 1 DAY)) AS time\n      FROM 'http://feeds/datasets/schependomlaan/tasks.parquet')\n",
+                  "refId": "clouds"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2015-02-26T00:00:00.000Z",
+            "value": "2015-02-26T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Window from",
+          "name": "t0",
+          "query": "2015-02-26T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2015-06-30T00:00:00.000Z",
+            "value": "2015-06-30T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Window to",
+          "name": "t1",
+          "query": "2015-06-30T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

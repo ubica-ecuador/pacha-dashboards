@@ -1,0 +1,2745 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "baltic-cable-watch"
+  },
+  "spec": {
+    "annotations": [],
+    "cursorSync": "Off",
+    "description": "Ships lingering over the Baltic's undersea cables and pipelines, live: every ship Finland's AIS network hears, the telecom and power cables and gas pipelines with a fence around each, and a Grafana alert for every cargo ship or tanker that stops or anchors inside one, drawn on the ship.",
+    "editable": true,
+    "elements": {
+      "card-alerts": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) FILTER (WHERE alert = 'Alert')::DOUBLE AS firing,\n       count(*) FILTER (WHERE alert = 'Watching')::DOUBLE AS pending\nFROM $lingering\nWHERE mmsi IN (SELECT mmsi FROM $ships WHERE $__crossfilter($shipFilters))\n  AND cable IN (SELECT cable FROM $cables WHERE $__crossfilter($cableFilters))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The rule's alerts in Grafana's alerting API: firing (lingering for 15 minutes or more) and pending.",
+          "id": 13,
+          "links": [],
+          "title": "Alerts",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "0",
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "firing"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E02F44",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "displayName",
+                        "value": "Firing"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "pending"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "displayName",
+                        "value": "Pending"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- In epoch milliseconds: a stat reads it as a time.\nSELECT epoch_ms(max(time))::DOUBLE AS latest FROM $ships"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The newest AIS position among the ships heard.",
+          "id": 14,
+          "links": [],
+          "title": "Latest position",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "0",
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-lingering": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(DISTINCT mmsi)::DOUBLE AS lingering\nFROM $lingering\nWHERE mmsi IN (SELECT mmsi FROM $ships WHERE $__crossfilter($shipFilters))\n  AND cable IN (SELECT cable FROM $cables WHERE $__crossfilter($cableFilters))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cargo ships and tankers inside a cable's fence, under 3 knots or at anchor: the alert's condition now.",
+          "id": 12,
+          "links": [],
+          "title": "Lingering over a cable",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FF9830",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "0",
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-ships": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*)::DOUBLE AS ships FROM $ships WHERE $__crossfilter($shipFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Ships Digitraffic's AIS stations heard in the last 15 minutes.",
+          "id": 10,
+          "links": [],
+          "title": "Ships heard",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "0",
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "card-watched": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) FILTER (WHERE type IN ('Cargo', 'Tanker'))::DOUBLE AS watched FROM $ships WHERE $__crossfilter($shipFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Of the ships heard, those of AIS types 70–89: the ones the alert watches.",
+          "id": 11,
+          "links": [],
+          "title": "Cargo ships and tankers",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "0",
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "Since 2023 anchors dragged along the floor of the Baltic have cut cables and a gas pipeline\n(Balticconnector, C-Lion1, Estlink 2 among them). This dashboard watches for the signature,\nlive, and raises a **Grafana alert** for every cargo ship or tanker that lingers over one.\n\n- **Ships**: [Digitraffic](https://www.digitraffic.fi/en/marine-traffic/), Fintraffic's AIS\n  network: the latest position, name and type of every ship its Finnish coastal stations hear,\n  through the gateway (cached 30 s). The Gulf of Finland, the Bothnian Sea and the northern\n  Baltic, roughly 57.5°–66° N; the southern Baltic is out of its range. A ship counts while it\n  was heard in the last 15 minutes. Flag: the first three digits of the MMSI.\n- **Cables and pipelines** (`datasets/baltic-cables`, built on each instance): telecom cables\n  from [TeleGeography's Submarine Cable Map](https://www.submarinecablemap.com) (CC BY-SA 4.0),\n  power cables from [OpenStreetMap](https://www.openstreetmap.org) (ODbL), gas pipelines from\n  [EMODnet Human Activities](https://emodnet.ec.europa.eu/en/human-activities) (CC BY 4.0).\n- **Fences**: a kilometre each side of each cable, less 5 km around every port (EMODnet) and\n  cable landing, where ships are expected to wait.\n\n**The alert** (`provisioning/alerting/baltic-cable-watch.yaml`): a query on the server DuckDB\nfinds the cargo ships and tankers inside a fence that are slow (under 3 knots) or at anchor;\na SQL expression makes each row an alert, labelled by ship and cable. **Pending** (amber) as a\nship arrives, **firing** (red) after 15 minutes; at anchor and moving 2–6 knots, the sign of a\ndragged anchor, it is critical. The map is Kepler Plus's **Active alerts**: each alert drawn on\nits ship (Entity label `mmsi`) and each fence coloured by the alerts naming its cable (Zone\nlabel `cable`), blue when quiet.\n\n**Filters**: the server reads the ships, the cables and the alerts on each refresh (every\nminute) and hands them to **Chaski**, DuckDB in your browser; the filters on the left are\nanswered there, at once, by the map (ships, alerts, cables and fences), the cards and the tables.\n\nA slow ship over a cable is not an accusation: anchorages off busy ports lie over pipelines,\nand ships wait there for a berth. The watch shows where to look.",
+                "mode": "markdown"
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-cable-filters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Filter the cables and pipelines by kind or by name: the map draws only those and their fences, and the tables and cards count only the ships over them.",
+          "id": 7,
+          "links": [],
+          "title": "Cables and pipelines",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 20,
+                "filters": "cableFilters",
+                "layout": "auto",
+                "maxValues": 6,
+                "noun": "cables",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-cables": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT c.cable AS \"Cable\", c.kind AS \"Kind\", c.km AS \"Km\",\n       count(DISTINCT l.mmsi)::DOUBLE AS \"Lingering\", c.url,\n       c.centre_lat + (epoch_ms(now()) % 10) * 1e-6 AS clat, c.centre_lng AS clng\nFROM (SELECT * FROM $cables WHERE $__crossfilter($cableFilters)) c\nLEFT JOIN (SELECT mmsi, cable FROM $lingering WHERE mmsi IN (SELECT mmsi FROM $ships WHERE $__crossfilter($shipFilters))) l ON l.cable = c.cable\nGROUP BY ALL\nORDER BY \"Lingering\" DESC, c.kind, c.cable"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The cables and pipelines in the waters Digitraffic hears, their length in the Baltic (km) and the ships of the ship filters lingering over each now. A click on the name flies the map to the cable, or opens its source.",
+          "id": 4,
+          "links": [],
+          "title": "Cables and pipelines in the watched waters",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "url"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 6
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "gas": {
+                                "color": "#B877D9",
+                                "index": 2
+                              },
+                              "power": {
+                                "color": "#FADE2A",
+                                "index": 1
+                              },
+                              "telecom": {
+                                "color": "#00D1C1",
+                                "index": 0
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 70
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Km"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 60
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Lingering"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 100
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "clat"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 6
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "clng"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 6
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Cable"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Show ${__data.fields.Cable} on the map",
+                            "url": "/d/baltic-cable-watch?var-clat=${__data.fields.clat}\u0026var-clng=${__data.fields.clng}\u0026${alertState:queryparam}\u0026${watch:queryparam}\u0026${shipType:queryparam}\u0026${flag:queryparam}\u0026${navStatus:queryparam}\u0026var-knots_lo=${knots_lo}\u0026var-knots_hi=${knots_hi}\u0026${cableKind:queryparam}\u0026${cable:queryparam}"
+                          },
+                          {
+                            "targetBlank": true,
+                            "title": "${__data.fields.Cable}: source",
+                            "url": "${__data.fields.url}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Lingering"
+                  }
+                ]
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-history": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the rule state history Grafana keeps (anyone can read it),\n-- over the panel range: one row per change of state of one alert.\nSET VARIABLE history = 'http://localhost:3000/api/v1/rules/history?ruleUID=baltic-cable-watch\u0026limit=20000'\n  || '\u0026from=' || epoch(CAST($__timeFrom() AS TIMESTAMP))::BIGINT || '\u0026to=' || epoch(CAST($__timeTo() AS TIMESTAMP))::BIGINT;\nWITH frame AS (\n  SELECT content::JSON AS j FROM read_text(getvariable('history'))\n), changes AS (\n  SELECT make_timestamp(unnest(from_json(j -\u003e '$.data.values[0]', '[\"BIGINT\"]'))) AS time,\n         unnest(from_json(j -\u003e '$.data.values[1]', '[\"VARCHAR\"]')) AS text,\n         unnest(from_json(j -\u003e '$.data.values[3]', '[\"VARCHAR\"]')) AS state\n  FROM frame\n), spans AS (\n  -- An alert is its labels; each state holds until its next change.\n  SELECT split_part(text, ' - ', 1) AS alert, state, time AS since,\n         coalesce(lead(time) OVER (PARTITION BY split_part(text, ' - ', 1) ORDER BY time), now()::TIMESTAMP) AS until\n  FROM changes\n), minutes AS (\n  SELECT unnest(generate_series(time_bucket(INTERVAL 1 MINUTE, CAST($__timeFrom() AS TIMESTAMP)),\n                                least(CAST($__timeTo() AS TIMESTAMP), now()::TIMESTAMP), INTERVAL 1 MINUTE)) AS time\n)\nSELECT m.time,\n       count(*) FILTER (WHERE s.state LIKE 'Alerting%')::DOUBLE AS firing,\n       count(*) FILTER (WHERE s.state LIKE 'Pending%')::DOUBLE AS pending\nFROM minutes m\nLEFT JOIN spans s ON s.since \u003c= m.time AND m.time \u003c s.until\nGROUP BY m.time\nORDER BY m.time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {
+                "timeFrom": "24h"
+              },
+              "transformations": []
+            }
+          },
+          "description": "The alerts of the rule minute by minute over the last 24 hours, rebuilt from the state history Grafana keeps for it: firing (red, lingering 15 minutes or more) and pending (amber), stacked. Not filtered.",
+          "id": 8,
+          "links": [],
+          "title": "Alerts over the last 24 hours",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisLabel": "alerts",
+                    "axisPlacement": "auto",
+                    "axisSoftMin": 0,
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 40,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineInterpolation": "stepAfter",
+                    "lineWidth": 1,
+                    "pointSize": 4,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "min": 0,
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "firing"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E02F44",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "displayName",
+                        "value": "Firing"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "pending"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FF9830",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "displayName",
+                        "value": "Pending"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "max"
+                  ],
+                  "displayMode": "list",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The ships the filters keep, for the Fleet layer: lingering over a cable in\n-- red, cargo ships and tankers in white, the rest in grey.\nSELECT mmsi, ship, label, type, flag, status, knots, course, destination, watch, alert, over_cable, time, latitude, longitude\nFROM $ships\nWHERE $__crossfilter($shipFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The fences of the cables the filters keep, as the zones of the alerts: Active\n-- alerts colours each by the alerts whose cable label names it.\nSELECT cable, kind, fence AS geometry\nFROM $cables\nWHERE $__crossfilter($cableFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The cables the filters keep. Called name, not cable: a frame with the zone\n-- column and a geometry would be read as zones too.\nSELECT cable AS name, kind, operator, km, geometry\nFROM $cables\nWHERE $__crossfilter($cableFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The ships and cables the filters keep. Ships Digitraffic heard in the last 15 minutes (cargo and tankers white, lingering over a cable red), the cables and pipelines (telecom teal, power yellow, gas purple) and their fences, coloured by the alert rule: red firing, amber pending, blue quiet.",
+          "id": 2,
+          "links": [],
+          "title": "Ships over the Baltic's cables and pipelines",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "entityField": "mmsi",
+                  "entityLabel": "mmsi",
+                  "filter": "watch=baltic-cables",
+                  "show": true,
+                  "states": [
+                    "firing",
+                    "pending"
+                  ],
+                  "zoneField": "cable",
+                  "zoneLabel": "cable",
+                  "zones": true
+                },
+                "basemap": "openfreemap-dark",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 60.6,
+                      "longitude": 23.6,
+                      "pitch": 0,
+                      "zoom": 5.6
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": null,
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "ship"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "flag"
+                              },
+                              {
+                                "name": "status"
+                              },
+                              {
+                                "name": "knots"
+                              },
+                              {
+                                "name": "destination"
+                              },
+                              {
+                                "name": "over_cable"
+                              }
+                            ],
+                            "grafana-ALERTS": [
+                              {
+                                "name": "ship"
+                              },
+                              {
+                                "name": "type"
+                              },
+                              {
+                                "name": "flag"
+                              },
+                              {
+                                "name": "cable"
+                              },
+                              {
+                                "name": "signature"
+                              },
+                              {
+                                "name": "state"
+                              },
+                              {
+                                "name": "since"
+                              }
+                            ],
+                            "grafana-ALERT_ZONES": [
+                              {
+                                "name": "zone"
+                              },
+                              {
+                                "name": "state"
+                              },
+                              {
+                                "name": "firing"
+                              },
+                              {
+                                "name": "pending"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "operator"
+                              },
+                              {
+                                "name": "km"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "alerts",
+                        "ships",
+                        "cables",
+                        "fences"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-ALERTS",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Alerts",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "firing",
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    "pending",
+                                    "#FF9830"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF9830"
+                                ],
+                                "name": "Alert state",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.4,
+                              "outline": true,
+                              "radius": 24,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 2
+                            }
+                          },
+                          "id": "alerts",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              232,
+                              232,
+                              232
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Ships",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "label",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Lingering",
+                                    "#F2495C"
+                                  ],
+                                  [
+                                    "Cargo or tanker",
+                                    "#E8E8E8"
+                                  ],
+                                  [
+                                    "Other",
+                                    "#7B8089"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#F2495C",
+                                  "#E8E8E8",
+                                  "#7B8089"
+                                ],
+                                "name": "Watch",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "fleetAltitudeField": "none",
+                              "fleetAssetField": "mmsi",
+                              "fleetCard": true,
+                              "fleetCardField": "knots",
+                              "fleetCardMinutes": 60,
+                              "fleetCardOpacity": 0.9,
+                              "fleetCardSize": "L",
+                              "fleetCardUnit": "kn",
+                              "fleetCardWindow": "auto",
+                              "fleetChangeColours": "neutral",
+                              "fleetCrossValue": true,
+                              "fleetCrosshair": false,
+                              "fleetDisplay": "3d",
+                              "fleetFollow": "$follow",
+                              "fleetFollowFirst": false,
+                              "fleetFollowMode": "custom",
+                              "fleetGhost": false,
+                              "fleetHeadingField": "course",
+                              "fleetHeadingFrom": "auto",
+                              "fleetIcons": "{}",
+                              "fleetLabel": "none",
+                              "fleetLabelColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "fleetLabelOffset": -1,
+                              "fleetLabelOutline": true,
+                              "fleetLabelSize": 12,
+                              "fleetMarker": "silhouette",
+                              "fleetModelColours": "original",
+                              "fleetOrbitSecs": 60,
+                              "fleetPinned": [],
+                              "fleetPublishCrosshair": false,
+                              "fleetPulseBy": "auto",
+                              "fleetPulseCycle": 3,
+                              "fleetPulseLength": 0.3,
+                              "fleetPulseRange": [
+                                1,
+                                4
+                              ],
+                              "fleetReckon": true,
+                              "fleetRemember": "on",
+                              "fleetRememberMin": 30,
+                              "fleetShadow": false,
+                              "fleetSilent": "hide",
+                              "fleetSize": 40,
+                              "fleetSmooth": true,
+                              "fleetSmoothMs": 1000,
+                              "fleetSpeedField": "knots",
+                              "fleetSpeedUnit": "kt",
+                              "fleetStaleAfter": 15,
+                              "fleetStatusFrom": "column",
+                              "fleetStem": false,
+                              "fleetStopSpeed": 0.5,
+                              "fleetTimeField": "time",
+                              "fleetTimeRef": "live",
+                              "fleetTrail": 30,
+                              "fleetTrailAnimate": false,
+                              "fleetTrailDashLength": 0.5,
+                              "fleetTrailFade": true,
+                              "fleetTrailMode": "fleet",
+                              "fleetTrailOpacity": 0.5,
+                              "fleetTrailShow": true,
+                              "fleetTrailSpacing": 18,
+                              "fleetTrailStyle": "comets",
+                              "fleetTrailWidth": 2,
+                              "fleetTripsGap": 0,
+                              "fleetTripsTrail": 24,
+                              "fleetTypeField": "type",
+                              "fleetZoomRate": 0.5,
+                              "fleetZoomRef": 11,
+                              "fleetZoomScale": true,
+                              "opacity": 1,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#2C7BB6",
+                                  "#00A6CA",
+                                  "#00CCBC",
+                                  "#90EB9D",
+                                  "#FFFF8C",
+                                  "#F9D057",
+                                  "#F29E2E",
+                                  "#E76818"
+                                ],
+                                "name": "Altitude",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "ships",
+                          "type": "fleet",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "watch",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              0,
+                              209,
+                              193
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Cables and pipelines",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.9,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColor": [
+                                0,
+                                209,
+                                193
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "telecom",
+                                    "#00D1C1"
+                                  ],
+                                  [
+                                    "power",
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    "gas",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#00D1C1",
+                                  "#FADE2A",
+                                  "#B877D9"
+                                ],
+                                "name": "Cable kind",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.85,
+                              "stroked": true,
+                              "thickness": 0.4,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "cables",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              28,
+                              39,
+                              56
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-ALERT_ZONES",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Fences",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "firing",
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    "pending",
+                                    "#FF9830"
+                                  ],
+                                  [
+                                    "normal",
+                                    "#1C2738"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF9830",
+                                  "#1C2738"
+                                ],
+                                "name": "Fence state",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 5,
+                              "enable3d": false,
+                              "filled": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.45,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "firing",
+                                    "#FF5A6A"
+                                  ],
+                                  [
+                                    "pending",
+                                    "#FFB357"
+                                  ],
+                                  [
+                                    "normal",
+                                    "#3B5378"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FF5A6A",
+                                  "#FFB357",
+                                  "#3B5378"
+                                ],
+                                "name": "Fence outline",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.9,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "fences",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishWhilePlaying": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "lat",
+                    "variableTo": "lng",
+                    "zoom": 12
+                  },
+                  {
+                    "field": "",
+                    "source": "center",
+                    "variable": "clat",
+                    "variableTo": "clng",
+                    "zoom": 7
+                  }
+                ],
+                "viewportVariables": {}
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "panel-ship-filters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Filter the ships: by the state of their alert, what the watch makes of them, type, flag, AIS status or speed. Each is counted under the others; a × clears one. The map, the cards and the tables follow.",
+          "id": 6,
+          "links": [],
+          "title": "Ships",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 20,
+                "filters": "shipFilters",
+                "layout": "auto",
+                "maxValues": 8,
+                "noun": "ships",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-ships": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- lat and lng: where the map goes when it starts to follow the ship.\nSELECT ship AS \"Ship\", mmsi, cable AS \"Cable\", alert AS \"Alert\", since AS \"Since\", latitude AS lat, longitude AS lng\nFROM $lingering\nWHERE mmsi IN (SELECT mmsi FROM $ships WHERE $__crossfilter($shipFilters))\n  AND cable IN (SELECT cable FROM $cables WHERE $__crossfilter($cableFilters))\nORDER BY CASE alert WHEN 'Alert' THEN 0 WHEN 'Watching' THEN 1 ELSE 2 END, since, ship"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each cargo ship or tanker inside a cable's fence, slow or at anchor (the map's tooltip says which), with its alert's state in Grafana: Watching (pending) as it arrives, Alert (firing) after 15 minutes. Since: when its alert entered that state. A click on the name makes the map follow the ship with its card open, or opens it on MarineTraffic.",
+          "id": 3,
+          "links": [],
+          "title": "Ships lingering over a cable",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "mmsi"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 6
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Alert"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Alert": {
+                                "color": "#E02F44",
+                                "index": 0
+                              },
+                              "Clear": {
+                                "color": "#73BF69",
+                                "index": 2
+                              },
+                              "Not evaluated yet": {
+                                "color": "#8E8E8E",
+                                "index": 3
+                              },
+                              "Watching": {
+                                "color": "#FF9830",
+                                "index": 1
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ship"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Alert"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 90
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Since"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "dateTimeFromNow"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lat"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 6
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "lng"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 6
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ship"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Follow ${__data.fields.Ship} on the map",
+                            "url": "/d/baltic-cable-watch?var-follow=${__data.fields.mmsi}\u0026var-lat=${__data.fields.lat}\u0026var-lng=${__data.fields.lng}\u0026${alertState:queryparam}\u0026${watch:queryparam}\u0026${shipType:queryparam}\u0026${flag:queryparam}\u0026${navStatus:queryparam}\u0026var-knots_lo=${knots_lo}\u0026var-knots_hi=${knots_hi}\u0026${cableKind:queryparam}\u0026${cable:queryparam}"
+                          },
+                          {
+                            "targetBlank": true,
+                            "title": "${__data.fields.Ship} on MarineTraffic",
+                            "url": "https://www.marinetraffic.com/en/ais/details/ships/mmsi:${__data.fields.mmsi}"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-ships"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-watched"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 4,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-lingering"
+              },
+              "height": 3,
+              "width": 5,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-alerts"
+              },
+              "height": 3,
+              "width": 6,
+              "x": 14,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "card-latest"
+              },
+              "height": 3,
+              "width": 4,
+              "x": 20,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-ship-filters"
+              },
+              "height": 14,
+              "width": 5,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-cable-filters"
+              },
+              "height": 8,
+              "width": 5,
+              "x": 0,
+              "y": 17
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 22,
+              "width": 12,
+              "x": 5,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-ships"
+              },
+              "height": 11,
+              "width": 7,
+              "x": 17,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-cables"
+              },
+              "height": 11,
+              "width": 7,
+              "x": 17,
+              "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-history"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 25
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 10,
+              "width": 24,
+              "x": 0,
+              "y": 33
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "plus",
+      "maritime",
+      "network",
+      "energy",
+      "alerting",
+      "live"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
+        "30s",
+        "1m",
+        "5m",
+        "15m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-30m",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Baltic cable watch: ships lingering over undersea cables",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Every ship heard in the last 15 minutes, in the browser, loaded on each refresh.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "ships",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "ships",
+              "refId": "ships",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "SET force_download = true;\n-- The setting would outlive this query on the pooled connection it ran on, and stop the range reads of every Parquet read there later, so the result goes through a temp table (one per connection) and the setting is put back before it is returned.\nCREATE OR REPLACE TEMP TABLE fd_baltic_1 AS\nWITH heard AS (\n  -- Digitraffic: the latest position of each ship its AIS stations heard; a ship\n  -- counts while it was heard in the last 15 minutes.\n  SELECT unnest(features, recursive := true)\n  FROM read_json('http://feeds/digitraffic/ais/locations', columns = {features:\n    'STRUCT(geometry STRUCT(coordinates DOUBLE[]), properties STRUCT(mmsi BIGINT, sog DOUBLE, cog DOUBLE, navStat INTEGER, timestampExternal BIGINT))[]'})\n), vessels AS (\n  -- Name, type and destination, from the static AIS messages of each ship.\n  SELECT * FROM read_json('http://feeds/digitraffic/ais/vessels',\n    columns = {mmsi: 'BIGINT', name: 'VARCHAR', shipType: 'INTEGER', destination: 'VARCHAR'})\n), ships AS (\n  SELECT h.mmsi::VARCHAR AS mmsi,\n    coalesce(nullif(trim(v.name), ''), 'MMSI ' || h.mmsi) AS ship,\n    -- AIS ship types, named so the Fleet layer picks a fitting silhouette.\n    CASE\n      WHEN v.shipType BETWEEN 70 AND 79 THEN 'Cargo'\n      WHEN v.shipType BETWEEN 80 AND 89 THEN 'Tanker'\n      WHEN v.shipType BETWEEN 60 AND 69 THEN 'Passenger'\n      WHEN v.shipType BETWEEN 40 AND 49 THEN 'High-speed craft'\n      WHEN v.shipType = 30 THEN 'Fishing'\n      WHEN v.shipType IN (31, 32, 52) THEN 'Tug'\n      WHEN v.shipType = 35 THEN 'Military vessel'\n      WHEN v.shipType = 36 THEN 'Sailing'\n      WHEN v.shipType = 37 THEN 'Pleasure boat'\n      WHEN v.shipType = 50 THEN 'Pilot boat'\n      WHEN v.shipType = 51 THEN 'Rescue boat'\n      WHEN v.shipType = 55 THEN 'Patrol boat'\n      ELSE 'Other vessel'\n    END AS type,\n    coalesce(f.flag, 'MID ' || (h.mmsi // 1000000)) AS flag,\n    nullif(trim(v.destination), '') AS destination,\n    h.coordinates[2] AS latitude, h.coordinates[1] AS longitude,\n    -- 102.3 knots and 360° are how AIS says not available.\n    CASE WHEN h.sog \u003c 102.3 THEN h.sog END AS knots,\n    CASE WHEN h.cog \u003c 360 THEN h.cog END AS course,\n    CASE h.navStat WHEN 0 THEN 'Under way' WHEN 1 THEN 'At anchor' WHEN 2 THEN 'Not under command'\n      WHEN 3 THEN 'Restricted manoeuvrability' WHEN 4 THEN 'Constrained by draught' WHEN 5 THEN 'Moored'\n      WHEN 6 THEN 'Aground' WHEN 7 THEN 'Fishing' WHEN 8 THEN 'Sailing' ELSE 'Not reported' END AS status,\n    h.navStat AS nav_status,\n    -- Watched: cargo ships and tankers, the ships whose anchors have cut cables.\n    coalesce(v.shipType BETWEEN 70 AND 89, false) AS watched,\n    make_timestamp(h.timestampExternal * 1000) AS heard\n  FROM heard h\n  LEFT JOIN vessels v USING (mmsi)\n  LEFT JOIN 'http://feeds/datasets/baltic-cables/flags.parquet' f ON f.mid = h.mmsi // 1000000\n  WHERE make_timestamp(h.timestampExternal * 1000) \u003e now() - INTERVAL 15 MINUTE\n    AND h.coordinates[2] BETWEEN -90 AND 90\n), fences AS (\n  -- The cables in the waters the Digitraffic stations hear, with their fences.\n  SELECT cable, kind, operator, url, km, line, fence\n  FROM 'http://feeds/datasets/baltic-cables/cables.parquet'\n  WHERE ST_Intersects(line, ST_MakeEnvelope(17, 57.5, 33, 66.5))\n), lingering AS (\n  -- A watched ship inside a fence, slow (under 3 knots) or at anchor and\n  -- moving under 6 (an anchor dragged along the seabed): one row per ship and\n  -- cable.\n  SELECT s.*, c.cable, c.kind,\n    CASE WHEN s.nav_status = 1 AND s.knots \u003e= 2 THEN 'Dragging anchor'\n         WHEN s.nav_status = 1 THEN 'At anchor'\n         ELSE 'Slow' END AS signature\n  FROM ships s JOIN fences c ON ST_Contains(c.fence, ST_Point(s.longitude, s.latitude))\n  WHERE s.watched AND (s.knots \u003c 3 OR (s.nav_status = 1 AND s.knots \u003c 6))\n), api AS (\n  -- Grafana's own alerting API, as an anonymous viewer reads it: this rule's\n  -- alerts, one per ship and cable.\n  SELECT unnest(from_json(r -\u003e '$.alerts', '[\"JSON\"]')) AS a\n  FROM (SELECT unnest(from_json(g -\u003e '$.rules', '[\"JSON\"]')) AS r\n        FROM (SELECT unnest(from_json(content::JSON -\u003e '$.data.groups', '[\"JSON\"]')) AS g\n              FROM read_text('http://localhost:3000/api/prometheus/grafana/api/v1/rules')))\n  WHERE r -\u003e\u003e '$.uid' = 'baltic-cable-watch'\n), alerts AS (\n  SELECT a -\u003e\u003e '$.labels.mmsi' AS mmsi, a -\u003e\u003e '$.labels.cable' AS cable,\n         CASE a -\u003e\u003e '$.state' WHEN 'Alerting' THEN 'Alert' WHEN 'Pending' THEN 'Watching' ELSE 'Clear' END AS alert,\n         (a -\u003e\u003e '$.activeAt')::TIMESTAMPTZ AS since\n  FROM api\n)\n-- Server side, on each load and refresh: every ship heard in the last 15\n-- minutes, with what it is doing over the cables and the gravest state of its\n-- alerts (Alert firing, Watching pending).\nSELECT s.mmsi, s.ship, s.ship || ' · ' || s.flag AS label, s.type, s.flag, s.status,\n       round(s.knots, 1) AS knots, s.course, s.destination,\n       CASE WHEN l.cables IS NOT NULL THEN 'Lingering'\n            WHEN s.watched THEN 'Cargo or tanker' ELSE 'Other' END AS watch,\n       coalesce(a.alert, 'No alert') AS alert,\n       l.cables AS over_cable, s.heard AS time, s.latitude, s.longitude\nFROM ships s\nLEFT JOIN (SELECT mmsi, string_agg(cable, ', ' ORDER BY cable) AS cables FROM lingering GROUP BY mmsi) l USING (mmsi)\nLEFT JOIN (SELECT mmsi, CASE WHEN bool_or(alert = 'Alert') THEN 'Alert'\n                             WHEN bool_or(alert = 'Watching') THEN 'Watching' END AS alert\n           FROM alerts GROUP BY mmsi) a USING (mmsi)\nORDER BY s.mmsi\n;\nSET force_download = false;\nSELECT * FROM fd_baltic_1",
+                  "refId": "ships"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The cargo ships and tankers lingering over a cable, with their alert state.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "lingering",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "lingering",
+              "refId": "lingering",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "SET force_download = true;\n-- The setting would outlive this query on the pooled connection it ran on, and stop the range reads of every Parquet read there later, so the result goes through a temp table (one per connection) and the setting is put back before it is returned.\nCREATE OR REPLACE TEMP TABLE fd_baltic_2 AS\nWITH heard AS (\n  -- Digitraffic: the latest position of each ship its AIS stations heard; a ship\n  -- counts while it was heard in the last 15 minutes.\n  SELECT unnest(features, recursive := true)\n  FROM read_json('http://feeds/digitraffic/ais/locations', columns = {features:\n    'STRUCT(geometry STRUCT(coordinates DOUBLE[]), properties STRUCT(mmsi BIGINT, sog DOUBLE, cog DOUBLE, navStat INTEGER, timestampExternal BIGINT))[]'})\n), vessels AS (\n  -- Name, type and destination, from the static AIS messages of each ship.\n  SELECT * FROM read_json('http://feeds/digitraffic/ais/vessels',\n    columns = {mmsi: 'BIGINT', name: 'VARCHAR', shipType: 'INTEGER', destination: 'VARCHAR'})\n), ships AS (\n  SELECT h.mmsi::VARCHAR AS mmsi,\n    coalesce(nullif(trim(v.name), ''), 'MMSI ' || h.mmsi) AS ship,\n    -- AIS ship types, named so the Fleet layer picks a fitting silhouette.\n    CASE\n      WHEN v.shipType BETWEEN 70 AND 79 THEN 'Cargo'\n      WHEN v.shipType BETWEEN 80 AND 89 THEN 'Tanker'\n      WHEN v.shipType BETWEEN 60 AND 69 THEN 'Passenger'\n      WHEN v.shipType BETWEEN 40 AND 49 THEN 'High-speed craft'\n      WHEN v.shipType = 30 THEN 'Fishing'\n      WHEN v.shipType IN (31, 32, 52) THEN 'Tug'\n      WHEN v.shipType = 35 THEN 'Military vessel'\n      WHEN v.shipType = 36 THEN 'Sailing'\n      WHEN v.shipType = 37 THEN 'Pleasure boat'\n      WHEN v.shipType = 50 THEN 'Pilot boat'\n      WHEN v.shipType = 51 THEN 'Rescue boat'\n      WHEN v.shipType = 55 THEN 'Patrol boat'\n      ELSE 'Other vessel'\n    END AS type,\n    coalesce(f.flag, 'MID ' || (h.mmsi // 1000000)) AS flag,\n    nullif(trim(v.destination), '') AS destination,\n    h.coordinates[2] AS latitude, h.coordinates[1] AS longitude,\n    -- 102.3 knots and 360° are how AIS says not available.\n    CASE WHEN h.sog \u003c 102.3 THEN h.sog END AS knots,\n    CASE WHEN h.cog \u003c 360 THEN h.cog END AS course,\n    CASE h.navStat WHEN 0 THEN 'Under way' WHEN 1 THEN 'At anchor' WHEN 2 THEN 'Not under command'\n      WHEN 3 THEN 'Restricted manoeuvrability' WHEN 4 THEN 'Constrained by draught' WHEN 5 THEN 'Moored'\n      WHEN 6 THEN 'Aground' WHEN 7 THEN 'Fishing' WHEN 8 THEN 'Sailing' ELSE 'Not reported' END AS status,\n    h.navStat AS nav_status,\n    -- Watched: cargo ships and tankers, the ships whose anchors have cut cables.\n    coalesce(v.shipType BETWEEN 70 AND 89, false) AS watched,\n    make_timestamp(h.timestampExternal * 1000) AS heard\n  FROM heard h\n  LEFT JOIN vessels v USING (mmsi)\n  LEFT JOIN 'http://feeds/datasets/baltic-cables/flags.parquet' f ON f.mid = h.mmsi // 1000000\n  WHERE make_timestamp(h.timestampExternal * 1000) \u003e now() - INTERVAL 15 MINUTE\n    AND h.coordinates[2] BETWEEN -90 AND 90\n), fences AS (\n  -- The cables in the waters the Digitraffic stations hear, with their fences.\n  SELECT cable, kind, operator, url, km, line, fence\n  FROM 'http://feeds/datasets/baltic-cables/cables.parquet'\n  WHERE ST_Intersects(line, ST_MakeEnvelope(17, 57.5, 33, 66.5))\n), lingering AS (\n  -- A watched ship inside a fence, slow (under 3 knots) or at anchor and\n  -- moving under 6 (an anchor dragged along the seabed): one row per ship and\n  -- cable.\n  SELECT s.*, c.cable, c.kind,\n    CASE WHEN s.nav_status = 1 AND s.knots \u003e= 2 THEN 'Dragging anchor'\n         WHEN s.nav_status = 1 THEN 'At anchor'\n         ELSE 'Slow' END AS signature\n  FROM ships s JOIN fences c ON ST_Contains(c.fence, ST_Point(s.longitude, s.latitude))\n  WHERE s.watched AND (s.knots \u003c 3 OR (s.nav_status = 1 AND s.knots \u003c 6))\n), api AS (\n  -- Grafana's own alerting API, as an anonymous viewer reads it: this rule's\n  -- alerts, one per ship and cable.\n  SELECT unnest(from_json(r -\u003e '$.alerts', '[\"JSON\"]')) AS a\n  FROM (SELECT unnest(from_json(g -\u003e '$.rules', '[\"JSON\"]')) AS r\n        FROM (SELECT unnest(from_json(content::JSON -\u003e '$.data.groups', '[\"JSON\"]')) AS g\n              FROM read_text('http://localhost:3000/api/prometheus/grafana/api/v1/rules')))\n  WHERE r -\u003e\u003e '$.uid' = 'baltic-cable-watch'\n), alerts AS (\n  SELECT a -\u003e\u003e '$.labels.mmsi' AS mmsi, a -\u003e\u003e '$.labels.cable' AS cable,\n         CASE a -\u003e\u003e '$.state' WHEN 'Alerting' THEN 'Alert' WHEN 'Pending' THEN 'Watching' ELSE 'Clear' END AS alert,\n         (a -\u003e\u003e '$.activeAt')::TIMESTAMPTZ AS since\n  FROM api\n)\n-- Server side: each cargo ship or tanker lingering over a cable, with the state\n-- of its alert in Grafana.\nSELECT l.mmsi, l.ship, l.flag, l.type, l.cable, l.kind, l.signature, round(l.knots, 1) AS knots,\n       coalesce(a.alert, 'Not evaluated yet') AS alert, a.since, l.latitude, l.longitude\nFROM lingering l\nLEFT JOIN alerts a ON a.mmsi = l.mmsi AND a.cable = l.cable\n;\nSET force_download = false;\nSELECT * FROM fd_baltic_2",
+                  "refId": "lingering"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The cables and pipelines in the watched waters, their lines and fences.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "cables",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cables",
+              "refId": "cables",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "SET force_download = true;\n-- The setting would outlive this query on the pooled connection it ran on, and stop the range reads of every Parquet read there later, so the result goes through a temp table (one per connection) and the setting is put back before it is returned.\nCREATE OR REPLACE TEMP TABLE fd_baltic_3 AS\nWITH heard AS (\n  -- Digitraffic: the latest position of each ship its AIS stations heard; a ship\n  -- counts while it was heard in the last 15 minutes.\n  SELECT unnest(features, recursive := true)\n  FROM read_json('http://feeds/digitraffic/ais/locations', columns = {features:\n    'STRUCT(geometry STRUCT(coordinates DOUBLE[]), properties STRUCT(mmsi BIGINT, sog DOUBLE, cog DOUBLE, navStat INTEGER, timestampExternal BIGINT))[]'})\n), vessels AS (\n  -- Name, type and destination, from the static AIS messages of each ship.\n  SELECT * FROM read_json('http://feeds/digitraffic/ais/vessels',\n    columns = {mmsi: 'BIGINT', name: 'VARCHAR', shipType: 'INTEGER', destination: 'VARCHAR'})\n), ships AS (\n  SELECT h.mmsi::VARCHAR AS mmsi,\n    coalesce(nullif(trim(v.name), ''), 'MMSI ' || h.mmsi) AS ship,\n    -- AIS ship types, named so the Fleet layer picks a fitting silhouette.\n    CASE\n      WHEN v.shipType BETWEEN 70 AND 79 THEN 'Cargo'\n      WHEN v.shipType BETWEEN 80 AND 89 THEN 'Tanker'\n      WHEN v.shipType BETWEEN 60 AND 69 THEN 'Passenger'\n      WHEN v.shipType BETWEEN 40 AND 49 THEN 'High-speed craft'\n      WHEN v.shipType = 30 THEN 'Fishing'\n      WHEN v.shipType IN (31, 32, 52) THEN 'Tug'\n      WHEN v.shipType = 35 THEN 'Military vessel'\n      WHEN v.shipType = 36 THEN 'Sailing'\n      WHEN v.shipType = 37 THEN 'Pleasure boat'\n      WHEN v.shipType = 50 THEN 'Pilot boat'\n      WHEN v.shipType = 51 THEN 'Rescue boat'\n      WHEN v.shipType = 55 THEN 'Patrol boat'\n      ELSE 'Other vessel'\n    END AS type,\n    coalesce(f.flag, 'MID ' || (h.mmsi // 1000000)) AS flag,\n    nullif(trim(v.destination), '') AS destination,\n    h.coordinates[2] AS latitude, h.coordinates[1] AS longitude,\n    -- 102.3 knots and 360° are how AIS says not available.\n    CASE WHEN h.sog \u003c 102.3 THEN h.sog END AS knots,\n    CASE WHEN h.cog \u003c 360 THEN h.cog END AS course,\n    CASE h.navStat WHEN 0 THEN 'Under way' WHEN 1 THEN 'At anchor' WHEN 2 THEN 'Not under command'\n      WHEN 3 THEN 'Restricted manoeuvrability' WHEN 4 THEN 'Constrained by draught' WHEN 5 THEN 'Moored'\n      WHEN 6 THEN 'Aground' WHEN 7 THEN 'Fishing' WHEN 8 THEN 'Sailing' ELSE 'Not reported' END AS status,\n    h.navStat AS nav_status,\n    -- Watched: cargo ships and tankers, the ships whose anchors have cut cables.\n    coalesce(v.shipType BETWEEN 70 AND 89, false) AS watched,\n    make_timestamp(h.timestampExternal * 1000) AS heard\n  FROM heard h\n  LEFT JOIN vessels v USING (mmsi)\n  LEFT JOIN 'http://feeds/datasets/baltic-cables/flags.parquet' f ON f.mid = h.mmsi // 1000000\n  WHERE make_timestamp(h.timestampExternal * 1000) \u003e now() - INTERVAL 15 MINUTE\n    AND h.coordinates[2] BETWEEN -90 AND 90\n), fences AS (\n  -- The cables in the waters the Digitraffic stations hear, with their fences.\n  SELECT cable, kind, operator, url, km, line, fence\n  FROM 'http://feeds/datasets/baltic-cables/cables.parquet'\n  WHERE ST_Intersects(line, ST_MakeEnvelope(17, 57.5, 33, 66.5))\n), lingering AS (\n  -- A watched ship inside a fence, slow (under 3 knots) or at anchor and\n  -- moving under 6 (an anchor dragged along the seabed): one row per ship and\n  -- cable.\n  SELECT s.*, c.cable, c.kind,\n    CASE WHEN s.nav_status = 1 AND s.knots \u003e= 2 THEN 'Dragging anchor'\n         WHEN s.nav_status = 1 THEN 'At anchor'\n         ELSE 'Slow' END AS signature\n  FROM ships s JOIN fences c ON ST_Contains(c.fence, ST_Point(s.longitude, s.latitude))\n  WHERE s.watched AND (s.knots \u003c 3 OR (s.nav_status = 1 AND s.knots \u003c 6))\n)\n-- Server side: the cables in the watched waters, each line clipped to them and\n-- its fence, as GeoJSON.\nSELECT cable, kind, operator, km, url,\n       ST_Y(ST_Centroid(ST_Intersection(line, ST_MakeEnvelope(17, 57.5, 33, 66.5)))) AS centre_lat,\n       ST_X(ST_Centroid(ST_Intersection(line, ST_MakeEnvelope(17, 57.5, 33, 66.5)))) AS centre_lng,\n       ST_AsGeoJSON(ST_Simplify(ST_Intersection(line, ST_MakeEnvelope(17, 57.5, 33, 66.5)), 0.0005))::VARCHAR AS geometry,\n       ST_AsGeoJSON(fence)::VARCHAR AS fence\nFROM fences\nORDER BY kind, cable\n;\nSET force_download = false;\nSELECT * FROM fd_baltic_3",
+                  "refId": "cables"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Alert",
+          "multi": true,
+          "name": "alertState",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "alertState",
+              "sql": "SELECT DISTINCT alert AS value FROM $ships ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Type",
+          "multi": true,
+          "name": "shipType",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "shipType",
+              "sql": "SELECT DISTINCT type AS value FROM $ships WHERE type IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Flag",
+          "multi": true,
+          "name": "flag",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "flag",
+              "sql": "SELECT DISTINCT flag AS value FROM $ships WHERE flag IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Status",
+          "multi": true,
+          "name": "navStatus",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "navStatus",
+              "sql": "SELECT DISTINCT status AS value FROM $ships WHERE status IS NOT NULL ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Watch",
+          "multi": true,
+          "name": "watch",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "watch",
+              "sql": "SELECT DISTINCT watch AS value FROM $ships ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Knots from",
+          "name": "knots_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Knots to",
+          "name": "knots_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Followed ship",
+          "name": "follow",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Ship latitude",
+          "name": "lat",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Ship longitude",
+          "name": "lng",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Cable latitude",
+          "name": "clat",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Cable longitude",
+          "name": "clng",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Kind",
+          "multi": true,
+          "name": "cableKind",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "cableKind",
+              "sql": "SELECT DISTINCT kind AS value FROM $cables ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Cable",
+          "multi": true,
+          "name": "cable",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "cable",
+              "sql": "SELECT DISTINCT cable AS value FROM $cables ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "shipFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$ships",
+              "filters": [
+                {
+                  "column": "alert",
+                  "label": "Alert",
+                  "name": "alert",
+                  "type": "in",
+                  "variable": "$alertState"
+                },
+                {
+                  "column": "watch",
+                  "label": "Watch",
+                  "name": "watch",
+                  "type": "in",
+                  "variable": "$watch"
+                },
+                {
+                  "column": "type",
+                  "label": "Type",
+                  "name": "type",
+                  "type": "in",
+                  "variable": "$shipType"
+                },
+                {
+                  "column": "flag",
+                  "label": "Flag",
+                  "name": "flag",
+                  "type": "in",
+                  "variable": "$flag"
+                },
+                {
+                  "column": "status",
+                  "label": "Status",
+                  "name": "status",
+                  "type": "in",
+                  "variable": "$navStatus"
+                },
+                {
+                  "column": "knots",
+                  "from": "$knots_lo",
+                  "label": "Speed (knots)",
+                  "name": "knots",
+                  "to": "$knots_hi",
+                  "type": "range"
+                }
+              ],
+              "kind": "filters",
+              "refId": "shipFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "cableFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$cables",
+              "filters": [
+                {
+                  "column": "kind",
+                  "label": "Kind",
+                  "name": "kind",
+                  "type": "in",
+                  "variable": "$cableKind"
+                },
+                {
+                  "column": "cable",
+                  "label": "Cable",
+                  "name": "cable",
+                  "type": "in",
+                  "variable": "$cable"
+                }
+              ],
+              "kind": "filters",
+              "refId": "cableFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

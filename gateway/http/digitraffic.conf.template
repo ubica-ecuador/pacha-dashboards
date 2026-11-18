@@ -1,0 +1,4 @@
+# Digitraffic (Fintraffic), behind baltic-cable-watch and its alert rule
+# (grafana/alerting/): every ship its AIS network hears in the Baltic.
+proxy_cache_path /var/cache/nginx/digitraffic levels=1:2 keys_zone=digitraffic:10m
+                 max_size=100m inactive=1h use_temp_path=off;

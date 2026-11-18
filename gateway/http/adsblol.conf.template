@@ -1,0 +1,7 @@
+# adsb.lol, behind air-traffic-world: every aircraft in the world in one
+# answer, about 6,000 of them, 3.6 MB plain and 850 KB gzipped. A community
+# service with no key; asked once a minute at most, whoever is looking, and the
+# recorder's flights feed (recorder/feeds/parked/) reads this same copy. Since
+# 2026-11-11 adsb.lol refuses a radius over 250 NM, so this answers 403.
+proxy_cache_path /var/cache/nginx/adsblol levels=1:2 keys_zone=adsblol:10m
+                 max_size=100m inactive=1h use_temp_path=off;

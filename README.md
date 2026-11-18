@@ -34,6 +34,8 @@ rest run on the free stack.
 | `gateway/http/<feed>.conf.template` | what those need at `http` level: `proxy_cache_path`, `map`, `limit_req_zone`, throttle servers | when the gateway starts |
 | `datasets/<name>/build.sh` | data an instance builds for itself, served at `http://feeds/datasets/<name>/...` | when the script is run |
 | `recorder/feeds/<feed>.sql` | a live feed the recorder keeps, served at `http://feeds/recordings/<feed>/` | when the recorder starts |
+| `recorder/fallback/` | each feed's empty recording, served at the same paths until the recorder has written one (`recorder/make-empty.sh`) | Pacha mounts it on the gateway |
+| `grafana/alerting/<rule>.yaml` | alert rules, Grafana's file provisioning | when Grafana starts |
 | `screenshots/<uid>.jpg` | the dashboard's card on Pacha's home page, a 16:9 crop of its map about 700 × 394 | served by the gateway at `/home/screenshots/`, after Pacha's own |
 | `tests/stack/<uid>.test.mjs` | a handful of tests per dashboard, on Pacha's helpers | `npm run test:stack` |
 | `grafana/repositories/` | the Git Sync repository that syncs `dashboards/` | Pacha mounts it |

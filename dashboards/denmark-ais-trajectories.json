@@ -1,0 +1,2158 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "denmark-ais-trajectories"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Every ship the Danish Maritime Authority's AIS network heard in the last week it published, read as trajectories: where ships stopped, the trips between their stops, the busiest ports and waters, and the ships that lay together at sea; the analysis of MovingPandas, Trackintel and scikit-mobility, in DuckDB. Click a kind of ship to filter, a ship to follow it. Needs the recorder (compose profile `recorder`). Data: Danish Maritime Authority, open data.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Every ship the Danish Maritime Authority's AIS network heard**, a day at a time, read as trajectories: where each ship **stopped** (half an hour or more under half a knot), the **trips** between its stops, the **places** where many ships stop, the **encounters** where two ships lay together at sea, and how busy each stretch of water was. The same analysis [MovingPandas](https://movingpandas.org), [Trackintel](https://github.com/mie-lab/trackintel) and [scikit-mobility](https://scikit-mobility.github.io/scikit-mobility/) do in Python and [MobilityDB](https://mobilitydb.com) in PostgreSQL, here in DuckDB: [`recorder/feeds/ais-denmark.sql`](https://github.com/ubica-ecuador/pacha/blob/main/recorder/feeds/ais-denmark.sql). **Click a kind of ship** to filter by it; **click a ship** in the trips or encounters tables to follow it.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "at-sea": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Hours of presence per hour are the ships there on average in that hour.\nSELECT hour AS time, kind, round(sum(ship_hours)) AS ships\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/cells.parquet'), union_by_name = true)\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\nGROUP BY ALL\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The hours ships spent in the network's waters in each hour: how many were there on average. Times in UTC.",
+          "id": 5,
+          "links": [],
+          "title": "Ships in the water, hour by hour",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst COLORS = {\"Cargo\": \"#F29E2E\", \"Tanker\": \"#E5484D\", \"Passenger\": \"#00A6CA\", \"Fishing\": \"#90EB9D\", \"Leisure\": \"#C77DFF\", \"Service\": \"#FFD166\", \"Other\": \"#8B8D98\"};\n// Ships present, hour by hour, stacked by kind: the hours ships spent in the\n// network's waters in each hour, which is how many were there on average.\nconst times = col('time');\nconst kinds = col('kind');\nconst ships = col('ships');\nconst order = Object.keys(COLORS).filter((k) =\u003e kinds.includes(k));\nconst buckets = [...new Set(times)].sort((a, b) =\u003e a - b);\nconst series = order.map((k) =\u003e {\n  const at = new Map();\n  kinds.forEach((kind, i) =\u003e kind === k \u0026\u0026 at.set(times[i], ships[i]));\n  return { name: k, type: 'bar', stack: 'all', barMaxWidth: 10, itemStyle: { color: COLORS[k] },\n           data: buckets.map((t) =\u003e [t, at.get(t) ?? 0]) };\n});\nreturn {\n  animation: false,\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 10, itemHeight: 10 },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis' },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: lines } } },\n  yAxis: { type: 'value', min: 0, axisLabel: { color: muted }, splitLine: { lineStyle: { color: lines } } },\n  series,\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "busy-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Ships on average in each cell (H3 resolution 7) over the days picked: hours\n-- of presence divided by the hours in those days.\nWITH days AS (\n  SELECT greatest(count(*), 1) AS n FROM unnest([${dirs:singlequote}]) AS t(d) WHERE d NOT LIKE '%-empty'\n)\nSELECT h3_h3_to_string(cell) AS h3, round(sum(ship_hours) / (24 * any_value(days.n)), 3) AS ships\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/cells.parquet'), union_by_name = true), days\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring})\nGROUP BY cell"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Ships on average in each H3 cell (about 5 km²) over the days picked, for the kind of ship picked. The shipping lanes through the Great Belt, the Sound and around Skagen stand out.",
+          "id": 7,
+          "links": [],
+          "title": "How busy the water is",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 56.2,
+                      "longitude": 10.8,
+                      "pitch": 0,
+                      "zoom": 5.7
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "ships"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "busy"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              181,
+                              242,
+                              255
+                            ],
+                            "columns": {
+                              "hex_id": "h3"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Ships on average",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#0B1F3A",
+                                  "#123F6B",
+                                  "#1565A3",
+                                  "#1E8BC3",
+                                  "#4CC9F0",
+                                  "#B5F2FF"
+                                ],
+                                "name": "Ships on average",
+                                "type": "sequential"
+                              },
+                              "coverage": 0.95,
+                              "enable3d": false,
+                              "opacity": 0.85
+                            }
+                          },
+                          "id": "busy",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "ships",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "encounters": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Two ships within 500 m, both under 2 knots, for an hour or more, away from\n-- ports and anchorages.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n)\nSELECT coalesce(a.name, e.mmsi_a::VARCHAR) || ' × ' || coalesce(b.name, e.mmsi_b::VARCHAR) AS \"Ships\",\n       e.kind_a || ' × ' || e.kind_b AS \"Kinds\",\n       e.start_ts AS \"From\", round(e.minutes / 60, 1) AS \"Hours\", e.closest_m AS \"Closest, m\",\n       e.median_m AS \"Median, m\",\n       CASE WHEN e.with_service THEN 'With a service ship' ELSE 'Between other ships' END AS \"Meeting\",\n       round(e.lat, 4) AS latitude, round(e.lon, 4) AS longitude,\n       e.mmsi_a || ',' || e.mmsi_b AS pair\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/encounters.parquet'), union_by_name = true) e\nLEFT JOIN ships a ON a.mmsi = e.mmsi_a\nLEFT JOIN ships b ON b.mmsi = e.mmsi_b\nWHERE (${kind:sqlstring} = '' OR e.kind_a = ${kind:sqlstring} OR e.kind_b = ${kind:sqlstring})\n  AND (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), e.mmsi_a::VARCHAR)\n       OR list_contains(string_split(${ships:sqlstring}, ','), e.mmsi_b::VARCHAR))\nORDER BY e.minutes DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Two ships within 500 m, both under 2 knots, for an hour or more, away from ports and anchorages, after Global Fishing Watch. Two ferries or a pilot boat and its ship meet too: the kinds tell. Click to follow both.",
+          "id": 11,
+          "links": [],
+          "title": "Encounters",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ships"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Follow both ships",
+                            "url": "/d/denmark-ais-trajectories${__url.params:exclude:var-ships}\u0026var-ships=${__data.fields.pair}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "pair"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "latitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "longitude"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "From"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:ddd D MMM HH:mm"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Meeting"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "encounters-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Two ships within 500 m, both under 2 knots, for an hour or more, away from\n-- ports and anchorages.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n)\nSELECT coalesce(a.name, e.mmsi_a::VARCHAR) || ' × ' || coalesce(b.name, e.mmsi_b::VARCHAR) AS \"Ships\",\n       e.kind_a || ' × ' || e.kind_b AS \"Kinds\",\n       e.start_ts AS \"From\", round(e.minutes / 60, 1) AS \"Hours\", e.closest_m AS \"Closest, m\",\n       e.median_m AS \"Median, m\",\n       CASE WHEN e.with_service THEN 'With a service ship' ELSE 'Between other ships' END AS \"Meeting\",\n       round(e.lat, 4) AS latitude, round(e.lon, 4) AS longitude,\n       e.mmsi_a || ',' || e.mmsi_b AS pair\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/encounters.parquet'), union_by_name = true) e\nLEFT JOIN ships a ON a.mmsi = e.mmsi_a\nLEFT JOIN ships b ON b.mmsi = e.mmsi_b\nWHERE (${kind:sqlstring} = '' OR e.kind_a = ${kind:sqlstring} OR e.kind_b = ${kind:sqlstring})\n  AND (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), e.mmsi_a::VARCHAR)\n       OR list_contains(string_split(${ships:sqlstring}, ','), e.mmsi_b::VARCHAR))\nORDER BY e.minutes DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Where two ships lay together at sea, sized by how long; amber when one of them is a service ship (tug, pilot, rescue…), which explains most of those.",
+          "id": 10,
+          "links": [],
+          "title": "Encounters at sea",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 56.0,
+                      "longitude": 8.6,
+                      "pitch": 0,
+                      "zoom": 4.7
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "Ships"
+                              },
+                              {
+                                "name": "Kinds"
+                              },
+                              {
+                                "name": "Hours"
+                              },
+                              {
+                                "name": "Closest, m"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "meetings"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              229,
+                              72,
+                              77
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Meeting",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  220
+                                ],
+                                "collisionEnabled": true,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "Ships",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -16
+                                ],
+                                "outlineColor": [
+                                  0,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 12,
+                                "weight": 500
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#E5484D",
+                                  "#FFD166"
+                                ],
+                                "name": "Meeting",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.9,
+                              "outline": true,
+                              "radius": 6,
+                              "radiusRange": [
+                                5,
+                                16
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "meetings",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "Meeting",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeField": {
+                              "name": "Hours",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "kinds": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Ships by kind, from the type each declares. The kind picked stays drawn,\n-- so the bars can switch it.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n)\nSELECT kind AS value, kind AS label, count(*) AS ships\nFROM ships\nWHERE (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), mmsi::VARCHAR))\nGROUP BY kind\nORDER BY ships DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Ships heard in the days picked, by the type each declares; Other is a ship that declares none, or one of a rare type. Click a bar to filter the whole dashboard by it.",
+          "id": 4,
+          "links": [],
+          "title": "Kind of ship",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst COLORS = {\"Cargo\": \"#F29E2E\", \"Tanker\": \"#E5484D\", \"Passenger\": \"#00A6CA\", \"Fishing\": \"#90EB9D\", \"Leisure\": \"#C77DFF\", \"Service\": \"#FFD166\", \"Other\": \"#8B8D98\"};\n// Ships by kind, from the type each ship declares. A click on a bar filters the\n// whole dashboard by it ($kind); a click on the picked bar clears the filter.\nconst VAR = 'kind';\nconst values = col('value').reverse();\nconst labels = col('label').reverse();\nconst counts = col('ships').reverse();\nconst picked = context.grafana.replaceVariables('${' + VAR + '}');\nconst location = context.grafana.locationService;\n\nconst chart = context.panel.chart;\nchart.off('click');\nchart.on('click', (event) =\u003e {\n  const value = values[event.dataIndex];\n  const current = context.grafana.replaceVariables('${' + VAR + '}');\n  location.partial({ ['var-' + VAR]: value === current ? '' : value }, true);\n});\n\nreturn {\n  animation: false,\n  grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },\n             formatter: (items) =\u003e `\u003cb\u003e${labels[items[0].dataIndex]}\u003c/b\u003e\u003cbr/\u003e${counts[items[0].dataIndex].toLocaleString()} ships\u003cbr/\u003e\u003ci\u003eclick to ${values[items[0].dataIndex] === picked ? 'clear the filter' : 'filter by it'}\u003c/i\u003e` },\n  xAxis: { type: 'value', axisLabel: { show: false }, splitLine: { show: false } },\n  yAxis: { type: 'category', data: labels, axisLabel: { color: text }, axisLine: { lineStyle: { color: lines } } },\n  series: [{\n    name: 'Ships', type: 'bar', barMaxWidth: 16, cursor: 'pointer',\n    data: counts.map((v, i) =\u003e ({\n      value: v,\n      itemStyle: { color: COLORS[values[i]] || '#8B8D98', opacity: !picked || values[i] === picked ? 1 : 0.3 },\n    })),\n    label: { show: true, position: 'right', color: muted, formatter: (p) =\u003e p.value.toLocaleString() },\n  }],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "method": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 13,
+          "links": [],
+          "title": "",
+          "transparent": false,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### How it is read\n\n| | What it is here | After |\n|---|---|---|\n| **Positions** | Class A and B ships only, one position every 30 s. A fix the ship would have had to reach and leave at over 50 knots is dropped. | MovingPandas' cleaning |\n| **Stop** | Half an hour or more with the speed, smoothed over two minutes, under half a knot. Two still spells less than 15 minutes and 500 m apart are one stop. *Moored* and *at anchor* are what the ship said; *stopped*, that it said neither. | MovingPandas' stop detector, Trackintel's staypoints |\n| **Trip** | What lies between two stops, broken where a ship went unheard for two hours. Under a kilometre is no trip. | Trackintel's triplegs |\n| **Place** | The H3 cell (resolution 7, about 5 km²) where a stop lies. Its name is the destination most often declared by the ships whose trips end there: a good guess at the port, not a gazetteer. | Trackintel's locations |\n| **Encounter** | Two ships within 500 m, both under 2 knots, for an hour or more, neither moored nor made fast to a quay, and away from ports and anchorages (where five ships stopped that day, and two cells around). | Global Fishing Watch's encounters, over a day instead of months |\n| **Busy water** | Hours of presence per H3 cell: each position counts until the next, five minutes at most. Divided by the hours in the days picked, it is the ships there on average. | scikit-mobility's tessellations |\n\n**Days.** The authority publishes each day two or three days later; the recorder (compose profile `recorder`) reads each new one, about 650 MB zipped, and keeps the last seven. A day is read on its own, so a stop or trip across midnight is cut there: the trips table leaves those out, and most ships that cross these waters without stopping are among them.\n\n**Not here.** AIS says what a ship's own instruments and crew put in it: names, types and destinations can be wrong or missing (a third of the ships declare no type, and count as *Other*), and a ship with its transponder off is not heard. Coverage thins out beyond about 40 nautical miles from the Danish coast.\n\nData: [Danish Maritime Authority, historical AIS data](http://aisdata.ais.dk/), open data under Denmark's act on the re-use of public sector information.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "places": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The places with most ships stopping, named by the destination ships\n-- arriving there declared.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n),\nnames AS (\n  SELECT t.to_place AS place, mode(upper(trim(s.destination))) AS port\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/trips.parquet'), union_by_name = true) t JOIN ships s USING (mmsi)\n  WHERE s.destination IS NOT NULL AND length(trim(s.destination)) \u003e 1\n  GROUP BY t.to_place\n),\nst AS (\n  SELECT st.*, s.kind FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/stops.parquet'), union_by_name = true) st JOIN ships s USING (mmsi)\n  WHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring}) AND (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), st.mmsi::VARCHAR))\n)\nSELECT coalesce(n.port, '–') AS \"Ships heading here said\",\n       count(DISTINCT st.mmsi) AS \"Ships\", count(*) AS \"Stops\",\n       round(median(st.minutes) / 60, 1) AS \"Median stay, h\",\n       round(100 * avg((st.how = 'Moored')::INTEGER)) AS \"Moored, %\",\n       round(100 * avg((st.how = 'At anchor')::INTEGER)) AS \"At anchor, %\",\n       mode(st.kind) AS \"Most are\",\n       round(h3_cell_to_lat(st.place), 3) AS \"Lat\", round(h3_cell_to_lng(st.place), 3) AS \"Lon\"\nFROM st LEFT JOIN names n USING (place)\nGROUP BY st.place, n.port\nORDER BY \"Ships\" DESC\nLIMIT 100"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The places where most ships stopped, named by the destination most often declared by the ships arriving: a good guess at the port. Moored and at anchor are what the ships said.",
+          "id": 8,
+          "links": [],
+          "title": "Busiest places to stop",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Most are"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Cargo": {
+                                "color": "#F29E2E",
+                                "index": 0
+                              },
+                              "Fishing": {
+                                "color": "#90EB9D",
+                                "index": 3
+                              },
+                              "Leisure": {
+                                "color": "#C77DFF",
+                                "index": 4
+                              },
+                              "Other": {
+                                "color": "#8B8D98",
+                                "index": 6
+                              },
+                              "Passenger": {
+                                "color": "#00A6CA",
+                                "index": 2
+                              },
+                              "Service": {
+                                "color": "#FFD166",
+                                "index": 5
+                              },
+                              "Tanker": {
+                                "color": "#E5484D",
+                                "index": 1
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Ships"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "speed": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The ships followed: speed over ground, every 30 s.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n)\nSELECT t.ts AS time, coalesce(s.name, t.mmsi::VARCHAR) AS name, t.sog AS knots\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/tracks.parquet'), union_by_name = true) t JOIN ships s USING (mmsi)\nWHERE ${ships:sqlstring} \u003c\u003e '' AND list_contains(string_split(${ships:sqlstring}, ','), t.mmsi::VARCHAR)\nORDER BY name, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The speed each ship followed reported, every 30 s, over the days picked. Clear filters to stop following.",
+          "id": 12,
+          "links": [],
+          "title": "Ships followed: speed over ground",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "const theme = context.grafana.theme;\nconst text = theme.colors.text.primary;\nconst muted = theme.colors.text.secondary;\nconst lines = theme.colors.border.weak;\nconst frame = context.panel.data.series[0];\nconst col = (name) =\u003e {\n  const field = frame \u0026\u0026 frame.fields.find((f) =\u003e f.name === name);\n  return field ? Array.from(field.values) : [];\n};\nconst COLORS = {\"Cargo\": \"#F29E2E\", \"Tanker\": \"#E5484D\", \"Passenger\": \"#00A6CA\", \"Fishing\": \"#90EB9D\", \"Leisure\": \"#C77DFF\", \"Service\": \"#FFD166\", \"Other\": \"#8B8D98\"};\n// The speed over ground of each ship followed, as it reported it. Flat at zero\n// is a stop; a gap is a stretch the network did not hear it.\nconst times = col('time');\nconst names = col('name');\nconst knots = col('knots');\nconst PALETTE = ['#4cc9f0', '#f72585', '#ffb703', '#80ed99', '#b388eb', '#ff7f51'];\nconst byName = new Map();\nnames.forEach((n, i) =\u003e {\n  if (!byName.has(n)) byName.set(n, []);\n  byName.get(n).push([times[i], knots[i]]);\n});\n// Break a line where the ship went unheard for over ten minutes.\nconst withGaps = (points) =\u003e points.flatMap((p, i) =\u003e (i \u0026\u0026 p[0] - points[i - 1][0] \u003e 600000 ? [[p[0] - 1, null], p] : [p]));\nconst series = [...byName.keys()].sort().map((n, i) =\u003e ({\n  name: n, type: 'line', showSymbol: false, connectNulls: false, lineStyle: { width: 1.5 },\n  itemStyle: { color: PALETTE[i % PALETTE.length] }, data: withGaps(byName.get(n)),\n}));\nif (!series.length) {\n  return { title: { text: 'Follow a ship from the trips or encounters tables', left: 'center', top: 'middle',\n                    textStyle: { color: muted, fontSize: 13, fontWeight: 'normal' } } };\n}\nreturn {\n  animation: false,\n  legend: { top: 0, textStyle: { color: muted }, itemWidth: 10, itemHeight: 10 },\n  grid: { left: 8, right: 16, top: 32, bottom: 8, containLabel: true },\n  tooltip: { trigger: 'axis', valueFormatter: (v) =\u003e (v == null ? '–' : `${v} kn`) },\n  xAxis: { type: 'time', axisLabel: { color: muted }, axisLine: { lineStyle: { color: lines } } },\n  yAxis: { type: 'value', min: 0, name: 'knots', nameTextStyle: { color: muted }, axisLabel: { color: muted },\n           splitLine: { lineStyle: { color: lines } } },\n  series,\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "stats": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "WITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n),\npicked AS (SELECT mmsi FROM ships WHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring}) AND (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), mmsi::VARCHAR)))\nSELECT\n  (SELECT count(*) FROM picked) AS \"Ships heard\",\n  (SELECT count(*) FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/stops.parquet'), union_by_name = true) SEMI JOIN picked USING (mmsi)) AS \"Stops\",\n  (SELECT count(*) FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/trips.parquet'), union_by_name = true) SEMI JOIN picked USING (mmsi)) AS \"Trips\",\n  (SELECT round(coalesce(sum(km), 0) / 1.852) FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/trips.parquet'), union_by_name = true) SEMI JOIN picked USING (mmsi)) AS \"Nautical miles sailed\",\n  (SELECT count(*) FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/encounters.parquet'), union_by_name = true)\n   WHERE mmsi_a IN (SELECT mmsi FROM picked) OR mmsi_b IN (SELECT mmsi FROM picked)) AS \"Encounters at sea\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "For the days picked and the filters. Nautical miles add up the trips, from one 30-second position to the next.",
+          "id": 2,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "noValue": "–",
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "vertical",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "titleSize": 12,
+                  "valueSize": 24
+                },
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "stops-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Places where ships stop (H3 resolution 7, about 5 km2): how many ships.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n)\nSELECT h3_h3_to_string(st.place) AS h3, count(DISTINCT st.mmsi) AS ships, count(*) AS stops,\n       round(median(st.minutes) / 60, 1) AS median_hours\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/stops.parquet'), union_by_name = true) st JOIN ships s USING (mmsi)\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring}) AND (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), st.mmsi::VARCHAR))\nGROUP BY st.place"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every stop: where the ship lay, how long, moored, at anchor or just stopped.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n)\nSELECT s.name, s.kind, st.lat AS latitude, st.lon AS longitude, st.how,\n       round(st.minutes / 60, 1) AS hours, st.radius_m\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/stops.parquet'), union_by_name = true) st JOIN ships s USING (mmsi)\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring}) AND (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), st.mmsi::VARCHAR))\nORDER BY st.minutes DESC\nLIMIT 30000"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every stop, sized by how long it lasted and coloured by what the ship said it was doing; under them, the places (H3 cells of about 5 km²) by how many ships stopped there.",
+          "id": 6,
+          "links": [],
+          "title": "Where ships stop",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 56.2,
+                      "longitude": 10.8,
+                      "pitch": 0,
+                      "zoom": 5.7
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "ships"
+                              },
+                              {
+                                "name": "stops"
+                              },
+                              {
+                                "name": "median_hours"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "how"
+                              },
+                              {
+                                "name": "hours"
+                              },
+                              {
+                                "name": "radius_m"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "stop-points",
+                        "places"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              209,
+                              102
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "How",
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#FFD166",
+                                  "#00A6CA",
+                                  "#C77DFF"
+                                ],
+                                "name": "How",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 2,
+                              "radiusRange": [
+                                1,
+                                7
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "stop-points",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "how",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeField": {
+                              "name": "hours",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              195,
+                              0
+                            ],
+                            "columns": {
+                              "hex_id": "h3"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Ships stopping",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5A1846",
+                                  "#900C3F",
+                                  "#C70039",
+                                  "#E3611C",
+                                  "#F1920E",
+                                  "#FFC300"
+                                ],
+                                "name": "Ships stopping",
+                                "type": "sequential"
+                              },
+                              "coverage": 0.95,
+                              "enable3d": false,
+                              "opacity": 0.55
+                            }
+                          },
+                          "id": "places",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "ships",
+                              "type": "real"
+                            },
+                            "colorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "trails": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- A trip id, a time and a position: the panel builds an animated Trip layer.\n-- Every trip of the ships the filters let through, one position every five\n-- minutes for each day picked (five minutes for one day, 35 for a week),\n-- or the ships followed, every 30 s, stops and all, as one trail each.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n),\ndays AS (\n  SELECT greatest(count(*), 1) AS n FROM unnest([${dirs:singlequote}]) AS t(d) WHERE d NOT LIKE '%-empty'\n)\nSELECT CASE WHEN ${ships:sqlstring} \u003c\u003e '' THEN s.name || ' (' || t.mmsi || ')' ELSE t.trip_id END AS trip_id,\n       t.ts AS time, t.lat AS latitude, t.lon AS longitude, t.kind,\n       coalesce(s.name, t.mmsi::VARCHAR) AS name, t.sog AS knots\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/tracks.parquet'), union_by_name = true) t JOIN ships s USING (mmsi), days\nWHERE CASE WHEN ${ships:sqlstring} \u003c\u003e '' THEN list_contains(string_split(${ships:sqlstring}, ','), t.mmsi::VARCHAR)\n           ELSE t.trip_id IS NOT NULL AND epoch(t.ts)::BIGINT % (300 * days.n) \u003c 30\n                AND (${kind:sqlstring} = '' OR t.kind = ${kind:sqlstring}) END\nORDER BY trip_id, time\nLIMIT 150000"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Where the ships followed stopped; nothing when none is followed.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n)\nSELECT s.name, st.lat AS latitude, st.lon AS longitude, st.how, st.minutes,\n       strftime(st.start_ts, '%a %d %H:%M') || ' to ' || strftime(st.end_ts, '%a %d %H:%M') AS stayed\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/stops.parquet'), union_by_name = true) st JOIN ships s USING (mmsi)\nWHERE ${ships:sqlstring} \u003c\u003e '' AND list_contains(string_split(${ships:sqlstring}, ','), st.mmsi::VARCHAR)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every trip of the kind of ship picked, replayed: press ▶. One position every five minutes per day picked; one day shows the most detail. Following ships (from the tables), their whole days, every 30 s, with the stops in white. Up to 150,000 positions.",
+          "id": 3,
+          "links": [],
+          "title": "Trips, replayed",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "openfreemap-dark",
+                "clickConfirm": false,
+                "followGrafanaTheme": false,
+                "hoverMaxAgeSeconds": 60,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "latitude": 56.2,
+                      "longitude": 10.8,
+                      "pitch": 0,
+                      "zoom": 5.7
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "knots"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "how"
+                              },
+                              {
+                                "name": "stayed"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "trails",
+                        "stops"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              158,
+                              46
+                            ],
+                            "columnMode": "table",
+                            "columns": {
+                              "id": "trip_id",
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "timestamp": "time"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Ships",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#F29E2E",
+                                  "#90EB9D",
+                                  "#C77DFF",
+                                  "#8B8D98",
+                                  "#00A6CA",
+                                  "#FFD166",
+                                  "#E5484D"
+                                ],
+                                "name": "Kinds of ship",
+                                "type": "custom"
+                              },
+                              "fadeTrail": true,
+                              "opacity": 0.9,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "thickness": 2,
+                              "trailLength": 3600
+                            }
+                          },
+                          "id": "trails",
+                          "type": "trip",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Stops of the ships followed",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "middle",
+                                "background": true,
+                                "backgroundColor": [
+                                  17,
+                                  18,
+                                  23,
+                                  220
+                                ],
+                                "collisionEnabled": true,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "field": {
+                                  "name": "name",
+                                  "type": "string"
+                                },
+                                "offset": [
+                                  0,
+                                  -16
+                                ],
+                                "outlineColor": [
+                                  0,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 12,
+                                "weight": 500
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.9,
+                              "outline": true,
+                              "radius": 7,
+                              "radiusRange": [
+                                2,
+                                22
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "stops",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "ordinal",
+                            "sizeField": null,
+                            "sizeScale": "sqrt"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "trips": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The longest trips from one stop to the next. A trip cut by midnight is not\n-- here: the ships crossing these waters without stopping are most of those.\nWITH ships AS (\n  -- What each ship said of itself, its latest day.\n  SELECT mmsi, arg_max(name, day) AS name, arg_max(kind, day) AS kind,\n         arg_max(ship_type, day) AS ship_type, arg_max(destination, day) AS destination\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/vessels.parquet'), union_by_name = true)\n  GROUP BY mmsi\n),\nnames AS (\n  SELECT t.to_place AS place, mode(upper(trim(s.destination))) AS port\n  FROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/trips.parquet'), union_by_name = true) t JOIN ships s USING (mmsi)\n  WHERE s.destination IS NOT NULL AND length(trim(s.destination)) \u003e 1\n  GROUP BY t.to_place\n)\nSELECT coalesce(s.name, t.mmsi::VARCHAR) AS \"Ship\", s.kind AS \"Kind\",\n       t.start_ts AS \"Left\", round(t.minutes / 60, 1) AS \"Hours\",\n       round(t.km / 1.852) AS \"Nautical miles\", t.avg_kn AS \"Avg knots\", t.max_kn AS \"Max knots\",\n       coalesce(nf.port, '–') AS \"From\", coalesce(nt.port, '–') AS \"To\",\n       t.mmsi::VARCHAR AS mmsi\nFROM read_parquet(list_transform([${dirs:singlequote}], d -\u003e d || '/trips.parquet'), union_by_name = true) t JOIN ships s USING (mmsi)\nLEFT JOIN names nf ON nf.place = t.from_place\nLEFT JOIN names nt ON nt.place = t.to_place\nWHERE (${kind:sqlstring} = '' OR kind = ${kind:sqlstring}) AND (${ships:sqlstring} = '' OR list_contains(string_split(${ships:sqlstring}, ','), t.mmsi::VARCHAR))\n  AND t.from_place IS NOT NULL AND t.to_place IS NOT NULL AND NOT t.cut_start AND NOT t.cut_end\nORDER BY t.km DESC\nLIMIT 200"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips from one stop to the next within a day, longest first; From and To are the places' likely ports. A ferry turning round in under half an hour sails on in the same trip. Click a ship to follow it.",
+          "id": 9,
+          "links": [],
+          "title": "Port to port: the longest trips",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ship"
+                    },
+                    "properties": [
+                      {
+                        "id": "links",
+                        "value": [
+                          {
+                            "title": "Follow this ship",
+                            "url": "/d/denmark-ais-trajectories${__url.params:exclude:var-ships}\u0026var-ships=${__data.fields.mmsi}"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "mmsi"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Left"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:ddd D MMM HH:mm"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "Cargo": {
+                                "color": "#F29E2E",
+                                "index": 0
+                              },
+                              "Fishing": {
+                                "color": "#90EB9D",
+                                "index": 3
+                              },
+                              "Leisure": {
+                                "color": "#C77DFF",
+                                "index": 4
+                              },
+                              "Other": {
+                                "color": "#8B8D98",
+                                "index": 6
+                              },
+                              "Passenger": {
+                                "color": "#00A6CA",
+                                "index": 2
+                              },
+                              "Service": {
+                                "color": "#FFD166",
+                                "index": 5
+                              },
+                              "Tanker": {
+                                "color": "#E5484D",
+                                "index": 1
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "about"
+              },
+              "height": 3,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "stats"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "trails"
+              },
+              "height": 20,
+              "width": 16,
+              "x": 0,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "kinds"
+              },
+              "height": 8,
+              "width": 8,
+              "x": 16,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "at-sea"
+              },
+              "height": 12,
+              "width": 8,
+              "x": 16,
+              "y": 15
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "stops-map"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "busy-map"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 12,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "places"
+              },
+              "height": 11,
+              "width": 24,
+              "x": 0,
+              "y": 43
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "trips"
+              },
+              "height": 11,
+              "width": 24,
+              "x": 0,
+              "y": 54
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "encounters-map"
+              },
+              "height": 13,
+              "width": 10,
+              "x": 0,
+              "y": 65
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "encounters"
+              },
+              "height": 13,
+              "width": 14,
+              "x": 10,
+              "y": 65
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "speed"
+              },
+              "height": 8,
+              "width": 24,
+              "x": 0,
+              "y": 78
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "method"
+              },
+              "height": 15,
+              "width": 24,
+              "x": 0,
+              "y": 86
+            }
+          }
+        ]
+      }
+    },
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "info",
+        "includeVars": false,
+        "keepTime": true,
+        "tags": [],
+        "targetBlank": false,
+        "title": "Clear filters",
+        "tooltip": "Clear the kind of ship and the ships followed",
+        "type": "link",
+        "url": "/d/denmark-ais-trajectories?var-kind=\u0026var-ships="
+      }
+    ],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "plus",
+      "business-charts",
+      "maritime",
+      "mobility"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-7d",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Ships around Denmark: stops, trips and encounters",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [],
+            "value": []
+          },
+          "definition": "",
+          "description": "The days the recorder has read, newest first: the authority publishes each two or three days later. The newest at first; pick more for a week.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Day",
+          "multi": true,
+          "name": "day",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Every day the recorder has read, newest first.\nSELECT DISTINCT day FROM read_json('http://feeds/recordings/ais-denmark/manifest.json', columns = {url: 'VARCHAR', day: 'VARCHAR', \"table\": 'VARCHAR'})\nORDER BY day DESC"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The folders of the days picked, and an empty one that is always there, so that no day picked reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Day folders",
+          "multi": true,
+          "name": "dirs",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- The folders of the days picked, and the empty recording, always there, so\n-- that no day picked reads as no rows.\nSELECT DISTINCT 'http://feeds/recordings/ais-denmark/' || day AS dir\nFROM read_json('http://feeds/recordings/ais-denmark/manifest.json', columns = {url: 'VARCHAR', day: 'VARCHAR', \"table\": 'VARCHAR'})\nWHERE day IN (${day:singlequote})\nUNION ALL SELECT 'http://feeds/recordings/ais-denmark-empty'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Kind of ship: click a bar in \"Kind of ship\", or clear the box.",
+          "hide": "dontHide",
+          "label": "Kind",
+          "name": "kind",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The ships followed, by MMSI, comma separated: click a ship in the trips or encounters tables.",
+          "hide": "dontHide",
+          "label": "Ships (MMSI)",
+          "name": "ships",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

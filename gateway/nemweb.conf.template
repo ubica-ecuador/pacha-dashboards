@@ -1,0 +1,20 @@
+    # AEMO's NEMweb current reports (see http/nemweb.conf.template): a report's listing,
+    # and its zips by name.
+    location ~ ^/nemweb/(Reports/Current/[A-Za-z_]+/)$ {
+        set $nemweb nemweb.com.au;
+        proxy_pass https://$nemweb/$1;
+        proxy_set_header Host $nemweb;
+        proxy_cache nemweb;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 1m;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    location ~ ^/nemweb/(Reports/Current/[A-Za-z_]+/PUBLIC_[A-Z_]+_[0-9]+_[0-9]+\.zip)$ {
+        set $nemweb nemweb.com.au;
+        proxy_pass https://$nemweb/$1;
+        proxy_set_header Host $nemweb;
+        proxy_cache nemweb;
+        proxy_cache_key $uri;
+        proxy_cache_valid 200 3d;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

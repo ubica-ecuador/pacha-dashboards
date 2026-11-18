@@ -1,0 +1,7 @@
+# AEMO's NEMweb, behind aemo-eraring-live: the recorder reads the market's
+# five-minute dispatch SCADA, one small zip per interval, through here. The
+# listing changes every five minutes and is kept one; a zip never changes once
+# published and is kept for the three days NEMweb lists it, so a recorder that
+# restarts and fills its history asks AEMO for nothing it already had.
+proxy_cache_path /var/cache/nginx/nemweb levels=1:2 keys_zone=nemweb:10m
+                 max_size=500m inactive=3d use_temp_path=off;

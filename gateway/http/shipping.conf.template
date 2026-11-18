@@ -1,0 +1,7 @@
+# The IMF's PortWatch and FRED, behind shipping-chokepoints-freight.
+# PortWatch's daily transits are one 9 MB CSV, rebuilt once a week: cached, it
+# is downloaded once a day, not once a visit. FRED refuses DuckDB, on its site
+# and on its API alike (DuckDB's HEAD before the GET); through here it is one
+# GET with the key from FRED_API_KEY in .env, added like TriMet's AppID.
+proxy_cache_path /var/cache/nginx/shipping levels=1:2 keys_zone=shipping:10m
+                 max_size=100m inactive=7d use_temp_path=off;

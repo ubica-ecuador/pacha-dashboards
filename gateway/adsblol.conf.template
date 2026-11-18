@@ -1,0 +1,19 @@
+    # adsb.lol: every aircraft in the world, the widest circle its API takes.
+    # Asked for gzip and stored that way, like TriMet. Kept 55 s, not 60: the
+    # recorder polls on the minute, and a copy it fetched a minute earlier
+    # (stored a second or so after the minute) would still be fresh, so every
+    # other poll would get the same snapshot again. Still at most one request a
+    # minute to adsb.lol, near enough.
+    location = /adsblol/world {
+        set $adsblol api.adsb.lol;
+        proxy_pass https://$adsblol/v2/lat/0/lon/0/dist/20000;
+        # Its envoy answers nginx's default HTTP/1.0 with 426 Upgrade Required.
+        proxy_http_version 1.1;
+        proxy_set_header Host $adsblol;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache adsblol;
+        proxy_cache_valid 200 55s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

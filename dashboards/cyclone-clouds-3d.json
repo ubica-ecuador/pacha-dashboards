@@ -1,0 +1,1435 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "cyclone-clouds-3d"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Super Typhoon In-fa in one ECMWF forecast run: a voxel wherever the air is near saturation, on eleven levels from the sea to 14 km, played over two days with the Time Brush; Mosaic charts of the storm from the side, by height and by side of the eye filter the 3D map.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "What you are looking at",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "Super Typhoon In-fa as the ECMWF model saw it in one forecast run: relative humidity on eleven pressure levels (1000 to 150 hPa, from the sea to some 14 km), and a voxel wherever the air is at least as humid as the threshold above, near saturation, where cloud forms. These are the model’s clouds, not observed ones. Brush a six-hour window or press play: the map shows the forecast valid at the window’s end, the browser holding every step (Chaski), so nothing is asked of the server as it plays. On the right, the storm from the side (distance from the eye against height), how high the humid air goes and which side of the eye it is on: brush any of them and the map, the bars and the other charts keep those voxels. Heights are lifted by the factor above. Tilt and turn the map with the right button or Ctrl+drag. One forecast run (29 October 2026, 18 UTC). Data: [ECMWF Open Data](https://www.ecmwf.int/en/forecasts/datasets/open-data), CC BY 4.0; the red dots are the eye in the model, its lowest sea-level pressure, every six hours.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- A voxel for each cell and pressure level whose humidity reaches the threshold\n-- picked above, at the height of its level in the standard atmosphere, lifted\n-- by the factor picked above. The map shows the step in the window of the brush,\n-- the voxels the charts keep (the cloudFilters selection, on the GPU).\nSELECT time, valid_at, latitude, longitude,\n       44330.8 * (1 - pow(level_hpa / 1013.25, 0.190263)) * ${lift:raw} AS altitude,\n       height_km, height_class, level_hpa, humidity_pct, distance_km, bearing_deg\nFROM $clouds\nWHERE humidity_pct \u003e= ${rh:raw}\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The storm's eye at each step of the run: the model's lowest sea-level\n-- pressure near its track (datasets/cyclone-clouds/build.sh).\nSELECT strftime(valid_time, '%b %-d %H:%M UTC') AS valid_at,\n       latitude, longitude, msl_hpa AS eye_hpa\nFROM 'http://feeds/datasets/cyclone-clouds/centres.parquet'\nORDER BY valid_time\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Drag with the right button (or Ctrl) to tilt and turn. Each voxel: a 0.25 degree cell and pressure level whose humidity reaches the threshold. The charts on the right filter it.",
+          "id": 2,
+          "links": [],
+          "title": "In-fa’s clouds, the step at the end of the brushed window",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "fieldMappings": {
+                  "A": {
+                    "altitude": "altitude"
+                  }
+                },
+                "fitOnVariables": [],
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 10,
+                "hoverPublishSpike": true,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -29.606404269513007,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 18.929422499988497,
+                      "longitude": 146.0337187644928,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 60,
+                      "pitch": 55.899028381032764,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 4.9121271250524865
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "grafana-satellite-terrain",
+                      "threeDBuildingColor": [
+                        9.311499150948377,
+                        9.311499150948377,
+                        9.311499150948377
+                      ],
+                      "topLayerGroups": {
+                        "water": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  LT",
+                            "interval": "6-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            1793318400000,
+                            1793340000000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "valid_at"
+                              },
+                              {
+                                "name": "height_km"
+                              },
+                              {
+                                "name": "distance_km"
+                              },
+                              {
+                                "name": "bearing_deg"
+                              },
+                              {
+                                "name": "humidity_pct"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "valid_at"
+                              },
+                              {
+                                "name": "eye_hpa"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "track",
+                        "m7szj8h",
+                        "clouds"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              77,
+                              109
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "The eye in the model, every six hours",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#ff4d6d"
+                                ],
+                                "name": "Eye",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 14,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                20,
+                                24,
+                                32
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#141820"
+                                ],
+                                "name": "Outline",
+                                "type": "custom"
+                              },
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "track",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              235,
+                              240,
+                              245
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Copy of Cloud (humid air), ECMWF",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Below 2 km",
+                                    "#5b5bd6"
+                                  ],
+                                  [
+                                    "2–5 km",
+                                    "#3fa7d6"
+                                  ],
+                                  [
+                                    "5–8 km",
+                                    "#59d4a8"
+                                  ],
+                                  [
+                                    "8–11 km",
+                                    "#f2c14e"
+                                  ],
+                                  [
+                                    "Above 11 km",
+                                    "#fff4d6"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5b5bd6",
+                                  "#3fa7d6",
+                                  "#59d4a8",
+                                  "#f2c14e",
+                                  "#fff4d6"
+                                ],
+                                "name": "Height band",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.23,
+                              "outline": false,
+                              "radius": 13,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5d6b78",
+                                  "#8796a3",
+                                  "#aebac4",
+                                  "#d3dbe1",
+                                  "#f4f7f9",
+                                  "#ffffff"
+                                ],
+                                "name": "Cloud by height",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "m7szj8h",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "height_class",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              235,
+                              240,
+                              245
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "altitude": "altitude",
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Cloud (humid air), ECMWF",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Below 2 km",
+                                    "#5b5bd6"
+                                  ],
+                                  [
+                                    "2–5 km",
+                                    "#3fa7d6"
+                                  ],
+                                  [
+                                    "5–8 km",
+                                    "#59d4a8"
+                                  ],
+                                  [
+                                    "8–11 km",
+                                    "#f2c14e"
+                                  ],
+                                  [
+                                    "Above 11 km",
+                                    "#fff4d6"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5b5bd6",
+                                  "#3fa7d6",
+                                  "#59d4a8",
+                                  "#f2c14e",
+                                  "#fff4d6"
+                                ],
+                                "name": "Height band",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.03,
+                              "outline": false,
+                              "radius": 21.9,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5d6b78",
+                                  "#8796a3",
+                                  "#aebac4",
+                                  "#d3dbe1",
+                                  "#f4f7f9",
+                                  "#ffffff"
+                                ],
+                                "name": "Cloud by height",
+                                "type": "sequential"
+                              },
+                              "thickness": 1
+                            }
+                          },
+                          "id": "clouds",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "height_class",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "screen",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": false,
+                "mosaicSelection": "cloudFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 250,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 5,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Humid air in each step: how many voxels pass the threshold and\n-- the brushes of the charts (grey behind: all of them). Not filtered by its own window.\nWITH x AS (\n  SELECT time, level_hpa, $__crossfilter($cloudFilters, -time) AS keep FROM $clouds\n)\nSELECT time_bucket(INTERVAL 6 HOUR, time) AS time,\n       count(*)::DOUBLE AS \"All humid air\",\n       count(*) FILTER (WHERE keep)::DOUBLE AS \"Kept by the charts\"\nFROM x\nGROUP BY 1\nORDER BY 1\n"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Bars: voxels at or above the threshold in each step, below and above 5.5 km (500 hPa).",
+          "id": 3,
+          "links": [],
+          "title": "Forecast hours: brush or press play, one six-hour step at a time",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "aggregation": "auto",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "All humid air"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "rgba(128, 128, 128, 0.25)",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kept by the charts"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#dfe8ee",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "#111827",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "6h",
+                "cursorColor": "",
+                "cursorFollow": false,
+                "cursorPublish": false,
+                "density": "comfortable",
+                "domain": "data",
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": false,
+                "instantVariable": "",
+                "loop": true,
+                "mosaicColumn": "time",
+                "mosaicSelection": "cloudFilters",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "never",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 500,
+                "publishWhileDragging": true,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1500,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "interval",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.5.0"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Humid air by distance from the model’s eye (25 km rings) and height, every bearing together, in the colour of its height: the more of the ring at or above the threshold, the more opaque. Brush a range of distance to filter.",
+          "id": 4,
+          "links": [],
+          "title": "In-fa from the side: distance from the eye and height",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# In-fa from the side: the share of each 25 km ring around the eye (the model's\n# lowest pressure) that is humid, level by level, every bearing together, at the\n# step the brush shows: in the colour of its height, more opaque the more of\n# the ring is humid.\n# The eye is the gap at the left; the eyewall the tall column beside it. Brush\n# a range of distance (the eyewall, the outer bands) to keep that ring on the\n# map and in the other charts.\nparams:\n  cloudFilters: { select: crossfilter }\nplot:\n  - mark: rect\n    data: { from: clouds, filterBy: $cloudFilters }\n    x: { bin: distance_km, step: 25 }\n    y1: band_lo_km\n    y2: band_hi_km\n    fill: height_class\n    fillOpacity: { sum: ring_share }\n    inset: 0\n  - select: intervalX\n    as: $cloudFilters\n    brush: { fillOpacity: 0.06, stroke: currentColor, strokeOpacity: 0.8 }\nxDomain: [0, 1000]\nyDomain: [0, 14.5]\ncolorDomain: [\"Below 2 km\", \"2–5 km\", \"5–8 km\", \"8–11 km\", \"Above 11 km\"]\ncolorRange: [\"#5b5bd6\", \"#3fa7d6\", \"#59d4a8\", \"#f2c14e\", \"#fff4d6\"]\nopacityDomain: [0, 0.7]\nopacityClamp: true\nxLabel: Distance from the eye (km) →\nyLabel: ↑ Height (km)\nmarginLeft: 40\nmarginBottom: 36\n",
+                "variables": "- param: cloudFilters\n  column: distance_km\n  from: dist_lo\n  to: dist_hi\n"
+              }
+            },
+            "version": "2.3.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Voxels by bearing from the eye, eight sectors, stacked by height. Brush a range of bearings to filter.",
+          "id": 5,
+          "links": [],
+          "title": "Side of the eye",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "- param: cloudFilters\n  column: humidity_pct\n  from: rh\n  to: rh_top\n",
+                "spec": "# Which side of the eye holds the humid air: bearing from the eye, 0 = north,\n# in eight sectors, stacked by height, at the step the brush shows. Brush a\n# range of bearings.\nparams:\n  cloudFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: clouds, filterBy: $cloudFilters }\n    x: { bin: bearing_deg, step: 45 }\n    y: { count: }\n    fill: height_class\n    inset: 1\n  - select: intervalX\n    as: $cloudFilters\n    brush: { fillOpacity: 0.08, stroke: currentColor, strokeOpacity: 0.7 }\nxDomain: [0, 360]\nxTicks: [0, 90, 180, 270, 360]\ncolorDomain: [\"Below 2 km\", \"2–5 km\", \"5–8 km\", \"8–11 km\", \"Above 11 km\"]\ncolorRange: [\"#5b5bd6\", \"#3fa7d6\", \"#59d4a8\", \"#f2c14e\", \"#fff4d6\"]\nxLabel: Bearing (°, 0 = N, 90 = E) →\nyLabel: ↑ Voxels\nmarginLeft: 48\nmarginBottom: 36\n",
+                "variables": "- param: cloudFilters\n  column: bearing_deg\n  from: b_lo\n  to: b_hi\n"
+              }
+            },
+            "version": "2.3.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Voxels per pressure level, over the layer of air each stands for. Brush a range of heights to filter.",
+          "id": 6,
+          "links": [],
+          "title": "How high",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "# How high the humid air goes: voxels per pressure level, each drawn over the\n# layer of air it stands for. Brush a range of heights (low cloud, the\n# outflow) to keep it on the map and in the other charts.\nparams:\n  cloudFilters: { select: crossfilter }\nplot:\n  - mark: rectX\n    data: { from: clouds, filterBy: $cloudFilters }\n    y1: band_lo_km\n    y2: band_hi_km\n    x: { count: }\n    fill: height_class\n    inset: 0.5\n  - select: intervalY\n    as: $cloudFilters\n    field: height_km\n    brush: { fillOpacity: 0.08, stroke: currentColor, strokeOpacity: 0.7 }\nyDomain: [0, 14.5]\ncolorDomain: [\"Below 2 km\", \"2–5 km\", \"5–8 km\", \"8–11 km\", \"Above 11 km\"]\ncolorRange: [\"#5b5bd6\", \"#3fa7d6\", \"#59d4a8\", \"#f2c14e\", \"#fff4d6\"]\nxLabel: Voxels →\nyLabel: ↑ Height (km)\nmarginLeft: 40\nmarginBottom: 36\n",
+                "variables": "- param: cloudFilters\n  column: height_km\n  from: h_lo\n  to: h_hi\n"
+              }
+            },
+            "version": "2.3.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 4,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 17,
+              "width": 15,
+              "x": 0,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 7,
+              "width": 9,
+              "x": 15,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 10,
+              "width": 4,
+              "x": 15,
+              "y": 16
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 10,
+              "width": 5,
+              "x": 19,
+              "y": 16
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus",
+      "weather"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-6h",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "In-fa in 3D: a typhoon’s clouds in the ECMWF forecast",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "95 %",
+            "value": "95"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Cloud where humidity ≥",
+          "multi": false,
+          "name": "rh",
+          "options": [],
+          "query": "90 % : 90, 95 % : 95, 100 % : 100",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "×20",
+            "value": "20"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Heights lifted",
+          "multi": false,
+          "name": "lift",
+          "options": [],
+          "query": "×5 : 5, ×10 : 10, ×20 : 20",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "d943f0a4d_clouds_v1",
+            "value": "d943f0a4d_clouds_v1"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "clouds",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "clouds",
+              "refId": "clouds",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- ECMWF's forecast (IFS, 0.25 degree, Open Data, the run of 29 October 18 UTC)\n-- of relative humidity on eleven pressure levels, every six hours to two days\n-- ahead: the cells and levels at 90 % or more within 1,000 km of In-fa's eye,\n-- into the browser once. The eye of each step is the model's own, its lowest\n-- sea-level pressure near the track (centres.parquet). Each voxel carries its\n-- distance and bearing from the eye and the height of its level in the\n-- standard atmosphere. Each step is stamped three hours before its valid time,\n-- the middle of the six-hour window that ends at it, so the brush's window\n-- holds one step: the one valid at its end.\nWITH v AS (\n  SELECT v.valid_time, v.latitude, v.longitude, v.level_hpa, v.rh,\n         c.msl_hpa AS eye_hpa,\n         2 * 6371 * asin(sqrt(pow(sin(radians(v.latitude - c.latitude) / 2), 2)\n             + cos(radians(c.latitude)) * cos(radians(v.latitude)) * pow(sin(radians(v.longitude - c.longitude) / 2), 2))) AS distance_km,\n         (degrees(atan2(sin(radians(v.longitude - c.longitude)) * cos(radians(v.latitude)),\n                        cos(radians(c.latitude)) * sin(radians(v.latitude))\n                        - sin(radians(c.latitude)) * cos(radians(v.latitude)) * cos(radians(v.longitude - c.longitude)))) + 360) % 360 AS bearing\n  FROM 'http://feeds/datasets/cyclone-clouds/clouds.parquet' v\n  JOIN 'http://feeds/datasets/cyclone-clouds/centres.parquet' c USING (valid_time)\n  WHERE v.rh \u003e= 90\n)\nSELECT valid_time - INTERVAL 3 HOUR AS time,\n       strftime(valid_time, '%b %-d %H:%M UTC') AS valid_at,\n       latitude, longitude, level_hpa,\n       rh AS humidity_pct,\n       round(44330.8 * (1 - pow(level_hpa / 1013.25, 0.190263)) / 1000, 1) AS height_km,\n       round(distance_km) AS distance_km,\n       round(bearing) AS bearing_deg,\n       eye_hpa,\n       -- The height band each chart and the map colour by.\n       CASE WHEN level_hpa \u003e= 850 THEN 'Below 2 km' WHEN level_hpa \u003e= 600 THEN '2–5 km'\n            WHEN level_hpa \u003e= 400 THEN '5–8 km' WHEN level_hpa \u003e= 250 THEN '8–11 km'\n            ELSE 'Above 11 km' END AS height_class,\n       -- The share of its 25 km ring around the eye one cell covers (a 0.25\n       -- degree cell against the ring's area), so a sum per ring and level is\n       -- the share of that ring that is humid, near the eye as far out.\n       27.8 * 27.8 * cos(radians(latitude))\n         / (pi() * (pow(floor(distance_km / 25) * 25 + 25, 2) - pow(floor(distance_km / 25) * 25, 2))) AS ring_share,\n       -- The layer of air this level stands for, halfway to its neighbours.\n       CASE level_hpa WHEN 1000 THEN 0 WHEN 925 THEN 0.45 WHEN 850 THEN 1.15 WHEN 700 THEN 2.25 WHEN 600 THEN 3.6\n                      WHEN 500 THEN 4.9 WHEN 400 THEN 6.4 WHEN 300 THEN 8.2 WHEN 250 THEN 9.8 WHEN 200 THEN 11.1\n                      ELSE 12.7 END AS band_lo_km,\n       CASE level_hpa WHEN 1000 THEN 0.45 WHEN 925 THEN 1.15 WHEN 850 THEN 2.25 WHEN 700 THEN 3.6 WHEN 600 THEN 4.9\n                      WHEN 500 THEN 6.4 WHEN 400 THEN 8.2 WHEN 300 THEN 9.8 WHEN 250 THEN 11.1 WHEN 200 THEN 12.7\n                      ELSE 14.5 END AS band_hi_km\nFROM v\nWHERE distance_km \u003c= 1000\nORDER BY time\n",
+                  "refId": "clouds"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-10-30T06:00:00.000Z",
+            "value": "2026-10-30T06:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Window from",
+          "name": "t0",
+          "query": "2026-10-30T06:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-10-30T12:00:00.000Z",
+            "value": "2026-10-30T12:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Window to",
+          "name": "t1",
+          "query": "2026-10-30T12:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "dist_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "dist_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "h_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "b_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "b_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "100",
+            "value": "100"
+          },
+          "hide": "hideVariable",
+          "name": "rh_top",
+          "query": "100",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "clouds#aa76f570",
+            "value": "clouds#aa76f570"
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "cloudFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$clouds",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$t0",
+                  "label": "Time",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "distance_km",
+                  "from": "$dist_lo",
+                  "label": "Distance from the eye (km)",
+                  "name": "distance",
+                  "to": "$dist_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "height_km",
+                  "from": "$h_lo",
+                  "label": "Height (km)",
+                  "name": "height",
+                  "to": "$h_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "bearing_deg",
+                  "from": "$b_lo",
+                  "label": "Bearing (°)",
+                  "name": "bearing",
+                  "to": "$b_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "humidity_pct",
+                  "from": "$rh",
+                  "label": "Humidity (%)",
+                  "name": "humidity",
+                  "to": "$rh_top",
+                  "type": "range"
+                }
+              ],
+              "kind": "filters",
+              "refId": "cloudFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}

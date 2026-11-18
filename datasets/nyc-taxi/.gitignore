@@ -1,0 +1,3 @@
+# Built by build.sh on each instance from somebody else's demo database.
+*.parquet
+.*.tmp

@@ -1,0 +1,12 @@
+    # Fires and the grid. FIRMS's week of detections per satellite and region,
+    # a fresh copy every ten minutes, as the satellites pass; the last one while
+    # FIRMS fails.
+    location ~ ^/firms/((?:noaa-20|noaa-21|suomi-npp)-viirs-c2)/((?:J1|J2|SUOMI)_VIIRS_C2_(?:South_America|Southern_Africa|Australia_NewZealand|USA_contiguous_and_Hawaii)_7d\.csv)$ {
+        set $firms firms.modaps.eosdis.nasa.gov;
+        proxy_pass https://$firms/data/active_fire/$1/csv/$2;
+        proxy_set_header Host $firms;
+        proxy_cache wildfires;
+        proxy_cache_valid 200 10m;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

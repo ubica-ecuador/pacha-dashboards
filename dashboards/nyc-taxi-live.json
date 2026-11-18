@@ -1,0 +1,2085 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "nyc-taxi-live"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "legacyOptions": {
+            "type": "dashboard"
+          },
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "One real week of New York taxi trips (September 2015) replayed to the New York clock every 5 seconds: animated H3 flows between neighbourhoods, pickups and dropoffs by hexagon, trip arcs and live counters.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 1,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## New York City taxis, live\nOne real week of 2015 — 3.09 million trips — replayed to the New York clock: the same weekday and the same time of day as there right now. Refreshes every 5 seconds.\n\nPick a cab type above, or click a hexagon on the pickups or dropoffs map to follow only the trips that start or end there.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- The same trips aggregated to large hexagons (H3 resolution 7, ~5 km²):\n-- from which neighborhood to which, without street-level detail.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT pickup_h3_7 AS origin_h3,\n       dropoff_h3_7 AS dest_h3,\n       count(*)::BIGINT AS trips\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (pickup_time \u003e t - INTERVAL 10 MINUTE AND pickup_time \u003c= t)\n    -- Past midnight on Monday, the window carries on at the end of Sunday.\n    OR (pickup_time \u003e t + INTERVAL 7 DAY - INTERVAL 10 MINUTE AND pickup_time \u003c= t + INTERVAL 7 DAY)\n  )\n  AND pickup_h3_7 \u003c\u003e dropoff_h3_7\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)\n  -- The fare range brushed on the tip chart ($fare_lo, $fare_hi). Empty means any fare.\n  AND ($fare_lo = '' OR fare \u003e= try_cast($fare_lo AS DOUBLE))\n  AND ($fare_hi = '' OR fare \u003c try_cast($fare_hi AS DOUBLE))\nGROUP BY 1, 2"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- One arc per trip in the last 10 minutes. pickup_lat/pickup_lon and\n-- dropoff_lat/dropoff_lon are names the panel recognizes as origin and destination.\n-- The fare is `amount`, not `total`: the panel reads a column named `total` as a\n-- flow count and renames it.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT pickup_lat, pickup_lon, dropoff_lat, dropoff_lon,\n       passengers,\n       total AS amount\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (pickup_time \u003e t - INTERVAL 10 MINUTE AND pickup_time \u003c= t)\n    -- Past midnight on Monday, the window carries on at the end of Sunday.\n    OR (pickup_time \u003e t + INTERVAL 7 DAY - INTERVAL 10 MINUTE AND pickup_time \u003c= t + INTERVAL 7 DAY)\n  )\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)\n  -- The fare range brushed on the tip chart ($fare_lo, $fare_hi). Empty means any fare.\n  AND ($fare_lo = '' OR fare \u003e= try_cast($fare_lo AS DOUBLE))\n  AND ($fare_hi = '' OR fare \u003c try_cast($fare_hi AS DOUBLE))"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each arc is a trip from the last 10 minutes, cyan where it starts and magenta where it ends. With the cursor over the map, only the arcs that start or end within 0.7 km remain. Underneath, in amber, the same trips aggregated neighborhood to neighborhood (H3 hexagons of ~5 km²); those lines do not react to the cursor. A fare range brushed on the tip chart keeps only the trips inside it.",
+          "id": 10,
+          "links": [],
+          "title": "Trip by trip · hover over the map to see what leaves and arrives in each area",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "dark-matter",
+                "flowRenderMode": "curved",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 32.88592394929953,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.72550142342595,
+                      "longitude": -73.93440106201068,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 64.80689936413478,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "c526v1g3d",
+                          "name": [
+                            "passengers"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            1.09,
+                            6.1
+                          ],
+                          "view": "side"
+                        },
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-B"
+                          ],
+                          "enabled": true,
+                          "id": "0fdmndn3th",
+                          "name": [
+                            "amount"
+                          ],
+                          "plotType": {
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "range",
+                          "value": [
+                            1.7999999999999998,
+                            106.45
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": true,
+                          "size": 0.7
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": false,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "source_h3"
+                              },
+                              {
+                                "name": "target_h3"
+                              },
+                              {
+                                "name": "count"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "passengers"
+                              },
+                              {
+                                "name": "amount"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "arcs",
+                        "flow-grafana-A"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              53,
+                              198,
+                              220
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Trips · last 10 min",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "opacity": 0.75,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "targetColor": [
+                                240,
+                                56,
+                                107
+                              ],
+                              "thickness": 0.7
+                            }
+                          },
+                          "id": "arcs",
+                          "type": "arc",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              34,
+                              63,
+                              154
+                            ],
+                            "columnMode": "H3",
+                            "columns": {
+                              "count": "count",
+                              "sourceH3": "source_h3",
+                              "targetH3": "target_h3"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Neighborhood to neighborhood · last 10 min",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#5c3a0a",
+                                  "#8a5a0f",
+                                  "#b87d16",
+                                  "#e0a526",
+                                  "#f7c64b",
+                                  "#ffe08a"
+                                ],
+                                "name": "Neighborhood to neighborhood · last 10 min",
+                                "type": "sequential"
+                              },
+                              "darkBaseMapEnabled": true,
+                              "flowAdaptiveScalesEnabled": true,
+                              "flowClusteringEnabled": true,
+                              "flowFadeAmount": 11,
+                              "flowFadeEnabled": true,
+                              "flowLineCurviness": 1,
+                              "flowLineThicknessScale": 2.1,
+                              "flowLinesRenderingMode": "straight",
+                              "flowLocationTotalsEnabled": false,
+                              "maxTopFlowsDisplayNum": 5000,
+                              "opacity": 0.45
+                            }
+                          },
+                          "id": "flow-grafana-A",
+                          "type": "flow",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishWhilePlaying": false,
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 1,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [],
+                "viewportVariables": {},
+                "windDensity": 9000
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- Trips per minute since midnight, returned as instants of today so that\n-- Grafana's time axis puts them in place.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT (time_bucket(INTERVAL 1 MINUTE, pickup_time)\n        + (date_trunc('day', now() AT TIME ZONE 'America/New_York') - date_trunc('day', t)))\n       AT TIME ZONE 'America/New_York' AS time,\n       count(*)::BIGINT AS \"Trips per minute\"\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE pickup_time \u003e= date_trunc('day', t) AND pickup_time \u003c= t\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)\nGROUP BY 1\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 11,
+          "links": [],
+          "title": "Trips per minute, since midnight",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#ffa62b",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 25,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- Tip against fare for trips in the last 30 minutes. Only trips paid with a\n-- tip: cash tips are not recorded.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT fare AS \"Fare\",\n       tip AS \"Tip\"\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (pickup_time \u003e t - INTERVAL 30 MINUTE AND pickup_time \u003c= t)\n    -- Past midnight on Monday, the window carries on at the end of Sunday.\n    OR (pickup_time \u003e t + INTERVAL 7 DAY - INTERVAL 30 MINUTE AND pickup_time \u003c= t + INTERVAL 7 DAY)\n  )\n  AND fare BETWEEN 2.5 AND 70 AND tip \u003e 0 AND tip \u003c 15\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot is a trip paid with a tip in the last half hour. Drag across the chart to pick a fare range: the trip-by-trip arcs and the flows keep only the trips inside it. The eraser in the corner clears it.",
+          "id": 12,
+          "links": [],
+          "title": "Tip against fare · last 30 minutes",
+          "vizConfig": {
+            "group": "volkovlabs-echarts-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "baidu": {
+                  "callback": "bmapReady",
+                  "key": ""
+                },
+                "editor": {
+                  "format": "auto"
+                },
+                "editorMode": "code",
+                "gaode": {
+                  "key": "",
+                  "plugin": "AMap.Scale,AMap.ToolBar"
+                },
+                "getOption": "// Tip against fare, one dot per trip paid with a tip in the last half hour,\n// and a brush over the fare that filters the maps.\n//\n// Dragging across the chart writes the fare range, in whole dollars, to two\n// dashboard variables (LO and HI): the trip-by-trip arcs and the flows keep\n// only the trips whose fare is inside it. The chart does not filter itself:\n// dots outside the range stay, faded. A click without a drag clears it.\n// The query frame has columns `Fare` and `Tip`, in dollars.\n// @constants begin\nconst LO = 'fare_lo';\nconst HI = 'fare_hi';\nconst STEP = 1;\nconst DOMAIN = [0, 70];\nconst UNIT = 'fare ($)';\nconst COLOR = '#35c6dc';\n// @constants end\n\nconst chart = context.panel.chart;\nconst location = context.grafana.locationService;\nconst theme = context.grafana.theme;\n\nconst frame = context.panel.data.series.find((f) =\u003e f.refId === 'A');\nconst col = (name) =\u003e (frame ? Array.from(frame.fields.find((f) =\u003e f.name === name)?.values ?? []) : []);\nconst fares = col('Fare').map(Number);\nconst tips = col('Tip').map(Number);\nconst points = fares.map((f, i) =\u003e [f, tips[i]]);\n\n// Whole dollars only, and never an empty range.\nconst snap = (range) =\u003e {\n  const lo = Math.max(DOMAIN[0], Math.floor(range[0] / STEP) * STEP);\n  const hi = Math.min(DOMAIN[1], Math.max(Math.ceil(range[1] / STEP) * STEP, lo + STEP));\n  return [lo, hi];\n};\nconst drawBrush = (range) =\u003e\n  chart.dispatchAction({ type: 'brush', areas: range ? [{ brushType: 'lineX', xAxisIndex: 0, coordRange: range }] : [] });\nconst publish = (range) =\u003e {\n  location.partial({ ['var-' + LO]: range ? String(range[0]) : '', ['var-' + HI]: range ? String(range[1]) : '' }, true);\n};\n\n// The drag is handled here, on the chart's zrender, not by ECharts' own brush:\n// this dashboard refreshes every 5 s, and a refresh that lands during a drag\n// redraws the chart and drops an ECharts brush before it ends. The zrender\n// outlives redraws, so the drag carries on across them; the brush component\n// only draws the range. A click without a drag clears it.\nconst zr = chart.getZr();\nconst fareAt = (x) =\u003e Math.max(DOMAIN[0], Math.min(DOMAIN[1], chart.convertFromPixel({ xAxisIndex: 0 }, x)));\nfor (const [name, fn] of Object.entries(chart.__fareDrag || {})) {\n  zr.off(name, fn);\n}\nchart.__fareDrag = {\n  mousedown: (e) =\u003e {\n    if (chart.containPixel('grid', [e.offsetX, e.offsetY])) {\n      chart.__drag = { x: e.offsetX, fare: fareAt(e.offsetX) };\n    }\n  },\n  mousemove: (e) =\u003e {\n    const d = chart.__drag;\n    if (d \u0026\u0026 Math.abs(e.offsetX - d.x) \u003e 3) {\n      const f = fareAt(e.offsetX);\n      drawBrush([Math.min(d.fare, f), Math.max(d.fare, f)]);\n    }\n  },\n  mouseup: (e) =\u003e {\n    const d = chart.__drag;\n    chart.__drag = null;\n    if (!d) return;\n    if (Math.abs(e.offsetX - d.x) \u003c= 3) {\n      drawBrush(null);\n      publish(undefined);\n      return;\n    }\n    const f = fareAt(e.offsetX);\n    const range = snap([Math.min(d.fare, f), Math.max(d.fare, f)]);\n    drawBrush(range);\n    publish(range);\n  },\n};\nfor (const [name, fn] of Object.entries(chart.__fareDrag)) {\n  zr.on(name, fn);\n}\n\n// Every redraw wipes the brush: draw it back from the variables, which is\n// also how a shared link arrives with its range.\nconst current = [\n  parseFloat(context.grafana.replaceVariables('${' + LO + '}')),\n  parseFloat(context.grafana.replaceVariables('${' + HI + '}')),\n];\nconst picked = current.every(Number.isFinite);\nconst inRange = picked ? points.filter((p) =\u003e p[0] \u003e= current[0] \u0026\u0026 p[0] \u003c current[1]).length : null;\nsetTimeout(() =\u003e drawBrush(picked ? current : null), 0);\n\nconst muted = theme.colors.text.secondary;\n\nreturn {\n  animation: false,\n  backgroundColor: 'transparent',\n  grid: { left: 22, right: 16, top: 28, bottom: 22, containLabel: true },\n  // The brush only draws the range: no toolbox, the drag is handled above.\n  toolbox: { show: false },\n  title: {\n    show: true,\n    text: picked\n      ? `$${current[0]}–$${current[1]}: ${inRange} of ${points.length} trips · click to clear`\n      : 'Drag across to pick a fare range',\n    left: 4,\n    top: 2,\n    textStyle: { color: muted, fontSize: 11, fontWeight: 'normal' },\n  },\n  tooltip: {\n    trigger: 'item',\n    formatter: (p) =\u003e {\n      const [f, t] = p.value;\n      return `Fare \u003cb\u003e$${f.toFixed(2)}\u003c/b\u003e\u003cbr/\u003eTip \u003cb\u003e$${t.toFixed(2)}\u003c/b\u003e (${Math.round((100 * t) / f)} %)`;\n    },\n  },\n  brush: {\n    xAxisIndex: 0,\n    seriesIndex: [0],\n    brushType: 'lineX',\n    brushMode: 'single',\n    transformable: false,\n    brushStyle: { color: 'rgba(128, 128, 128, 0.12)', borderColor: muted, borderWidth: 1 },\n    outOfBrush: { colorAlpha: 0.15 },\n  },\n  xAxis: {\n    type: 'value',\n    min: DOMAIN[0],\n    max: DOMAIN[1],\n    name: UNIT,\n    nameLocation: 'middle',\n    nameGap: 24,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted, formatter: (v) =\u003e `$${v}` },\n    splitLine: { show: false },\n  },\n  yAxis: {\n    type: 'value',\n    name: 'tip ($)',\n    nameLocation: 'middle',\n    nameGap: 36,\n    nameTextStyle: { color: muted },\n    axisLabel: { color: muted, formatter: (v) =\u003e `$${v}` },\n    splitLine: { lineStyle: { opacity: 0.15 } },\n  },\n  series: [\n    {\n      name: 'Trips',\n      type: 'scatter',\n      data: points,\n      symbolSize: 4,\n      itemStyle: { color: COLOR, opacity: 0.55 },\n      emphasis: { disabled: true },\n    },\n  ],\n};",
+                "google": {
+                  "callback": "gmapReady",
+                  "key": ""
+                },
+                "map": "none",
+                "renderer": "canvas",
+                "themeEditor": {
+                  "config": "{}",
+                  "name": "default"
+                },
+                "visualEditor": {
+                  "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+                  "dataset": [],
+                  "series": []
+                }
+              }
+            },
+            "version": "7.2.5"
+          }
+        }
+      },
+      "panel-13": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 13,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**How it's built.** A Parquet file built once on this instance (`datasets/nyc-taxi/build.sh`), read by the DuckDB data source and four kepler.gl panels; the flows come straight from columns named `origin_h3`, `dest_h3` and `trips`, and the arcs from `pickup_lat`/`pickup_lon` and `dropoff_lat`/`dropoff_lon`. **Data:** NYC Taxi \u0026 Limousine Commission, yellow and green cabs, 14–20 Sep 2015, extracted from [QuestDB's public demo](https://demo.questdb.io). Inspired by their [taxi dashboard](https://questdb.com/dashboards/taxi/).",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- One flow per pair of H3 hexagons (resolution 8, ~0.7 km²) with trips that\n-- started in the last 10 minutes. origin_h3/dest_h3/trips are names the panel\n-- recognizes on its own to build the flow layer.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT pickup_h3_8 AS origin_h3,\n       dropoff_h3_8 AS dest_h3,\n       count(*)::BIGINT AS trips\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (pickup_time \u003e t - INTERVAL 10 MINUTE AND pickup_time \u003c= t)\n    -- Past midnight on Monday, the window carries on at the end of Sunday.\n    OR (pickup_time \u003e t + INTERVAL 7 DAY - INTERVAL 10 MINUTE AND pickup_time \u003c= t + INTERVAL 7 DAY)\n  )\n  AND pickup_h3_8 \u003c\u003e dropoff_h3_8\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)\n  -- The fare range brushed on the tip chart ($fare_lo, $fare_hi). Empty means any fare.\n  AND ($fare_lo = '' OR fare \u003e= try_cast($fare_lo AS DOUBLE))\n  AND ($fare_hi = '' OR fare \u003c try_cast($fare_hi AS DOUBLE))\nGROUP BY 1, 2"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each animated line joins two H3 hexagons with trips between them; its width and color say how many. The circle at each hexagon splits into what leaves and what arrives. Everything is computed in DuckDB over a Parquet file on every refresh. A fare range brushed on the tip chart keeps only the trips inside it.",
+          "id": 2,
+          "links": [],
+          "title": "Flows · trips that started in the last 10 minutes",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "dark-matter",
+                "flowRenderMode": "animated-straight",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 24,
+                      "dragRotate": true,
+                      "isSplit": false,
+                      "latitude": 40.705,
+                      "longitude": -73.905,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "pitch": 45,
+                      "zoom": 11.2
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": []
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "flow-grafana-A"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "columnMode": "H3",
+                            "columns": {
+                              "count": "count",
+                              "sourceH3": "source_h3",
+                              "targetH3": "target_h3"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Trips · last 10 min",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#b5176f",
+                                  "#d6246e",
+                                  "#f0386b",
+                                  "#ff6b4a",
+                                  "#ffa62b",
+                                  "#ffe066"
+                                ],
+                                "name": "Trips · last 10 min",
+                                "type": "sequential"
+                              },
+                              "darkBaseMapEnabled": true,
+                              "flowAdaptiveScalesEnabled": true,
+                              "flowClusteringEnabled": false,
+                              "flowFadeAmount": 20,
+                              "flowFadeEnabled": true,
+                              "flowLineCurviness": 1,
+                              "flowLineThicknessScale": 2.4,
+                              "flowLinesRenderingMode": "animated-straight",
+                              "flowLocationTotalsEnabled": true,
+                              "maxTopFlowsDisplayNum": 5000,
+                              "opacity": 1
+                            }
+                          },
+                          "id": "flow-grafana-A",
+                          "type": "flow",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishWhilePlaying": false,
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [],
+                "viewportVariables": {},
+                "windDensity": 9000
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\nSELECT strftime(t, '%a %H:%M') AS ny_time\nFROM clock"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The replay time: the same weekday and time of day as in New York right now, in September 2015.",
+          "id": 3,
+          "links": [],
+          "title": "Time in New York",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^ny_time$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "valueSize": 34
+                },
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- In transit: picked up in the last 3 hours and not dropped off yet. The two\n-- halves of the week wrap sit inside one pair of parentheses, so the filters\n-- below apply to both.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT count(*)::BIGINT AS taxis,\n       sum(passengers)::BIGINT AS passengers\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (pickup_time \u003e t - INTERVAL 3 HOUR AND pickup_time \u003c= t AND dropoff_time \u003e t)\n    OR (pickup_time \u003e t + INTERVAL 7 DAY - INTERVAL 3 HOUR AND pickup_time \u003c= t + INTERVAL 7 DAY\n        AND dropoff_time \u003e t + INTERVAL 7 DAY)\n  )\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips that have started and not ended yet.",
+          "id": 4,
+          "links": [],
+          "title": "Taxis in transit",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#35c6dc",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^taxis$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "valueSize": 40
+                },
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- In transit: picked up in the last 3 hours and not dropped off yet. The two\n-- halves of the week wrap sit inside one pair of parentheses, so the filters\n-- below apply to both.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT count(*)::BIGINT AS taxis,\n       sum(passengers)::BIGINT AS passengers\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (pickup_time \u003e t - INTERVAL 3 HOUR AND pickup_time \u003c= t AND dropoff_time \u003e t)\n    OR (pickup_time \u003e t + INTERVAL 7 DAY - INTERVAL 3 HOUR AND pickup_time \u003c= t + INTERVAL 7 DAY\n        AND dropoff_time \u003e t + INTERVAL 7 DAY)\n  )\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Total passengers in the taxis in transit.",
+          "id": 5,
+          "links": [],
+          "title": "Passengers on board",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#7fe3ea",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^passengers$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "valueSize": 40
+                },
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- Since midnight in New York. The sum() is cast: without it Grafana receives a\n-- HUGEINT as text and the stat cannot draw it.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT count(*)::BIGINT AS trips,\n       sum(total)::DOUBLE AS revenue\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE pickup_time \u003e= date_trunc('day', t) AND pickup_time \u003c= t\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips started since midnight in New York.",
+          "id": 6,
+          "links": [],
+          "title": "Trips today",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#ffa62b",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^trips$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "valueSize": 40
+                },
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- Since midnight in New York. The sum() is cast: without it Grafana receives a\n-- HUGEINT as text and the stat cannot draw it.\n-- Cross-filtering: the cab type picker, and the hexagon clicked on the pickups\n-- map ($from_zone) or the dropoffs map ($to_zone). Empty means everywhere.\nSELECT count(*)::BIGINT AS trips,\n       sum(total)::DOUBLE AS revenue\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE pickup_time \u003e= date_trunc('day', t) AND pickup_time \u003c= t\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Total amount charged (fare, surcharges, tolls and tips) since midnight.",
+          "id": 7,
+          "links": [],
+          "title": "Revenue today",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#ffe066",
+                    "mode": "fixed"
+                  },
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "currencyUSD"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^revenue$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "text": {
+                  "valueSize": 40
+                },
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- Pickups in the last 10 minutes per H3 hexagon at resolution 9 (~0.1 km²).\n-- Filtered by the dropoff hexagon but never by its own ($from_zone): the map\n-- you click on keeps showing every hexagon, so another one can be picked.\nSELECT pickup_h3_9 AS h3,\n       count(*)::BIGINT AS pickups\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (pickup_time \u003e t - INTERVAL 10 MINUTE AND pickup_time \u003c= t)\n    -- Past midnight on Monday, the window carries on at the end of Sunday.\n    OR (pickup_time \u003e t + INTERVAL 7 DAY - INTERVAL 10 MINUTE AND pickup_time \u003c= t + INTERVAL 7 DAY)\n  )\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($to_zone = '' OR dropoff_h3_9 = $to_zone)\nGROUP BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Pickups per H3 hexagon at resolution 9 (~0.1 km²): height and color say how many. Click a hexagon to show only the trips that start there across the whole dashboard; click empty map to clear.",
+          "id": 8,
+          "links": [],
+          "title": "Where people get in · last 10 minutes",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "dark-matter",
+                "flowRenderMode": "animated-straight",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 29,
+                      "dragRotate": true,
+                      "isSplit": false,
+                      "latitude": 40.727,
+                      "longitude": -73.945,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "pitch": 50,
+                      "zoom": 11.4
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "pickups"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "pickups"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "columns": {
+                              "hex_id": "h3"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Pickups · last 10 min",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#083d5c",
+                                  "#0b5f86",
+                                  "#0f86ad",
+                                  "#18a9c9",
+                                  "#35c6dc",
+                                  "#7fe3ea"
+                                ],
+                                "name": "Pickups · last 10 min",
+                                "type": "sequential"
+                              },
+                              "coverage": 0.85,
+                              "coverageRange": [
+                                0,
+                                1
+                              ],
+                              "elevationScale": 2.5,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": true,
+                              "opacity": 0.85,
+                              "sizeRange": [
+                                0,
+                                300
+                              ]
+                            }
+                          },
+                          "id": "pickups",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "pickups",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantile",
+                            "coverageScale": "linear",
+                            "sizeField": {
+                              "name": "pickups",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishWhilePlaying": false,
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "h3",
+                    "source": "click",
+                    "variable": "from_zone"
+                  }
+                ],
+                "viewportVariables": {},
+                "windDensity": 9000
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The replay clock: the current time in New York, carried over to the week of\n-- Monday 14 September 2015 with the same weekday and time of day. The data\n-- holds New York wall-clock time, with no time zone.\nWITH clock AS (\n  SELECT TIMESTAMP '2015-09-14'\n         + ((now() AT TIME ZONE 'America/New_York')\n            - date_trunc('week', now() AT TIME ZONE 'America/New_York')) AS t\n)\n-- Dropoffs in the last 10 minutes per H3 hexagon at resolution 9. Filtered by\n-- the pickup hexagon but never by its own ($to_zone), like the pickups map.\nSELECT dropoff_h3_9 AS h3,\n       count(*)::BIGINT AS dropoffs\nFROM read_parquet('http://feeds/datasets/nyc-taxi/trips-2015-w38.parquet'), clock\nWHERE (\n    (dropoff_time \u003e t - INTERVAL 10 MINUTE AND dropoff_time \u003c= t)\n    -- Past midnight on Monday, the window carries on at the end of Sunday.\n    OR (dropoff_time \u003e t + INTERVAL 7 DAY - INTERVAL 10 MINUTE AND dropoff_time \u003c= t + INTERVAL 7 DAY)\n  )\n  AND cab_type IN (${cab_type:sqlstring})\n  AND ($from_zone = '' OR pickup_h3_9 = $from_zone)\nGROUP BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Dropoffs per H3 hexagon at resolution 9. Click a hexagon to show only the trips that end there across the whole dashboard; click empty map to clear. With a hexagon picked on the pickups map, this map shows where those trips go.",
+          "id": 9,
+          "links": [],
+          "title": "Where people get out · last 10 minutes",
+          "vizConfig": {
+            "group": "ubica-keplergl-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "basemap": "dark-matter",
+                "flowRenderMode": "animated-straight",
+                "followGrafanaTheme": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 29,
+                      "dragRotate": true,
+                      "isSplit": false,
+                      "latitude": 40.727,
+                      "longitude": -73.945,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "pitch": 50,
+                      "zoom": 11.4
+                    },
+                    "mapStyle": {
+                      "styleType": "dark-matter",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "dropoffs"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "dropoffs"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "columns": {
+                              "hex_id": "h3"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Dropoffs · last 10 min",
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#4a0f3a",
+                                  "#7d1650",
+                                  "#b31f5f",
+                                  "#e0406a",
+                                  "#ff7a59",
+                                  "#ffb26b"
+                                ],
+                                "name": "Dropoffs · last 10 min",
+                                "type": "sequential"
+                              },
+                              "coverage": 0.85,
+                              "coverageRange": [
+                                0,
+                                1
+                              ],
+                              "elevationScale": 2.5,
+                              "enable3d": true,
+                              "enableElevationZoomFactor": true,
+                              "opacity": 0.85,
+                              "sizeRange": [
+                                0,
+                                300
+                              ]
+                            }
+                          },
+                          "id": "dropoffs",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "dropoffs",
+                              "type": "integer"
+                            },
+                            "colorScale": "quantile",
+                            "coverageScale": "linear",
+                            "sizeField": {
+                              "name": "dropoffs",
+                              "type": "integer"
+                            },
+                            "sizeScale": "sqrt"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "publishWhilePlaying": false,
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 0,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "h3",
+                    "source": "click",
+                    "variable": "to_zone"
+                  }
+                ],
+                "viewportVariables": {},
+                "windDensity": 9000
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-1"
+              },
+              "height": 3,
+              "width": 24,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-2"
+              },
+              "height": 20,
+              "width": 18,
+              "x": 0,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 3
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-4"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 7
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 11
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 15
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 19
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 0,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              },
+              "height": 16,
+              "width": 12,
+              "x": 12,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-10"
+              },
+              "height": 20,
+              "width": 24,
+              "x": 0,
+              "y": 39
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-11"
+              },
+              "height": 9,
+              "width": 14,
+              "x": 0,
+              "y": 59
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-12"
+              },
+              "height": 9,
+              "width": 10,
+              "x": 14,
+              "y": 59
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-13"
+              },
+              "height": 3,
+              "width": 24,
+              "x": 0,
+              "y": 68
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "duckdb",
+      "kepler",
+      "mobility",
+      "live",
+      "business-charts"
+    ],
+    "timeSettings": {
+      "autoRefresh": "5s",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "10m",
+        "30m",
+        "60m"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now/d",
+      "hideTimepicker": true,
+      "timezone": "America/New_York",
+      "to": "now"
+    },
+    "title": "New York City Taxis — Live",
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "Yellow cabs pick up anywhere; green cabs cannot pick up in most of Manhattan.",
+          "hide": "dontHide",
+          "includeAll": true,
+          "label": "Cab type",
+          "multi": true,
+          "name": "cab_type",
+          "options": [],
+          "query": "yellow,green",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Set by clicking a hexagon on the pickups map; clear it to see every origin.",
+          "hide": "dontHide",
+          "label": "From hexagon",
+          "name": "from_zone",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Set by clicking a hexagon on the dropoffs map; clear it to see every destination.",
+          "hide": "dontHide",
+          "label": "To hexagon",
+          "name": "to_zone",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "fare_lo",
+          "name": "fare_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "fare_hi",
+          "name": "fare_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

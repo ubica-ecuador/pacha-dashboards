@@ -1,0 +1,2287 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "shipping-chokepoints-freight"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "enable": true,
+          "filter": {
+            "ids": [
+              4,
+              5,
+              8,
+              9
+            ]
+          },
+          "hide": false,
+          "iconColor": "rgba(255, 179, 0, 0.25)",
+          "name": "Map step",
+          "query": {
+            "datasource": {
+              "name": "infinity"
+            },
+            "group": "yesoreyeram-infinity-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "columns": [
+                {
+                  "selector": "time",
+                  "text": "time",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "timeEnd",
+                  "text": "timeEnd",
+                  "type": "timestamp"
+                },
+                {
+                  "selector": "text",
+                  "text": "text",
+                  "type": "string"
+                }
+              ],
+              "data": "[{\"time\":\"${map_from}\",\"timeEnd\":\"${map_to}\",\"text\":\"On the map\"}]",
+              "format": "table",
+              "parser": "backend",
+              "refId": "MapStep",
+              "source": "inline",
+              "type": "json"
+            },
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Ships a day through the 28 straits and canals the IMF follows, from AIS, against the BLS deep sea freight index: the Red Sea detour around the Cape of Good Hope, and what ocean freight costs since.",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Shipping through the world's chokepoints, and what ocean freight costs\n\nHow many ships pass, day by day, through the 28 straits and canals that world trade funnels through, and\nwhat carriers charge to move it. Since the attacks on ships in the Red Sea began in November 2023, much of\nthe traffic between Asia and Europe has left **Suez and Bab el-Mandeb** to sail around the **Cape of Good\nHope**, two weeks longer; the freight index shows what that costs.\n\nThe **map** sizes each chokepoint by its ships a day over the time range and colours it by the change\nagainst 2023 before the attacks (1 January to 18 November): warm for fewer ships, cool for more. **Hover**\na chokepoint for its traffic week by week; **click** it, or pick it above, for its ships by type below.\n\nData: [IMF PortWatch](https://portwatch.imf.org) daily chokepoint transits, estimated from AIS, updated\nweekly. Freight: BLS producer price index for deep sea freight transportation\n([PCU483111483111](https://fred.stlouisfed.org/series/PCU483111483111), June 1988 = 100, monthly) through\nFRED: what US carriers charge, an index, not a spot rate per container. Lanes:\n[Global Shipping Lanes](https://github.com/newzealandpaul/Shipping-Lanes) v1 (CC BY 4.0), from the CIA\nMap of the World Oceans.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Ships a day over the range against 2023 up to 18 November, the last day\n-- before the attacks in the Red Sea, at the four passages the detour moved\n-- traffic between. In percent.\nWITH r AS (\n  SELECT portid,\n         avg(ships) FILTER (WHERE $__timeFilter(time)) AS now,\n         avg(ships) FILTER (WHERE time \u003e= '2023-01-01' AND time \u003c '2023-11-19') AS before\n  FROM $transits\n  WHERE portid IN ('chokepoint1', 'chokepoint4', 'chokepoint7', 'chokepoint2')\n  GROUP BY portid\n)\nSELECT\n  max(CASE WHEN portid = 'chokepoint1' THEN 100 * (now / before - 1) END) AS \"Suez Canal\",\n  max(CASE WHEN portid = 'chokepoint4' THEN 100 * (now / before - 1) END) AS \"Bab el-Mandeb\",\n  max(CASE WHEN portid = 'chokepoint7' THEN 100 * (now / before - 1) END) AS \"Cape of Good Hope\",\n  max(CASE WHEN portid = 'chokepoint2' THEN 100 * (now / before - 1) END) AS \"Panama Canal\"\nFROM r"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Average ships a day through each passage over the time range, as a change against its average from 1 January to 18 November 2023.",
+          "id": 2,
+          "links": [],
+          "title": "Ships a day over the range, against 2023 before the attacks",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#E0524C",
+                        "value": null
+                      },
+                      {
+                        "color": "#F2A65A",
+                        "value": -30
+                      },
+                      {
+                        "color": "#9AA5B1",
+                        "value": -10
+                      },
+                      {
+                        "color": "#6CC3E0",
+                        "value": 10
+                      },
+                      {
+                        "color": "#3D8FE0",
+                        "value": 30
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The latest month of the freight index in the range, and how far it stands\n-- above its 2023 average, before the Red Sea attacks.\nWITH m AS (SELECT max(time) AS t FROM $freight WHERE $__timeFilter(time)),\nb AS (SELECT avg(freight_index) AS v FROM $freight WHERE year(time) = 2023)\nSELECT f.freight_index AS \"Deep sea freight index\",\n       100 * (f.freight_index / b.v - 1) AS \"Against 2023\"\nFROM m JOIN $freight f ON f.time = m.t, b"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "BLS producer price index for deep sea freight transportation (June 1988 = 100), the latest month in the time range, and how far it stands above its 2023 average.",
+          "id": 3,
+          "links": [],
+          "title": "Deep sea freight, latest month",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Deep sea freight index"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Against 2023"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "#9AA5B1",
+                              "value": 0
+                            },
+                            {
+                              "color": "#F2A65A",
+                              "value": 10
+                            },
+                            {
+                              "color": "#E0524C",
+                              "value": 30
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- One circle per chokepoint: ships a day over the range, sized; the change\n-- against 2023 before the Red Sea attacks (1 January to 18 November),\n-- coloured. Click one to pick it.\nWITH r AS (\n  SELECT portid,\n         avg(ships) FILTER (WHERE $__timeFilter(time)) AS now,\n         avg(ships) FILTER (WHERE time \u003e= '2023-01-01' AND time \u003c '2023-11-19') AS before,\n         avg(capacity_t) FILTER (WHERE $__timeFilter(time)) AS tonnes\n  FROM $transits GROUP BY portid\n)\nSELECT c.portid, c.chokepoint, c.latitude, c.longitude,\n       round(r.now, 1) AS ships_a_day,\n       round(100 * (r.now / r.before - 1), 1) AS change_pct,\n       round(r.tonnes / 1e6, 2) AS million_dwt_a_day,\n       c.top_goods\nFROM $chokepoints c JOIN r USING (portid)\nWHERE r.now IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Ships a day, week by week over the range, for the cards on the map: one\n-- line per chokepoint, shown on hover.\nSELECT $__timeGroup(t.time, '1w') AS time, c.chokepoint, c.latitude, c.longitude,\n       round(avg(t.ships), 1) AS ships_a_day\nFROM $transits t JOIN $chokepoints c USING (portid)\nWHERE $__timeFilter(t.time)\nGROUP BY ALL\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The shipping lanes, Major brightest.\nSELECT lane, geometry AS geom FROM $lanes"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Click a chokepoint to pick it for the charts below; hover it for its ships a day, week by week.",
+          "id": 4,
+          "links": [],
+          "title": "Chokepoints over the range \u2014 sized by ships a day, coloured by the change against 2023",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 18,
+                      "longitude": 45,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 1.6
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "chokepoint"
+                              },
+                              {
+                                "name": "ships_a_day"
+                              },
+                              {
+                                "name": "change_pct"
+                              },
+                              {
+                                "name": "million_dwt_a_day"
+                              },
+                              {
+                                "name": "top_goods"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "chokepoint"
+                              },
+                              {
+                                "name": "ships_a_day"
+                              },
+                              {
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-C": [
+                              {
+                                "name": "lane"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "weekly",
+                        "chokepoints",
+                        "lanes"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Ships a day, week by week",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    null,
+                                    "#F6D18A"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#F6D18A"
+                                ],
+                                "name": "Ships a day",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.8,
+                              "outline": false,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 0.9,
+                              "sparkCards": "hover",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 5,
+                              "sparkDots": true,
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": "auto",
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": false,
+                              "sparkScale": "perSite",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": " ships/day",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "weekly",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "ships_a_day",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              115,
+                              191,
+                              105
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Ships a day, change against 2023",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    -30,
+                                    "#E0524C"
+                                  ],
+                                  [
+                                    -10,
+                                    "#F2A65A"
+                                  ],
+                                  [
+                                    10,
+                                    "#9AA5B1"
+                                  ],
+                                  [
+                                    30,
+                                    "#6CC3E0"
+                                  ],
+                                  [
+                                    null,
+                                    "#3D8FE0"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E0524C",
+                                  "#F2A65A",
+                                  "#9AA5B1",
+                                  "#6CC3E0",
+                                  "#3D8FE0"
+                                ],
+                                "name": "Change against 2023 (%)",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.75,
+                              "outline": true,
+                              "radius": 120,
+                              "radiusRange": [
+                                18,
+                                110
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "chokepoints",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "change_pct",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeField": {
+                              "name": "ships_a_day",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              79,
+                              179,
+                              191
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Shipping lanes",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "220\u2013330 kV",
+                                    "#2A6F8F"
+                                  ],
+                                  [
+                                    "380\u2013420 kV",
+                                    "#4FB3BF"
+                                  ],
+                                  [
+                                    "500\u2013750 kV",
+                                    "#B9E3E8"
+                                  ],
+                                  [
+                                    "HVDC",
+                                    "#B877D9"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#2A6F8F",
+                                  "#4FB3BF",
+                                  "#B9E3E8",
+                                  "#B877D9"
+                                ],
+                                "name": "Transmission grid",
+                                "type": "customOrdinal"
+                              },
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.8,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "Major",
+                                    "#5FC8D8"
+                                  ],
+                                  [
+                                    "Middle",
+                                    "#2F8299"
+                                  ],
+                                  [
+                                    "Minor",
+                                    "#22566A"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#5FC8D8",
+                                  "#2F8299",
+                                  "#22566A"
+                                ],
+                                "name": "Shipping lanes",
+                                "type": "customOrdinal"
+                              },
+                              "strokeOpacity": 0.55,
+                              "stroked": true,
+                              "thickness": 0.8,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "lanes",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "lane",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1000,
+                "publishWhilePlaying": true,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "saveRequest": 4,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "portid",
+                    "source": "click",
+                    "variable": "chokepoint"
+                  }
+                ]
+              }
+            },
+            "version": "0.1.0"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Ships a day, week by week: through Suez and Bab el-Mandeb, the Red Sea\n-- route, and around the Cape of Good Hope instead.\nSELECT $__timeGroup(time, '1w') AS time,\n       avg(ships) FILTER (WHERE portid = 'chokepoint1') AS \"Suez Canal\",\n       avg(ships) FILTER (WHERE portid = 'chokepoint4') AS \"Bab el-Mandeb\",\n       avg(ships) FILTER (WHERE portid = 'chokepoint7') AS \"Cape of Good Hope\"\nFROM $transits\nWHERE $__timeFilter(time) AND portid IN ('chokepoint1', 'chokepoint4', 'chokepoint7')\nGROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Ships a day, averaged week by week, through Suez and Bab el-Mandeb, the Red Sea route between Asia and Europe, and around the Cape of Good Hope.",
+          "id": 5,
+          "links": [],
+          "title": "Around Africa instead of through the Red Sea \u2014 ships a day, weekly",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Suez Canal"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E0524C",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Bab el-Mandeb"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2A65A",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Cape of Good Hope"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3D8FE0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Month by month: the deep sea freight index, on the right axis, against the\n-- ships a day through Suez and around the Cape.\nWITH t AS (\n  SELECT date_trunc('month', time) AS time,\n         avg(ships) FILTER (WHERE portid = 'chokepoint1') AS suez,\n         avg(ships) FILTER (WHERE portid = 'chokepoint7') AS cape\n  FROM $transits\n  WHERE portid IN ('chokepoint1', 'chokepoint7')\n  GROUP BY 1\n)\nSELECT f.time, f.freight_index AS \"Deep sea freight index\",\n       t.suez AS \"Suez Canal, ships a day\", t.cape AS \"Cape of Good Hope, ships a day\"\nFROM $freight f LEFT JOIN t USING (time)\nWHERE $__timeFilter(f.time)\nORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The BLS producer price index for deep sea freight transportation (right axis, June 1988 = 100) against the ships a day through Suez and around the Cape, month by month.",
+          "id": 6,
+          "links": [],
+          "title": "What deep sea freight costs, against the detour \u2014 monthly",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 10,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Deep sea freight index"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F6D18A",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 3
+                      },
+                      {
+                        "id": "custom.axisLabel",
+                        "value": "Freight index"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Suez Canal, ships a day"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E0524C",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.axisLabel",
+                        "value": "Ships a day"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Cape of Good Hope, ships a day"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3D8FE0",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.axisLabel",
+                        "value": "Ships a day"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The picked chokepoint, ships a day by type, week by week.\nSELECT $__timeGroup(time, '1w') AS time,\n       avg(tanker) AS \"Tanker\", avg(container) AS \"Container\", avg(dry_bulk) AS \"Dry bulk\",\n       avg(general_cargo) AS \"General cargo\", avg(roro) AS \"Ro-ro\"\nFROM $transits\nWHERE $__timeFilter(time) AND portid = $chokepoint\nGROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Ships a day through the picked chokepoint, averaged week by week, stacked by vessel type.",
+          "id": 7,
+          "links": [],
+          "title": "${chokepoint:text}: ships a day by type, weekly",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "bars",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tanker"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E0524C",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Container"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3D8FE0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Dry bulk"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2A65A",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "General cargo"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#73BF69",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ro-ro"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#B877D9",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every chokepoint over the range: traffic, its change against 2023 before\n-- the Red Sea attacks, the tonnage and the share of tankers and container\n-- ships. portid feeds the link that picks a row, and stays hidden.\nWITH r AS (\n  SELECT portid,\n         avg(ships) FILTER (WHERE $__timeFilter(time)) AS now,\n         avg(ships) FILTER (WHERE time \u003e= '2023-01-01' AND time \u003c '2023-11-19') AS before,\n         avg(capacity_t) FILTER (WHERE $__timeFilter(time)) AS tonnes,\n         sum(tanker) FILTER (WHERE $__timeFilter(time)) AS tanker,\n         sum(container) FILTER (WHERE $__timeFilter(time)) AS container,\n         sum(ships) FILTER (WHERE $__timeFilter(time)) AS ships\n  FROM $transits GROUP BY portid\n)\nSELECT c.portid, c.chokepoint AS \"Chokepoint\",\n       r.now AS \"Ships a day\",\n       100 * (r.now / r.before - 1) AS \"Against 2023\",\n       r.tonnes / 1e6 AS \"Million dwt a day\",\n       100 * r.tanker / r.ships AS \"Tankers\",\n       100 * r.container / r.ships AS \"Container ships\",\n       c.top_goods AS \"Main goods\"\nFROM $chokepoints c JOIN r USING (portid)\nWHERE r.now IS NOT NULL\nORDER BY r.now DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Ships a day over the time range, the change against 2023 before the Red Sea attacks, the deadweight tonnage a day, and the share of tankers and container ships. Click a chokepoint to pick it.",
+          "id": 8,
+          "links": [],
+          "title": "Every chokepoint over the range",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false,
+                    "minWidth": 90
+                  },
+                  "decimals": 1,
+                  "links": [
+                    {
+                      "title": "Pick ${__data.fields.Chokepoint}",
+                      "url": "/d/shipping-chokepoints-freight${__url.params:exclude:var-chokepoint}\u0026var-chokepoint=${__data.fields.portid}"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "portid"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.hideFrom.viz",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Chokepoint"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "string"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ships a day"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Against 2023"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 120
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "absolute",
+                          "steps": [
+                            {
+                              "color": "#E0524C",
+                              "value": null
+                            },
+                            {
+                              "color": "#F2A65A",
+                              "value": -30
+                            },
+                            {
+                              "color": "#9AA5B1",
+                              "value": -10
+                            },
+                            {
+                              "color": "#6CC3E0",
+                              "value": 10
+                            },
+                            {
+                              "color": "#3D8FE0",
+                              "value": 30
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Million dwt a day"
+                    },
+                    "properties": [
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Tankers"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 100
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge"
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 110
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#E0524C",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Container ships"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 100
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "basic",
+                          "type": "gauge"
+                        }
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3D8FE0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Main goods"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "string"
+                      },
+                      {
+                        "id": "custom.minWidth",
+                        "value": 260
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "countRows": false,
+                  "fields": "",
+                  "reducer": [
+                    "sum"
+                  ],
+                  "show": false
+                },
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "Ships a day"
+                  }
+                ]
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-1"
+                        },
+                        "height": 7,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Intro"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
+                        },
+                        "height": 5,
+                        "width": 16,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        },
+                        "height": 5,
+                        "width": 8,
+                        "x": 16,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        },
+                        "height": 18,
+                        "width": 15,
+                        "x": 0,
+                        "y": 5
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 15,
+                        "y": 5
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 15,
+                        "y": 14
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Chokepoints and freight"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        },
+                        "height": 13,
+                        "width": 10,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        },
+                        "height": 13,
+                        "width": 14,
+                        "x": 10,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "${chokepoint:text}"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "plus",
+      "maritime"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "1h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-3y",
+      "hideTimepicker": false,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Shipping through the world's chokepoints, and ocean freight",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "transits",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "transits",
+              "refId": "transits",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: ships through the 28 chokepoints the IMF's\n-- PortWatch follows, counted from AIS, one row per chokepoint and day since\n-- 2019. Read through the gateway's day-long cache of the weekly CSV. Counts\n-- by vessel type; capacity is the deadweight tonnage that went through.\nSELECT strptime(date, '%Y/%m/%d') AS time, portid, portname AS chokepoint,\n       n_total::INTEGER AS ships, n_container::INTEGER AS container,\n       n_dry_bulk::INTEGER AS dry_bulk, n_general_cargo::INTEGER AS general_cargo,\n       n_roro::INTEGER AS roro, n_tanker::INTEGER AS tanker,\n       capacity::DOUBLE AS capacity_t\nFROM read_csv('http://feeds/portwatch/items/3da2b9ca97684916b75c4013f95d18ab.csv', types = {'date': 'VARCHAR'})",
+                  "refId": "transits"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "chokepoints",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "chokepoints",
+              "refId": "chokepoints",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: where each chokepoint is, and the three kinds\n-- of goods PortWatch estimates go through it most. 28 rows.\nSELECT portid, portname AS chokepoint, lat::DOUBLE AS latitude, lon::DOUBLE AS longitude,\n       nullif(concat_ws(', ', industry_top1, industry_top2, industry_top3), '') AS top_goods\nFROM (\n  SELECT unnest(features, recursive := true)\n  FROM read_json('https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/PortWatch_chokepoints_database/FeatureServer/0/query?where=1%3D1\u0026outFields=portid,portname,lat,lon,industry_top1,industry_top2,industry_top3\u0026returnGeometry=false\u0026f=json')\n)",
+                  "refId": "chokepoints"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "lanes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "lanes",
+              "refId": "lanes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: the world shipping lanes, Major, Middle and\n-- Minor, georeferenced from the CIA Map of the World Oceans (Shipping-Lanes\n-- v1, CC BY 4.0). Simplified to about 5 km: some 160 kB for the browser.\nSELECT \"Type\" AS lane,\n       ST_AsGeoJSON(ST_SimplifyPreserveTopology(geom, 0.05))::VARCHAR AS geometry\nFROM ST_Read('/vsicurl/https://raw.githubusercontent.com/newzealandpaul/Shipping-Lanes/b0ad85cdab959b84bc915b21d77d18bb8f1429f4/data/Shipping_Lanes_v1.geojson')",
+                  "refId": "lanes"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "freight",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "freight",
+              "refId": "freight",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side, once per visit: what US carriers charge for deep sea freight,\n-- the BLS producer price index PCU483111483111 (June 1988 = 100), monthly,\n-- from FRED through the gateway, which adds the API key.\nSELECT o.date::TIMESTAMP AS time, try_cast(o.value AS DOUBLE) AS freight_index\nFROM (SELECT unnest(observations) AS o FROM read_json('http://feeds/fred/series/PCU483111483111'))\nWHERE try_cast(o.value AS DOUBLE) IS NOT NULL",
+                  "refId": "freight"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Suez Canal",
+            "value": "chokepoint1"
+          },
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Chokepoint",
+          "multi": false,
+          "name": "chokepoint",
+          "options": [],
+          "query": "Bab el-Mandeb Strait : chokepoint4,Balabac Strait : chokepoint25,Bering Strait : chokepoint26,Bohai Strait : chokepoint17,Bosporus Strait : chokepoint3,Cape of Good Hope : chokepoint7,Dover Strait : chokepoint9,Gibraltar Strait : chokepoint8,Kerch Strait : chokepoint28,Korea Strait : chokepoint12,Lombok Strait : chokepoint15,Luzon Strait : chokepoint14,Magellan Strait : chokepoint21,Makassar Strait : chokepoint20,Malacca Strait : chokepoint5,Mindoro Strait : chokepoint27,Mona Passage : chokepoint24,Ombai Strait : chokepoint16,Oresund Strait : chokepoint10,Panama Canal : chokepoint2,Strait of Hormuz : chokepoint6,Suez Canal : chokepoint1,Sunda Strait : chokepoint19,Taiwan Strait : chokepoint11,Torres Strait : chokepoint18,Tsugaru Strait : chokepoint13,Windward Passage : chokepoint23,Yucatan Channel : chokepoint22",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      }
+    ]
+  }
+}

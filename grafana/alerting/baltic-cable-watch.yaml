@@ -1,0 +1,139 @@
+# Baltic cable watch: a Grafana alert rule, provisioned from this file.
+#
+# A cargo ship or tanker lingering over a cable or pipeline on the floor of the
+# Baltic: inside the cable's fence (datasets/baltic-cables, a kilometre each
+# side, ports and landings left out), under 3 knots or at anchor. One alert per
+# ship and cable, labelled with the ship (mmsi, ship, flag, type) and the cable
+# (cable, kind): pending as the ship arrives, firing after 15 minutes. At anchor
+# and moving 2 to 6 knots, an anchor dragged along the seabed, it is critical.
+#
+# The query runs on the server DuckDB: Digitraffic's AIS through the gateway,
+# the fences with spatial. A SQL expression turns its rows into alerts (every
+# column a label, the last the value). The baltic-cable-watch dashboard draws
+# each alert on its ship and colours each fence by its alerts.
+#
+# No contact point: the rule only changes state. Reload after an edit with
+# POST /api/admin/provisioning/alerting/reload, or restart Grafana.
+apiVersion: 1
+groups:
+- orgId: 1
+  name: Baltic cable watch
+  folder: Alerts
+  interval: 1m
+  rules:
+  - uid: baltic-cable-watch
+    title: Ship lingering over a cable
+    condition: B
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 900
+        to: 0
+      datasourceUid: duckdb
+      model:
+        refId: A
+        format: 1
+        rawQuery: true
+        rawSql: |-
+          SET force_download = true;
+          -- The setting would outlive this query on the pooled connection it ran on, and stop the range reads of every Parquet read there later, so the result goes through a temp table (one per connection) and the setting is put back before it is returned.
+          CREATE OR REPLACE TEMP TABLE fd_baltic_alert AS
+          WITH heard AS (
+            -- Digitraffic: the latest position of each ship its AIS stations heard; a ship
+            -- counts while it was heard in the last 15 minutes.
+            SELECT unnest(features, recursive := true)
+            FROM read_json('http://feeds/digitraffic/ais/locations', columns = {features:
+              'STRUCT(geometry STRUCT(coordinates DOUBLE[]), properties STRUCT(mmsi BIGINT, sog DOUBLE, cog DOUBLE, navStat INTEGER, timestampExternal BIGINT))[]'})
+          ), vessels AS (
+            -- Name, type and destination, from the static AIS messages of each ship.
+            SELECT * FROM read_json('http://feeds/digitraffic/ais/vessels',
+              columns = {mmsi: 'BIGINT', name: 'VARCHAR', shipType: 'INTEGER', destination: 'VARCHAR'})
+          ), ships AS (
+            SELECT h.mmsi::VARCHAR AS mmsi,
+              coalesce(nullif(trim(v.name), ''), 'MMSI ' || h.mmsi) AS ship,
+              -- AIS ship types, named so the Fleet layer picks a fitting silhouette.
+              CASE
+                WHEN v.shipType BETWEEN 70 AND 79 THEN 'Cargo'
+                WHEN v.shipType BETWEEN 80 AND 89 THEN 'Tanker'
+                WHEN v.shipType BETWEEN 60 AND 69 THEN 'Passenger'
+                WHEN v.shipType BETWEEN 40 AND 49 THEN 'High-speed craft'
+                WHEN v.shipType = 30 THEN 'Fishing'
+                WHEN v.shipType IN (31, 32, 52) THEN 'Tug'
+                WHEN v.shipType = 35 THEN 'Military vessel'
+                WHEN v.shipType = 36 THEN 'Sailing'
+                WHEN v.shipType = 37 THEN 'Pleasure boat'
+                WHEN v.shipType = 50 THEN 'Pilot boat'
+                WHEN v.shipType = 51 THEN 'Rescue boat'
+                WHEN v.shipType = 55 THEN 'Patrol boat'
+                ELSE 'Other vessel'
+              END AS type,
+              coalesce(f.flag, 'MID ' || (h.mmsi // 1000000)) AS flag,
+              nullif(trim(v.destination), '') AS destination,
+              h.coordinates[2] AS latitude, h.coordinates[1] AS longitude,
+              -- 102.3 knots and 360° are how AIS says not available.
+              CASE WHEN h.sog < 102.3 THEN h.sog END AS knots,
+              CASE WHEN h.cog < 360 THEN h.cog END AS course,
+              CASE h.navStat WHEN 0 THEN 'Under way' WHEN 1 THEN 'At anchor' WHEN 2 THEN 'Not under command'
+                WHEN 3 THEN 'Restricted manoeuvrability' WHEN 4 THEN 'Constrained by draught' WHEN 5 THEN 'Moored'
+                WHEN 6 THEN 'Aground' WHEN 7 THEN 'Fishing' WHEN 8 THEN 'Sailing' ELSE 'Not reported' END AS status,
+              h.navStat AS nav_status,
+              -- Watched: cargo ships and tankers, the ships whose anchors have cut cables.
+              coalesce(v.shipType BETWEEN 70 AND 89, false) AS watched,
+              make_timestamp(h.timestampExternal * 1000) AS heard
+            FROM heard h
+            LEFT JOIN vessels v USING (mmsi)
+            LEFT JOIN 'http://feeds/datasets/baltic-cables/flags.parquet' f ON f.mid = h.mmsi // 1000000
+            WHERE make_timestamp(h.timestampExternal * 1000) > now() - INTERVAL 15 MINUTE
+              AND h.coordinates[2] BETWEEN -90 AND 90
+          ), fences AS (
+            -- The cables in the waters the Digitraffic stations hear, with their fences.
+            SELECT cable, kind, operator, url, km, line, fence
+            FROM 'http://feeds/datasets/baltic-cables/cables.parquet'
+            WHERE ST_Intersects(line, ST_MakeEnvelope(17, 57.5, 33, 66.5))
+          ), lingering AS (
+            -- A watched ship inside a fence, slow (under 3 knots) or at anchor and
+            -- moving under 6 (an anchor dragged along the seabed): one row per ship and
+            -- cable.
+            SELECT s.*, c.cable, c.kind,
+              CASE WHEN s.nav_status = 1 AND s.knots >= 2 THEN 'Dragging anchor'
+                   WHEN s.nav_status = 1 THEN 'At anchor'
+                   ELSE 'Slow' END AS signature
+            FROM ships s JOIN fences c ON ST_Contains(c.fence, ST_Point(s.longitude, s.latitude))
+            WHERE s.watched AND (s.knots < 3 OR (s.nav_status = 1 AND s.knots < 6))
+          )
+          -- One alert per ship and cable. Every column a label but the last, the value.
+          SELECT mmsi, ship, flag, type, cable, kind, signature,
+                 CASE signature WHEN 'Dragging anchor' THEN 'critical' ELSE 'warning' END AS severity
+          FROM lingering
+          ;
+          SET force_download = false;
+          SELECT * FROM fd_baltic_alert
+    - refId: B
+      relativeTimeRange:
+        from: 0
+        to: 0
+      datasourceUid: __expr__
+      model:
+        refId: B
+        type: sql
+        format: alerting
+        expression: |-
+          SELECT mmsi, ship, flag, type, cable, kind, signature, severity, 1 AS lingering
+          FROM A
+        datasource:
+          type: __expr__
+          uid: __expr__
+    noDataState: OK
+    execErrState: KeepLast
+    for: 15m
+    dashboardUid: baltic-cable-watch
+    panelId: 2
+    labels:
+      watch: baltic-cables
+    annotations:
+      summary: '{{ $labels.ship }} ({{ $labels.type }}, {{ $labels.flag }}) is lingering over {{ $labels.cable }}: {{ $labels.signature
+        }}'
+      description: A cargo ship or tanker inside the fence of a cable or pipeline (a kilometre each side, ports and landings
+        left out), under 3 knots or at anchor. Pending as it arrives; firing after 15 minutes. Dragging anchor (at anchor
+        and moving 2 to 6 knots) is critical.
+    isPaused: false
