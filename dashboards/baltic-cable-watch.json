@@ -5,7 +5,27 @@
     "name": "baltic-cable-watch"
   },
   "spec": {
-    "annotations": [],
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
     "cursorSync": "Off",
     "description": "Ships lingering over the Baltic's undersea cables and pipelines, live: every ship Finland's AIS network hears, the telecom and power cables and gas pipelines with a fence around each, and a Grafana alert for every cargo ship or tanker that stops or anchors inside one, drawn on the ship.",
     "editable": true,
@@ -56,6 +76,19 @@
                   },
                   "decimals": 0,
                   "noValue": "0",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "none"
                 },
                 "overrides": [
@@ -117,7 +150,7 @@
                 "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -167,6 +200,19 @@
                   },
                   "decimals": 0,
                   "noValue": "0",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "dateTimeFromNow"
                 },
                 "overrides": []
@@ -189,7 +235,7 @@
                 "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -239,6 +285,19 @@
                   },
                   "decimals": 0,
                   "noValue": "0",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "none"
                 },
                 "overrides": []
@@ -261,7 +320,7 @@
                 "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -311,6 +370,19 @@
                   },
                   "decimals": 0,
                   "noValue": "0",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "none"
                 },
                 "overrides": []
@@ -333,7 +405,7 @@
                 "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -383,6 +455,19 @@
                   },
                   "decimals": 0,
                   "noValue": "0",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "none"
                 },
                 "overrides": []
@@ -405,7 +490,7 @@
                 "wideLayout": true
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -442,7 +527,7 @@
                 "mode": "markdown"
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -483,7 +568,7 @@
                 "timeline": ""
               }
             },
-            "version": "2.2.0"
+            "version": "2.3.2"
           }
         }
       },
@@ -531,7 +616,24 @@
                     "align": "auto",
                     "cellOptions": {
                       "type": "auto"
-                    }
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -687,10 +789,11 @@
                     "desc": true,
                     "displayName": "Lingering"
                   }
-                ]
+                ],
+                "zebraStriping": false
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -742,10 +845,14 @@
                     "mode": "palette-classic"
                   },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
                     "axisLabel": "alerts",
                     "axisPlacement": "auto",
                     "axisSoftMin": 0,
                     "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
                     "fillOpacity": 40,
                     "gradientMode": "none",
@@ -754,6 +861,7 @@
                       "tooltip": false,
                       "viz": false
                     },
+                    "insertNulls": false,
                     "lineInterpolation": "stepAfter",
                     "lineWidth": 1,
                     "pointSize": 4,
@@ -761,6 +869,7 @@
                       "type": "linear"
                     },
                     "showPoints": "never",
+                    "showValues": false,
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
@@ -772,6 +881,19 @@
                   },
                   "decimals": 0,
                   "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "none"
                 },
                 "overrides": [
@@ -831,7 +953,7 @@
                 }
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       },
@@ -910,7 +1032,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -928,27 +1064,160 @@
                   "zones": true
                 },
                 "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
                 "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": 0,
-                      "dragRotate": false,
-                      "latitude": 60.6,
-                      "longitude": 23.6,
-                      "pitch": 0,
-                      "zoom": 5.6
+                      "bearing": 11.022900763358777,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 59.93380891199803,
+                      "longitude": 25.588163435644596,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 55.54229934924078,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 9.320982140110472
                     },
                     "mapStyle": {
-                      "styleType": "openfreemap-dark"
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openwaters-seamap",
+                      "threeDBuildingColor": [
+                        12.887291085429352,
+                        12.887291085429352,
+                        12.887291085429352
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "depths": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "relief": false,
+                        "road": true,
+                        "seamarks": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
                     },
                     "visState": {
                       "animationConfig": {
-                        "currentTime": null,
                         "speed": 1
                       },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
                       "filters": [],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
                         "brush": {
                           "enabled": false,
                           "size": 0.5
@@ -957,7 +1226,17 @@
                           "enabled": false
                         },
                         "geocoder": {
-                          "enabled": false
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
                         },
                         "tooltip": {
                           "compareMode": false,
@@ -1024,6 +1303,14 @@
                                 "name": "pending"
                               }
                             ],
+                            "grafana-B": [
+                              {
+                                "name": "cable"
+                              },
+                              {
+                                "name": "kind"
+                              }
+                            ],
                             "grafana-C": [
                               {
                                 "name": "name"
@@ -1039,123 +1326,21 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
                       "layerBlending": "normal",
                       "layerOrder": [
-                        "alerts",
                         "ships",
+                        "alerts",
                         "cables",
                         "fences"
                       ],
                       "layers": [
-                        {
-                          "config": {
-                            "color": [
-                              255,
-                              152,
-                              48
-                            ],
-                            "columnMode": "points",
-                            "columns": {
-                              "lat": "latitude",
-                              "lng": "longitude"
-                            },
-                            "dataId": "grafana-ALERTS",
-                            "hidden": false,
-                            "highlightColor": [
-                              252,
-                              242,
-                              26,
-                              255
-                            ],
-                            "isVisible": true,
-                            "label": "Alerts",
-                            "textLabel": [
-                              {
-                                "alignment": "center",
-                                "anchor": "start",
-                                "background": false,
-                                "backgroundColor": [
-                                  0,
-                                  0,
-                                  200,
-                                  255
-                                ],
-                                "collisionEnabled": false,
-                                "color": [
-                                  255,
-                                  255,
-                                  255
-                                ],
-                                "offset": [
-                                  0,
-                                  0
-                                ],
-                                "outlineColor": [
-                                  255,
-                                  0,
-                                  0,
-                                  255
-                                ],
-                                "outlineWidth": 0,
-                                "size": 18,
-                                "weight": 400
-                              }
-                            ],
-                            "visConfig": {
-                              "allowHover": true,
-                              "billboard": false,
-                              "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    "firing",
-                                    "#E02F44"
-                                  ],
-                                  [
-                                    "pending",
-                                    "#FF9830"
-                                  ]
-                                ],
-                                "colors": [
-                                  "#E02F44",
-                                  "#FF9830"
-                                ],
-                                "name": "Alert state",
-                                "type": "customOrdinal"
-                              },
-                              "filled": true,
-                              "fixedRadius": false,
-                              "opacity": 0.4,
-                              "outline": true,
-                              "radius": 24,
-                              "radiusRange": [
-                                0,
-                                50
-                              ],
-                              "showHighlightColor": true,
-                              "showNeighborOnHover": false,
-                              "strokeColor": [
-                                255,
-                                255,
-                                255
-                              ],
-                              "thickness": 2
-                            }
-                          },
-                          "id": "alerts",
-                          "type": "point",
-                          "visualChannels": {
-                            "colorField": {
-                              "name": "state",
-                              "type": "string"
-                            },
-                            "colorScale": "customOrdinal",
-                            "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
-                          }
-                        },
                         {
                           "config": {
                             "color": [
@@ -1244,6 +1429,7 @@
                               "filled": true,
                               "fixedRadius": false,
                               "fleetAltitudeField": "none",
+                              "fleetAltitudeRef": "ground",
                               "fleetAssetField": "mmsi",
                               "fleetCard": true,
                               "fleetCardField": "knots",
@@ -1273,8 +1459,9 @@
                               "fleetLabelOutline": true,
                               "fleetLabelSize": 12,
                               "fleetMarker": "silhouette",
-                              "fleetModelColours": "original",
+                              "fleetModelColours": "beacon",
                               "fleetOrbitSecs": 60,
+                              "fleetPinAll": false,
                               "fleetPinned": [],
                               "fleetPublishCrosshair": false,
                               "fleetPulseBy": "auto",
@@ -1289,7 +1476,7 @@
                               "fleetRememberMin": 30,
                               "fleetShadow": false,
                               "fleetSilent": "hide",
-                              "fleetSize": 40,
+                              "fleetSize": 72,
                               "fleetSmooth": true,
                               "fleetSmoothMs": 1000,
                               "fleetSpeedField": "knots",
@@ -1316,8 +1503,18 @@
                               "fleetZoomRate": 0.5,
                               "fleetZoomRef": 11,
                               "fleetZoomScale": true,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
                               "opacity": 1,
                               "outline": false,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
                               "radius": 10,
                               "radiusRange": [
                                 0,
@@ -1358,10 +1555,141 @@
                         {
                           "config": {
                             "color": [
+                              255,
+                              152,
+                              48
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-ALERTS",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Alerts",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "firing",
+                                    "#E02F44"
+                                  ],
+                                  [
+                                    "pending",
+                                    "#FF9830"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#E02F44",
+                                  "#FF9830"
+                                ],
+                                "name": "Alert state",
+                                "type": "customOrdinal"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 0.4,
+                              "outline": true,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 24,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "alerts",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "state",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
                               0,
                               209,
                               193
                             ],
+                            "columnMode": "geojson",
                             "columns": {
                               "geojson": "_geojson"
                             },
@@ -1408,14 +1736,35 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
                               "elevationScale": 5,
                               "enable3d": false,
                               "filled": false,
+                              "fixedElevation": true,
                               "fixedHeight": false,
                               "heightRange": [
                                 0,
                                 500
                               ],
+                              "invertHeight": false,
                               "opacity": 0.9,
                               "radius": 10,
                               "radiusRange": [
@@ -1465,6 +1814,7 @@
                           "type": "geojson",
                           "visualChannels": {
                             "colorScale": "quantile",
+                            "elevationOffsetScale": "linear",
                             "heightScale": "linear",
                             "radiusScale": "linear",
                             "sizeScale": "linear",
@@ -1482,6 +1832,7 @@
                               39,
                               56
                             ],
+                            "columnMode": "geojson",
                             "columns": {
                               "geojson": "_geojson"
                             },
@@ -1528,6 +1879,7 @@
                               }
                             ],
                             "visConfig": {
+                              "allowHover": true,
                               "colorRange": {
                                 "category": "Custom",
                                 "colorMap": [
@@ -1552,14 +1904,21 @@
                                 "name": "Fence state",
                                 "type": "customOrdinal"
                               },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
                               "elevationScale": 5,
                               "enable3d": false,
                               "filled": true,
+                              "fixedElevation": true,
                               "fixedHeight": false,
                               "heightRange": [
                                 0,
                                 500
                               ],
+                              "invertHeight": false,
                               "opacity": 0.45,
                               "radius": 10,
                               "radiusRange": [
@@ -1608,6 +1967,7 @@
                               "type": "string"
                             },
                             "colorScale": "customOrdinal",
+                            "elevationOffsetScale": "linear",
                             "heightScale": "linear",
                             "radiusScale": "linear",
                             "sizeScale": "linear",
@@ -1619,17 +1979,25 @@
                           }
                         }
                       ],
+                      "overlayBlending": "normal",
                       "splitMaps": []
                     }
                   },
                   "version": "v1"
                 },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicViewport": false,
                 "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "saveRequest": 0,
                 "showSidePanel": false,
                 "timeSync": "off",
-                "tripLayerMode": "table",
                 "variableMappings": [
                   {
                     "field": "",
@@ -1649,7 +2017,7 @@
                 "viewportVariables": {}
               }
             },
-            "version": ""
+            "version": "1.6.0"
           }
         }
       },
@@ -1690,7 +2058,7 @@
                 "timeline": ""
               }
             },
-            "version": "2.2.0"
+            "version": "2.3.2"
           }
         }
       },
@@ -1738,7 +2106,24 @@
                     "align": "auto",
                     "cellOptions": {
                       "type": "auto"
-                    }
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": [
@@ -1892,10 +2277,11 @@
               },
               "options": {
                 "cellHeight": "sm",
-                "showHeader": true
+                "showHeader": true,
+                "zebraStriping": false
               }
             },
-            "version": ""
+            "version": "13.3.0"
           }
         }
       }
@@ -1987,19 +2373,6 @@
             "spec": {
               "element": {
                 "kind": "ElementReference",
-                "name": "panel-cable-filters"
-              },
-              "height": 8,
-              "width": 5,
-              "x": 0,
-              "y": 17
-            }
-          },
-          {
-            "kind": "GridLayoutItem",
-            "spec": {
-              "element": {
-                "kind": "ElementReference",
                 "name": "panel-map"
               },
               "height": 22,
@@ -2032,6 +2405,19 @@
               "width": 7,
               "x": 17,
               "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-cable-filters"
+              },
+              "height": 8,
+              "width": 5,
+              "x": 0,
+              "y": 17
             }
           },
           {
