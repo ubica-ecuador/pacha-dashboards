@@ -1,0 +1,2445 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "venezuela-earthquake-osm"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "The earthquakes of 24 June 2026 in Venezuela through OpenStreetMap: day by day, the buildings volunteers added in Caracas and La Guaira (from 51,000 to more than 170,000 in three weeks) on an H3 map, the hours they worked, and a curtain between Vantor's before and after imagery with HOT's validated damage.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n\n- **OpenStreetMap**: every building (a way tagged `building=*`) added to or deleted from the box, from the full history\n  through the [ohsome API](https://api.ohsome.org) (HeiGIT), whose history ends on 27 July 2026. © OpenStreetMap\n  contributors, ODbL. A building is placed at its centroid and counted in its H3 cell of resolution 9.\n- **Imagery**: [Vantor (Maxar) Open Data](https://radiantearth.github.io/stac-browser/#/external/vantor-opendata.s3.amazonaws.com/events/Venezuela-Earthquake-Jun-2026/collection.json),\n  pre- and post-event, CC BY-NC 4.0, read as Cloud-Optimized GeoTIFFs by Pacha's tile server.\n- **Damage**: HOT's [building damage assessment](https://data.humdata.org/dataset/venezuela-m-7-5-earthquake-building-damage-assessment):\n  AI-detected damage on the imagery, accepted by MapSwipe volunteers, and field reports. CC BY-NC-SA 4.0.\n- The activation: [OSM wiki](https://wiki.openstreetmap.org/wiki/Humanitarian_OSM_Team/Open_Mapping_Hub_-_Latin_America_and_The_Caribbean/Activations/2026_Venezuela_Earthquake).\n\nBuilt by `datasets/venezuela-eq-2026/build.sh` in pacha-dashboards. Times are UTC unless they say Caracas.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "added": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Added\" FROM $changes WHERE kind = 'creation' AND $__crossfilter($osmFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings added in the timeline window, in the hours of the day and the area kept.",
+          "id": 4,
+          "links": [],
+          "title": "Added in the window",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#E31A1A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "before": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(before)::BIGINT AS \"Buildings\" FROM $cells"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The buildings OpenStreetMap had in the box on 1 June 2026, three weeks before the earthquakes: everything mapped since 2010.",
+          "id": 2,
+          "links": [],
+          "title": "Buildings on 1 June",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8AB8FF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "changesets": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(DISTINCT changeset) AS \"Changesets\" FROM $changes WHERE $__crossfilter($osmFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "OpenStreetMap changesets (one upload by one mapper) that added or deleted those buildings.",
+          "id": 5,
+          "links": [],
+          "title": "Changesets",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F2CC0C",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "damage_cells": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Areas\" FROM $damage WHERE source = 'cell'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "H3 cells of about 1,800 m² where an AI found damage on the imagery and MapSwipe volunteers agreed.",
+          "id": 12,
+          "links": [],
+          "title": "Damage areas accepted",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#E31A1A",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "field": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Reports\" FROM $damage WHERE source = 'field' AND level = 'complete'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings HOT's field volunteers reported as completely collapsed (ChatMap).",
+          "id": 13,
+          "links": [],
+          "title": "Collapses reported on the ground",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFFFFF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "hours": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings added by the hour of the day in Caracas they were uploaded: volunteers from every time zone. Drag to keep some hours, on the map and the figures.",
+          "id": 6,
+          "links": [],
+          "title": "The hour in Caracas the buildings were added",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  osmFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: changes, filterBy: $osmFilters }\n    x1: hr\n    x2: { sql: \"hr + 1\" }\n    y: { count: }\n    fill: '#E31A1A'\n    inset: 1\n  - select: intervalX\n    as: $osmFilters\nxDomain: [0, 24]\nxTicks: [0, 3, 6, 9, 12, 15, 18, 21, 24]\nxLabel: Hour in Caracas (UTC−4) →\nyLabel: ↑ Buildings\nyTickFormat: s\nmarginLeft: 44\nmarginBottom: 34\n",
+                "variables": "- param: osmFilters\n  column: hr\n  from: hr_lo\n  to: hr_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Each H3 cell on the last day of the timeline window: the buildings OpenStreetMap had (those of 1 June,\n-- plus those added, less those deleted, up to then) and the share of them added in the window and in the hours and\n-- area the filters keep. The area drawn on this map is left out here, so the map keeps every cell.\nWITH w AS (\n  SELECT hex,\n         sum(delta) FILTER (WHERE t \u003c= coalesce(try_cast($tTo AS TIMESTAMP), 'infinity'::TIMESTAMP)) AS net,\n         count(*) FILTER (WHERE kind = 'creation' AND $__crossfilter($osmFilters, -area)) AS added\n  FROM $changes GROUP BY hex\n)\nSELECT hex, (coalesce(c.before, 0) + coalesce(w.net, 0))::INTEGER AS buildings, coalesce(c.before, 0)::INTEGER AS on_1_june,\n       coalesce(w.added, 0)::INTEGER AS added,\n       -- a building redrawn (deleted and added again) counts as added: the share stops at 100\n       least(100, round(100.0 * coalesce(w.added, 0) / greatest(coalesce(c.before, 0) + coalesce(w.net, 0), 1), 1)) AS added_pct\nFROM $cells AS c FULL JOIN w USING (hex)\nWHERE coalesce(c.before, 0) + coalesce(w.net, 0) \u003e 0"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each hexagon is an H3 cell of about 0.09 km². Its height is the buildings OpenStreetMap had there on the last day of the timeline window; its colour, the share of them added in the window (and in the hours and area kept). Play the timeline to watch the volunteers map.",
+          "id": 1,
+          "links": [],
+          "title": "OpenStreetMap buildings per H3 cell (0.09 km²)",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "osmArea",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 10.505,
+                      "longitude": -66.93,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 45,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11.4
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "threeDBuildingColor": [
+                        9,
+                        9,
+                        9
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "buildings"
+                              },
+                              {
+                                "name": "on_1_june"
+                              },
+                              {
+                                "name": "added"
+                              },
+                              {
+                                "name": "added_pct"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "cells"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              223,
+                              116,
+                              78
+                            ],
+                            "columns": {
+                              "hex_id": "hex"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "OSM buildings per cell",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#3B6E8F",
+                                  "#6A9BB5",
+                                  "#E8D9A8",
+                                  "#F4A259",
+                                  "#E4572E",
+                                  "#B5121B"
+                                ],
+                                "name": "Old to new",
+                                "type": "diverging"
+                              },
+                              "coverage": 0.92,
+                              "elevationScale": 8,
+                              "enable3d": true,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "opacity": 0.9,
+                              "sizeRange": [
+                                0,
+                                400
+                              ]
+                            }
+                          },
+                          "id": "cells",
+                          "type": "hexagonId",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "added_pct",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "coverageField": null,
+                            "coverageScale": "linear",
+                            "sizeField": {
+                              "name": "buildings",
+                              "type": "integer"
+                            },
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "rasterServerUrl": "",
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT ((SELECT sum(before) FROM $cells) + (SELECT sum(delta) FROM $changes WHERE t \u003c= coalesce(try_cast($tTo AS TIMESTAMP), 'infinity'::TIMESTAMP)))::BIGINT AS \"Buildings\""
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The buildings OpenStreetMap had in the box on the last day of the timeline window.",
+          "id": 3,
+          "links": [],
+          "title": "Buildings at the window's end",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFFFFF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Mapping a city after an earthquake\n\nOn **24 June 2026** two earthquakes struck northern Venezuela; Caracas and La Guaira were among the hardest hit.\nWithin hours the Humanitarian OpenStreetMap Team (HOT) opened mapping projects, and volunteers around the world began\ntracing every roof in the satellite imagery, so that rescuers and planners had a map of what was there.\n\nOn 1 June, OpenStreetMap had **about 51,000 buildings** here, mapped since 2010. Three weeks after the earthquakes\nit had **more than 170,000**.\n\nPlay the timeline below, drag over the hours to see when the volunteers worked, or draw an area on the map.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "story2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 14,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Before and after\n\n**Drag the curtain.** Left of it, Vantor (Maxar) imagery from before the earthquakes; right of it, the same coast a few\ndays after, with the areas where an AI saw damage and **MapSwipe volunteers agreed** (red) and the collapses reported\non the ground (white rings).\n\nThe map opens on **Caraballeda** (before: 3 November 2025; after: 26 June). Pan west along the coast to **Catia La\nMar and Maiquetía** (before: 7 April; after: 27 June): those two were taken from very different angles (35° and 15° off\nvertical), so they do not line up exactly and buildings jump across the curtain.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "swipe": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Vantor scene B120001100513B10, a COG on S3 that Pacha's tile server reads.\nSELECT id AS scene, phase, time::VARCHAR AS taken, raster_url FROM read_parquet('http://feeds/datasets/venezuela-eq-2026/scenes.parquet') WHERE id = 'B120001100513B10'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Vantor scene B15000110186C610, a COG on S3 that Pacha's tile server reads.\nSELECT id AS scene, phase, time::VARCHAR AS taken, raster_url FROM read_parquet('http://feeds/datasets/venezuela-eq-2026/scenes.parquet') WHERE id = 'B15000110186C610'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Vantor scene B130001101BE2A00, a COG on S3 that Pacha's tile server reads.\nSELECT id AS scene, phase, time::VARCHAR AS taken, raster_url FROM read_parquet('http://feeds/datasets/venezuela-eq-2026/scenes.parquet') WHERE id = 'B130001101BE2A00'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Vantor scene B1600011017A8610, a COG on S3 that Pacha's tile server reads.\nSELECT id AS scene, phase, time::VARCHAR AS taken, raster_url FROM read_parquet('http://feeds/datasets/venezuela-eq-2026/scenes.parquet') WHERE id = 'B1600011017A8610'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- HOT's damage areas accepted by MapSwipe volunteers, as outlines\nSELECT area, damaged_votes, validators, damaged_share, geojson AS geometry FROM read_parquet('http://feeds/datasets/venezuela-eq-2026/damage_cells.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "X"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- HOT's field reports\nSELECT level, coalesce(name, '') AS name, latitude, longitude FROM read_parquet('http://feeds/datasets/venezuela-eq-2026/damage_points.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "Y"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Vantor (Maxar) satellite imagery before the earthquakes (left of the curtain) and after them (right), with HOT's validated damage areas (red) and field reports (white rings) on the after side. Drag the curtain; zoom in on the coast.",
+          "id": 11,
+          "links": [],
+          "title": "Before and after: drag the curtain",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": true,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 10.617,
+                      "longitude": -66.846,
+                      "mapSplitMode": "SWIPE_COMPARE",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 16
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        9,
+                        9,
+                        9
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-X": [
+                              {
+                                "name": "area"
+                              },
+                              {
+                                "name": "damaged_votes"
+                              },
+                              {
+                                "name": "validators"
+                              },
+                              {
+                                "name": "damaged_share"
+                              }
+                            ],
+                            "grafana-Y": [
+                              {
+                                "name": "level"
+                              },
+                              {
+                                "name": "name"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "field",
+                        "damage",
+                        "post-B1600011017A8610",
+                        "pre-B130001101BE2A00",
+                        "post-B15000110186C610",
+                        "pre-B120001100513B10"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-Y",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Damage reported on the ground",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": false,
+                              "fixedRadius": false,
+                              "opacity": 1,
+                              "outline": true,
+                              "radius": 6,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 2
+                            }
+                          },
+                          "id": "field",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              227,
+                              26,
+                              28
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-X",
+                            "isVisible": true,
+                            "label": "Damage, accepted by MapSwipe volunteers",
+                            "visConfig": {
+                              "filled": false,
+                              "opacity": 0.9,
+                              "strokeColor": [
+                                255,
+                                60,
+                                60
+                              ],
+                              "stroked": true,
+                              "thickness": 1
+                            }
+                          },
+                          "id": "damage",
+                          "type": "geojson",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-raster",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Catia La Mar and Maiquetía, before",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colormapId": "cfastie",
+                              "dynamicColor": false,
+                              "enableTerrain": false,
+                              "filterEnabled": false,
+                              "filterRange": [
+                                -1,
+                                1
+                              ],
+                              "gammaContrastFactor": 1,
+                              "linearRescalingFactor": [
+                                0,
+                                1
+                              ],
+                              "nonLinearRescaling": true,
+                              "opacity": 1,
+                              "preset": "trueColor",
+                              "saturationValue": 1,
+                              "showTileBorders": false,
+                              "showTileDebugInfo": false,
+                              "sigmoidalBiasFactor": 0.5,
+                              "sigmoidalContrastFactor": 0,
+                              "useSTACSearching": false,
+                              "zoomOffset": 0
+                            }
+                          },
+                          "id": "pre-B120001100513B10",
+                          "type": "rasterTile",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-C-raster",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Catia La Mar and Maiquetía, after",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colormapId": "cfastie",
+                              "dynamicColor": false,
+                              "enableTerrain": false,
+                              "filterEnabled": false,
+                              "filterRange": [
+                                -1,
+                                1
+                              ],
+                              "gammaContrastFactor": 1,
+                              "linearRescalingFactor": [
+                                0,
+                                1
+                              ],
+                              "nonLinearRescaling": true,
+                              "opacity": 1,
+                              "preset": "trueColor",
+                              "saturationValue": 1,
+                              "showTileBorders": false,
+                              "showTileDebugInfo": false,
+                              "sigmoidalBiasFactor": 0.5,
+                              "sigmoidalContrastFactor": 0,
+                              "useSTACSearching": false,
+                              "zoomOffset": 0
+                            }
+                          },
+                          "id": "post-B15000110186C610",
+                          "type": "rasterTile",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-D-raster",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Caraballeda, before",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colormapId": "cfastie",
+                              "dynamicColor": false,
+                              "enableTerrain": false,
+                              "filterEnabled": false,
+                              "filterRange": [
+                                -1,
+                                1
+                              ],
+                              "gammaContrastFactor": 1,
+                              "linearRescalingFactor": [
+                                0,
+                                1
+                              ],
+                              "nonLinearRescaling": true,
+                              "opacity": 1,
+                              "preset": "trueColor",
+                              "saturationValue": 1,
+                              "showTileBorders": false,
+                              "showTileDebugInfo": false,
+                              "sigmoidalBiasFactor": 0.5,
+                              "sigmoidalContrastFactor": 0,
+                              "useSTACSearching": false,
+                              "zoomOffset": 0
+                            }
+                          },
+                          "id": "pre-B130001101BE2A00",
+                          "type": "rasterTile",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-E-raster",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Caraballeda, after",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": false,
+                              "colormapId": "cfastie",
+                              "dynamicColor": false,
+                              "enableTerrain": false,
+                              "filterEnabled": false,
+                              "filterRange": [
+                                -1,
+                                1
+                              ],
+                              "gammaContrastFactor": 1,
+                              "linearRescalingFactor": [
+                                0,
+                                1
+                              ],
+                              "nonLinearRescaling": true,
+                              "opacity": 1,
+                              "preset": "trueColor",
+                              "saturationValue": 1,
+                              "showTileBorders": false,
+                              "showTileDebugInfo": false,
+                              "sigmoidalBiasFactor": 0.5,
+                              "sigmoidalContrastFactor": 0,
+                              "useSTACSearching": false,
+                              "zoomOffset": 0
+                            }
+                          },
+                          "id": "post-B1600011017A8610",
+                          "type": "rasterTile",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": [
+                        {
+                          "layers": {
+                            "damage": false,
+                            "field": false,
+                            "post-B15000110186C610": false,
+                            "post-B1600011017A8610": false,
+                            "pre-B120001100513B10": true,
+                            "pre-B130001101BE2A00": true
+                          }
+                        },
+                        {
+                          "layers": {
+                            "damage": true,
+                            "field": true,
+                            "post-B15000110186C610": true,
+                            "post-B1600011017A8610": true,
+                            "pre-B120001100513B10": false,
+                            "pre-B130001101BE2A00": false
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The quarter hours of the last week, with every other filter as a pill. Drag across it to keep a span of days or hours; press play to walk through the week.",
+          "id": 7,
+          "links": [],
+          "title": "Buildings added and deleted, day by day",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 57,
+                "filters": "osmFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "buildings",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 700,
+                "timeColumn": "t",
+                "timeline": "time"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "years": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buildings added to OpenStreetMap in the box, by period since the first one in 2010: sixteen years against five weeks.",
+          "id": 8,
+          "links": [],
+          "title": "Years against weeks",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "plot:\n  - mark: barX\n    data: { from: years }\n    x: added\n    y: period\n    fill: '#8AB8FF'\n  - mark: barX\n    data: { from: years, filter: \"period = '24 June – 27 July 2026'\" }\n    x: added\n    y: period\n    fill: '#E31A1A'\n  - mark: text\n    data: { from: years }\n    x: added\n    y: period\n    text: added\n    textAnchor: start\n    dx: 4\n    fill: '#CCCCDC'\nyDomain: ['2010–2017', 'In 2018', '2019–2025', '2026 to 23 June', '24 June – 27 July 2026']\nxLabel: Buildings added →\nyLabel: null\nxTickFormat: s\nmarginLeft: 150\nmarginRight: 60\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "map"
+                        },
+                        "height": 22,
+                        "width": 15,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "story"
+                        },
+                        "height": 9,
+                        "width": 9,
+                        "x": 15,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "before"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 15,
+                        "y": 9
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "now"
+                        },
+                        "height": 4,
+                        "width": 5,
+                        "x": 19,
+                        "y": 9
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "added"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 15,
+                        "y": 13
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "changesets"
+                        },
+                        "height": 4,
+                        "width": 5,
+                        "x": 19,
+                        "y": 13
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "hours"
+                        },
+                        "height": 5,
+                        "width": 9,
+                        "x": 15,
+                        "y": 17
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "timeline"
+                        },
+                        "height": 5,
+                        "width": 24,
+                        "x": 0,
+                        "y": 22
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "years"
+                        },
+                        "height": 9,
+                        "width": 12,
+                        "x": 0,
+                        "y": 27
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "about"
+                        },
+                        "height": 9,
+                        "width": 12,
+                        "x": 12,
+                        "y": 27
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "The mapping"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "swipe"
+                        },
+                        "height": 24,
+                        "width": 17,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "story2"
+                        },
+                        "height": 12,
+                        "width": 7,
+                        "x": 17,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "damage_cells"
+                        },
+                        "height": 4,
+                        "width": 7,
+                        "x": 17,
+                        "y": 12
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "field"
+                        },
+                        "height": 4,
+                        "width": 7,
+                        "x": 17,
+                        "y": 16
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Before and after"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "chaski",
+      "duckdb",
+      "kepler",
+      "mosaic",
+      "plus",
+      "satellite",
+      "seismic"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2026-06-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "2026-07-27T00:00:00.000Z"
+    },
+    "title": "Venezuela 2026: how OpenStreetMap mapped Caracas after the earthquakes",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Every building OpenStreetMap gained or lost in Caracas and La Guaira, 1 June to 27 July 2026.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Changes",
+          "multi": false,
+          "name": "changes",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "changes",
+              "refId": "changes",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every building OpenStreetMap gained or lost in the box (Caracas, El Junquito, Catia La Mar,\n-- La Guaira, Caraballeda, Naiguatá) from 1 June to 27 July 2026, where ohsome's history ends: its time,\n-- +1 or -1, its H3 cell (resolution 9, about 0.09 km²), its centroid, its changeset and the hour in\n-- Caracas (UTC-4) it was made. From the full history through the ohsome API (datasets/venezuela-eq-2026).\nSELECT time AS t, kind, CASE kind WHEN 'creation' THEN 1 ELSE -1 END AS delta, hex, latitude, longitude, changeset,\n       (hour(time) + 20) % 24 AS hr\nFROM read_parquet('http://feeds/datasets/venezuela-eq-2026/osm_changes.parquet')\nWHERE time \u003e= TIMESTAMP '2026-06-01'",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Buildings per H3 cell in OpenStreetMap on 1 June 2026.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Cells",
+          "multi": false,
+          "name": "cells",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cells",
+              "refId": "cells",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the buildings each H3 cell had in OpenStreetMap on 1 June 2026, before the earthquakes\n-- (every building added since October 2007 less those deleted), and when its first one was mapped.\nSELECT hex, sum(CASE kind WHEN 'creation' THEN 1 ELSE -1 END)::INTEGER AS before, min(time) AS first_mapped\nFROM read_parquet('http://feeds/datasets/venezuela-eq-2026/osm_changes.parquet')\nWHERE time \u003c TIMESTAMP '2026-06-01'\nGROUP BY hex",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Buildings added to OpenStreetMap in the box, year by year.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Years",
+          "multi": false,
+          "name": "years",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "years",
+              "refId": "years",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: buildings added to OpenStreetMap in the box, by period since the first one (2010), with\n-- 2026 split at the earthquakes (24 June): what took years against what took weeks.\nSELECT CASE WHEN time \u003e= TIMESTAMP '2026-06-24' THEN '24 June – 27 July 2026'\n            WHEN year(time) = 2026 THEN '2026 to 23 June'\n            WHEN year(time) \u003e= 2019 THEN '2019–2025'\n            WHEN year(time) = 2018 THEN 'In 2018'\n            ELSE '2010–2017' END AS period,\n       min(time) AS since, count(*) AS added\nFROM read_parquet('http://feeds/datasets/venezuela-eq-2026/osm_changes.parquet')\nWHERE kind = 'creation'\nGROUP BY 1 ORDER BY since",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "HOT's validated damage cells and field reports.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Damage",
+          "multi": false,
+          "name": "damage",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "damage",
+              "refId": "damage",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: HOT's building damage areas, H3 cells of about 1,800 m² that an AI found damaged on the\n-- before and after imagery and that MapSwipe volunteers accepted, with their votes; and the damage HOT's\n-- volunteers reported on the ground (ChatMap). HDX, CC BY-NC-SA 4.0.\nSELECT 'cell' AS source, area, damaged_votes, validators, damaged_share, NULL AS level, NULL AS name, latitude, longitude, geojson\nFROM read_parquet('http://feeds/datasets/venezuela-eq-2026/damage_cells.parquet')\nUNION ALL\nSELECT 'field', NULL, NULL, NULL, NULL, level, name, latitude, longitude, NULL\nFROM read_parquet('http://feeds/datasets/venezuela-eq-2026/damage_points.parquet')",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "From",
+          "name": "tFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "To",
+          "name": "tTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Hour from",
+          "name": "hr_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Hour to",
+          "name": "hr_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Area",
+          "name": "osmArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "osmFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$changes",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "t",
+                  "from": "$tFrom",
+                  "label": "Day",
+                  "name": "time",
+                  "to": "$tTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "hr",
+                  "from": "$hr_lo",
+                  "label": "Hour in Caracas",
+                  "name": "hour",
+                  "to": "$hr_hi",
+                  "type": "range"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$osmArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "osmFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
