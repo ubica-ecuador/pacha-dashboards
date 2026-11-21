@@ -1,0 +1,1215 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "mercator-true-size"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Every flat map distorts the globe. The world in the projection you choose, with Tissot's circles, and every country's real area against the area it takes on a Mercator web map (Greenland: 16 times too large), all computed in the browser; pick countries by clicking or by latitude.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n\n- **Countries**: [Natural Earth](https://www.naturalearthdata.com/) admin 0 countries at 1:50 million, public domain,\n  read in your browser from its GitHub repository.\n- **Real area**: on the WGS 84 ellipsoid (`ST_Area_Spheroid`). **Mercator area**: the country projected to Web\n  Mercator (EPSG:3857), cut at 85° north and south like every web map, in projected square metres, which are true\n  only at the equator.\n- Everything is computed in your browser by DuckDB-WASM (Chaski) with its `spatial` extension; Mosaic (Observable\n  Plot) draws the projections and kepler.gl the web map.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "latitude": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot is a country at the latitude of its centre, as big as its real area; the dashed curve is Mercator's enlargement there, 1 / cos² of the latitude. Drag across latitudes to pick countries.",
+          "id": 3,
+          "links": [],
+          "title": "Latitude decides it",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  pick: { select: crossfilter }\nplot:\n  - mark: line\n    data: { from: curve }\n    x: lat\n    y: inflation\n    stroke: '#CCCCDC'\n    strokeOpacity: 0.5\n    strokeDasharray: '4,3'\n  - mark: dot\n    data: { from: countries, filterBy: $pick }\n    x: lat\n    y: inflation\n    r: km2\n    fill: inflation\n    fillOpacity: 0.85\n    stroke: '#11141a'\n    strokeWidth: 0.5\n    clip: true\n  - select: intervalX\n    as: $pick\nyScale: log\nyDomain: [0.9, 40]\nxDomain: [-60, 85]\nrRange: [2, 18]\ncolorScale: log\ncolorDomain: [1, 20]\ncolorRange: ['#3B6E8F', '#6A9BB5', '#E8D9A8', '#F4A259', '#E4572E', '#B5121B']\ncolorInterpolate: rgb\ncolorClamp: true\nxLabel: Latitude of the country's centre →\nyLabel: ↑ Times larger on Mercator\nyTickFormat: '~s'\nmarginLeft: 50\n",
+                "variables": "- param: pick\n  column: lat\n  from: lat_lo\n  to: lat_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "merc": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(merc_km2) / 1e6 AS \"Million km²\" FROM $countries WHERE name \u003c\u003e 'Antarctica' AND $__crossfilter($pickFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The area the same countries take on a Mercator map, as if it were drawn at true scale at the equator.",
+          "id": 6,
+          "links": [],
+          "title": "Area on a Mercator map",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#E4572E",
+                    "mode": "fixed"
+                  },
+                  "decimals": 2,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "suffix: M km²"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "ranking": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The 30 countries Mercator enlarges most (Antarctica left out: Mercator cannot draw the pole). Click countries to pick them, on every map and in the figures; click again to let go.",
+          "id": 2,
+          "links": [],
+          "title": "The countries Mercator inflates most",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  pick: { select: crossfilter }\nplot:\n  # the labels first: toggleY binds to the mark just before it, the bars\n  - mark: text\n    data: { from: countries, filterBy: $pick }\n    x: inflation\n    y: name\n    text: { sql: \"printf('%.1f×', inflation)\" }\n    textAnchor: start\n    dx: 4\n    fill: '#CCCCDC'\n  - mark: barX\n    data: { from: countries, filterBy: $pick }\n    x: inflation\n    y: name\n    fill: inflation\n    inset: 0.5\n  - select: toggleY\n    as: $pick\ncolorScale: log\ncolorDomain: [1, 20]\ncolorRange: ['#3B6E8F', '#6A9BB5', '#E8D9A8', '#F4A259', '#E4572E', '#B5121B']\ncolorInterpolate: rgb\ncolorClamp: true\nyDomain: ['Greenland', 'Norway', 'Iceland', 'Finland', 'Canada', 'Russia', 'Sweden', 'Latvia', 'Lithuania', 'United Kingdom', 'Belarus', 'Ireland', 'Poland', 'Germany', 'Czechia', 'Ukraine', 'United States of America', 'Kazakhstan', 'Austria', 'Hungary', 'Mongolia', 'Romania', 'Croatia', 'France', 'Serbia', 'Bosnia and Herz.', 'Italy', 'Bulgaria', 'Georgia', 'New Zealand']\nxLabel: Times larger on a Mercator map →\nyLabel: null\nmarginLeft: 150\nmarginRight: 50\n",
+                "variables": "- param: pick\n  column: name\n  variable: country\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "ratio": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(merc_km2) / sum(km2) AS \"×\" FROM $countries WHERE name \u003c\u003e 'Antarctica' AND $__crossfilter($pickFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How many times larger Mercator draws the countries picked.",
+          "id": 7,
+          "links": [],
+          "title": "Times larger on Mercator",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFFFFF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "suffix:×"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "real": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(km2) / 1e6 AS \"Million km²\" FROM $countries WHERE name \u003c\u003e 'Antarctica' AND $__crossfilter($pickFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The area of the countries picked (all but Antarctica when none is), on the ellipsoid, in millions of km².",
+          "id": 5,
+          "links": [],
+          "title": "Real area",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8AB8FF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 2,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "suffix: M km²"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "## Every flat map lies\n\nA globe cannot be flattened without tearing or stretching it. Every map projection picks what to keep: **areas**,\n**angles**, **distances** or **directions**, never all of them.\n\n**Mercator** keeps angles, which made it the sailors' map, and it is the projection of nearly every web map. The price\nis area: the farther from the equator, the larger it draws the land. On a Mercator map **Greenland takes more room\nthan Africa** (35 against 34 million km² of map); on the ground it is **14 times smaller** (2.2 against 29.9 million\nkm²). Ecuador, on the equator, comes out at its true size.\n\nSwitch projections above and watch Tissot's circles: all are 1,000 km across on the ground. Click a country, or drag\nacross latitudes, to compare its real area with Mercator's.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "webmap": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every country, with its real area and its area on this map; the pick filters it on the GPU\n-- (inflation_log: the colour, on the same log scale as the charts, 1× to 20×)\nSELECT name, continent, km2, merc_km2, inflation, ln(least(inflation, 20)) AS inflation_log, lat, geom FROM $countries"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "A web map, in Web Mercator like nearly every map online, with the countries you pick, coloured by how many times larger it draws them. Greenland takes more room than Africa here.",
+          "id": 4,
+          "links": [],
+          "title": "The same countries on a web map (Web Mercator)",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 25,
+                      "longitude": 0,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 0.9
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "dark-matter",
+                      "threeDBuildingColor": [
+                        9,
+                        9,
+                        9
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "km2"
+                              },
+                              {
+                                "name": "merc_km2"
+                              },
+                              {
+                                "name": "inflation"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "countries"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              106,
+                              155,
+                              181
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Countries",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#3B6E8F",
+                                  "#6A9BB5",
+                                  "#E8D9A8",
+                                  "#F4A259",
+                                  "#E4572E",
+                                  "#B5121B"
+                                ],
+                                "name": "True to inflated",
+                                "type": "sequential"
+                              },
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.85,
+                              "strokeColor": [
+                                17,
+                                20,
+                                26
+                              ],
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "countries",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "inflation_log",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": false,
+                "mosaicColumns": "",
+                "mosaicSelection": "pick",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "rasterServerUrl": "",
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "world": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Natural Earth's countries in the projection you choose, coloured by how many times larger Mercator draws them (grey: filtered out). The white discs are Tissot's circles, all 1,000 km across on the ground: see how each projection stretches, squeezes or shears them. Pick countries in the charts below.",
+          "id": 1,
+          "links": [],
+          "title": "The world in a projection",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  pick: { select: crossfilter }\n  proj: equal-earth\n  centre: 0\n  rotate: [$centre, 0]\nvconcat:\n  - hconcat:\n      - input: menu\n        label: Projection\n        as: $proj\n        options:\n          - { label: Equal Earth (true areas), value: equal-earth }\n          - { label: Mercator (web maps), value: mercator }\n          - { label: Equirectangular, value: equirectangular }\n          - { label: Orthographic (a globe), value: orthographic }\n          - { label: Azimuthal equal-area, value: azimuthal-equal-area }\n          - { label: Stereographic, value: stereographic }\n          - { label: Transverse Mercator, value: transverse-mercator }\n      - input: slider\n        label: Centre on longitude\n        as: $centre\n        min: -180\n        max: 180\n        step: 1\n  - plot:\n      - mark: sphere\n        fill: '#0b1d33'\n        stroke: currentColor\n        strokeOpacity: 0.3\n      - mark: graticule\n        strokeOpacity: 0.12\n      - mark: geo\n        data: { from: countries }\n        geometry: { geojson: geom }\n        fill: '#2a2f38'\n        stroke: '#11141a'\n        strokeWidth: 0.4\n      - mark: geo\n        data: { from: countries, filterBy: $pick }\n        geometry: { geojson: geom }\n        fill: inflation\n        stroke: '#11141a'\n        strokeWidth: 0.4\n      - mark: geo\n        data: { from: tissot }\n        geometry: { geojson: geom }\n        fill: white\n        fillOpacity: 0.22\n        stroke: white\n        strokeOpacity: 0.7\n        strokeWidth: 0.8\n    name: world\n    projectionType: $proj\n    projectionRotate: $rotate\n    colorScale: log\n    colorDomain: [1, 20]\n    colorRange: ['#3B6E8F', '#6A9BB5', '#E8D9A8', '#F4A259', '#E4572E', '#B5121B']\n    colorInterpolate: rgb\n    colorClamp: true\n    margin: 6\n  - legend: color\n    for: world\n    label: Times larger on a Mercator map\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "world"
+              },
+              "height": 17,
+              "width": 16,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "story"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 16,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "real"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 16,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "merc"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 20,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "ratio"
+              },
+              "height": 3,
+              "width": 8,
+              "x": 16,
+              "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "webmap"
+              },
+              "height": 13,
+              "width": 10,
+              "x": 0,
+              "y": 17
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "ranking"
+              },
+              "height": 13,
+              "width": 7,
+              "x": 10,
+              "y": 17
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "latitude"
+              },
+              "height": 13,
+              "width": 7,
+              "x": 17,
+              "y": 17
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "about"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 30
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "kepler",
+      "mosaic",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-7d",
+      "hideTimepicker": true,
+      "timezone": "Europe/Madrid",
+      "to": "now"
+    },
+    "title": "Projections: how much Mercator inflates every country",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Natural Earth's countries with their real area and their area on a Mercator map.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Countries",
+          "multi": false,
+          "name": "countries",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "countries",
+              "refId": "countries",
+              "source": {
+                "sql": "-- In the browser: Natural Earth's countries (1:50 million), each with its real area on the ellipsoid and the area\n-- it takes on a Mercator map (Web Mercator, EPSG:3857, cut at 85° like every web map), and how many times larger\n-- Mercator draws it. lat is the latitude of its centroid; rank orders the countries of 50,000 km² or more by that\n-- inflation, Antarctica left out (Mercator cannot draw the pole: cut at 85° it is still 23 times too large).\nWITH c AS (\n  SELECT f.properties.NAME::VARCHAR AS name, f.properties.CONTINENT::VARCHAR AS continent,\n         ST_GeomFromGeoJSON(to_json(f.geometry)) AS geom\n  FROM read_json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson'), unnest(features) AS t(f)\n), a AS (\n  SELECT name, continent, geom,\n         ST_Area_Spheroid(ST_FlipCoordinates(geom)) / 1e6 AS km2,\n         ST_Area(ST_Transform(ST_Intersection(geom, ST_MakeEnvelope(-180, -85, 180, 85)), 'EPSG:4326', 'EPSG:3857',\n                              always_xy := true)) / 1e6 AS merc_km2,\n         round(ST_Y(ST_Centroid(geom)), 1) AS lat\n  FROM c\n)\nSELECT name, continent, round(km2)::INTEGER AS km2, round(merc_km2)::BIGINT AS merc_km2,\n       round(merc_km2 / km2, 2) AS inflation, lat,\n       CASE WHEN name = 'Antarctica' OR km2 \u003c 50000 THEN NULL\n            ELSE row_number() OVER (PARTITION BY name = 'Antarctica' OR km2 \u003c 50000 ORDER BY merc_km2 / km2 DESC) END AS rank,\n       geom\nFROM a WHERE km2 \u003e 0",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Tissot's circles: 1,000 km across, on a 30° by 25° grid.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Tissot",
+          "multi": false,
+          "name": "tissot",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "tissot",
+              "refId": "tissot",
+              "source": {
+                "sql": "-- In the browser: Tissot's circles, every one 1,000 km across on the ground, every 30° of longitude and 25° of\n-- latitude. Drawn in a projection, each shows how that projection stretches the land there.\nWITH centre AS (\n  SELECT lon::DOUBLE AS lon, lat::DOUBLE AS lat FROM range(-165, 180, 30) AS a(lon), range(-75, 76, 25) AS b(lat)\n), ring AS (\n  SELECT lon, lat, k, radians(k * 10) AS b, 500 / 6371.0 AS d FROM centre, range(0, 37) AS r(k)\n), pt AS (\n  SELECT lon, lat, k,\n         asin(sin(radians(lat)) * cos(d) + cos(radians(lat)) * sin(d) * cos(b)) AS lat2, b, d\n  FROM ring\n)\nSELECT lon, lat,\n       ST_GeomFromText('POLYGON((' || string_agg(\n         round(lon + degrees(atan2(sin(b) * sin(d) * cos(radians(lat)), cos(d) - sin(radians(lat)) * sin(lat2))), 4)\n         || ' ' || round(degrees(lat2), 4), ', ' ORDER BY k) || '))') AS geom\nFROM pt GROUP BY lon, lat",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Mercator's enlargement by latitude.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Curve",
+          "multi": false,
+          "name": "curve",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "curve",
+              "refId": "curve",
+              "source": {
+                "sql": "-- In the browser: how much Mercator enlarges areas at each latitude, 1 / cos²(latitude).\nSELECT lat::DOUBLE AS lat, 1 / pow(cos(radians(lat)), 2) AS inflation FROM range(-84, 85) AS t(lat)",
+                "type": "sql"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Country",
+          "multi": true,
+          "name": "country",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "country",
+              "sql": "SELECT name AS value FROM $countries ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Latitude from",
+          "name": "lat_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Latitude to",
+          "name": "lat_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "pickFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$countries",
+              "filters": [
+                {
+                  "column": "name",
+                  "label": "Country",
+                  "name": "country",
+                  "type": "in",
+                  "variable": "$country"
+                },
+                {
+                  "column": "lat",
+                  "from": "$lat_lo",
+                  "label": "Latitude",
+                  "name": "lat",
+                  "to": "$lat_hi",
+                  "type": "range"
+                }
+              ],
+              "kind": "filters",
+              "refId": "pickFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
