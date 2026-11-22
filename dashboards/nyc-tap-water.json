@@ -1,0 +1,1436 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "nyc-tap-water"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "New York's drinking water on its way through the mains, from DEP's sampling stations since 2015: the free chlorine that gives tap water its taste, how warm water uses it up every summer, and where it runs low. A timeline plays the seasons; a temperature brush, the boroughs and a drawn area filter the map and figures.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n\n- **Samples**: NYC DEP, [Distribution Water Quality](https://data.cityofnewyork.us/Environment/Distribution-Water-Quality/bkwf-xfky)\n  (NYC Open Data), from 2015, when free chlorine starts under its present name, to the latest month DEP has published.\n  Only samples from the distribution system (the mains), not the plants or the aqueducts.\n- **Stations**: DEP names them only by a description (\"N/S Lafayette Ave 1st SS W/O Underhill Ave\"). Each is placed where\n  its two streets meet on NYC's [street centerline](https://data.cityofnewyork.us/City-Government/Centerline/inkn-q76z), or at its\n  address on [NYC GeoSearch](https://geosearch.planninglabs.nyc), within some tens of metres; 16 of 372 could not be placed and\n  are left off the map, though their samples count.\n- **Almost none left** means under 0.2 mg/L of free chlorine, the least New York State asks for where water enters the mains;\n  on the mains it asks only for a trace.\n\nBuilt by `datasets/nyc-tap-water/build.sh` in pacha-dashboards (stations by `locate.py`). Times are New York's.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "coliform": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) FILTER (WHERE coliform \u003e 0) AS \"Samples\" FROM $samples WHERE $__crossfilter($waterFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Samples kept where DEP found total coliform bacteria (MPN of 1 or more per 100 mL). Each one is resampled; the rule counts the share of a month's samples, which has to stay under 5 %.",
+          "id": 8,
+          "links": [],
+          "title": "Samples with coliform bacteria",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#E8D9A8",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "low": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT 100.0 * avg(low) AS \"%\" FROM $samples WHERE $__crossfilter($waterFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of samples kept with less than 0.2 mg/L of free chlorine.",
+          "id": 7,
+          "links": [],
+          "title": "Almost none left (under 0.2 mg/L)",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#E4572E",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Each sampling station in what the filters keep (the area drawn on this map left out, so every station stays):\n-- its median free chlorine, the share of its samples with almost none left (under 0.2 mg/L), its median water\n-- temperature, and its samples with coliform bacteria. The filters name bare columns: they go on $samples alone.\nWITH w AS (\n  SELECT site, round(median(chlorine), 2) AS chlorine, round(100.0 * avg(low), 1) AS low_pct,\n         round(median(temperature), 1) AS temperature, count(*)::INTEGER AS samples,\n         count(*) FILTER (WHERE coliform \u003e 0)::INTEGER AS coliform\n  FROM $samples WHERE $__crossfilter($waterFilters, -area) GROUP BY site\n)\nSELECT st.site, st.borough, st.description, st.latitude, st.longitude, w.chlorine,\n       -- the colour: 0.1 to 0.9 mg/L in six steps, a few stations above or below kept at the ends\n       greatest(0.1, least(w.chlorine, 0.9)) AS colour, w.low_pct, w.temperature, w.samples, w.coliform\nFROM w JOIN $stations st USING (site)\nWHERE st.latitude IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot is one of DEP's sampling stations on the city's water mains, coloured by the median free chlorine of its samples in the timeline window (and in the temperatures and boroughs kept), from red (0.1 mg/L or less) to blue (0.9 or more), and larger the more of its samples had almost none left. Draw an area to keep its stations.",
+          "id": 1,
+          "links": [],
+          "title": "Free chlorine at DEP's sampling stations",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "waterArea",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.7,
+                      "longitude": -73.94,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 9.9
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "threeDBuildingColor": [
+                        9,
+                        9,
+                        9
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "site"
+                              },
+                              {
+                                "name": "borough"
+                              },
+                              {
+                                "name": "description"
+                              },
+                              {
+                                "name": "chlorine"
+                              },
+                              {
+                                "name": "low_pct"
+                              },
+                              {
+                                "name": "temperature"
+                              },
+                              {
+                                "name": "samples"
+                              },
+                              {
+                                "name": "coliform"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "stations"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              106,
+                              155,
+                              181
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Free chlorine (mg/L)",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#B5121B",
+                                  "#E4572E",
+                                  "#F4A259",
+                                  "#E8D9A8",
+                                  "#6A9BB5",
+                                  "#3B6E8F"
+                                ],
+                                "name": "Chlorine left",
+                                "type": "sequential"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": false,
+                              "radius": 9,
+                              "radiusRange": [
+                                8,
+                                26
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 0.99
+                            }
+                          },
+                          "id": "stations",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "colour",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "sizeField": {
+                              "name": "low_pct",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "rasterServerUrl": "",
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "median": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT median(chlorine) AS \"mg/L\" FROM $samples WHERE $__crossfilter($waterFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median free chlorine of the samples kept, in mg/L: what the tap tastes of. New York State asks for a trace (detectable) everywhere on the mains, and at least 0.2 mg/L where water enters them.",
+          "id": 6,
+          "links": [],
+          "title": "Median free chlorine",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#6A9BB5",
+                    "mode": "fixed"
+                  },
+                  "decimals": 2,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "samples": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Samples\" FROM $samples WHERE $__crossfilter($waterFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Samples in what the filters keep.",
+          "id": 5,
+          "links": [],
+          "title": "Samples",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8AB8FF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "seasons": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Month by month since 2015: the share of samples with almost no chlorine left (orange) and the median temperature of the water in the mains (blue, dashed). They rise and fall together.",
+          "id": 4,
+          "links": [],
+          "title": "Every summer, the same dip",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  waterFilters: { select: crossfilter }\nplot:\n  - mark: lineY\n    data: { from: samples, filterBy: $waterFilters }\n    x: { sql: \"date_trunc('month', t)\" }\n    y: { sql: \"100 * avg(low)\" }\n    stroke: '#E4572E'\n    strokeWidth: 2\n    curve: monotone-x\n  - mark: lineY\n    data: { from: samples, filterBy: $waterFilters }\n    x: { sql: \"date_trunc('month', t)\" }\n    y: { sql: \"median(temperature)\" }\n    stroke: '#6A9BB5'\n    strokeWidth: 1.5\n    strokeDasharray: 3,3\n    curve: monotone-x\nyDomain: [0, 30]\nxLabel: null\nyLabel: ↑ % under 0.2 mg/L (orange) · water °C (blue, dashed)\nmarginLeft: 44\nmarginBottom: 30\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### What New York's tap water tastes of\n\nChlorine. DEP adds it where the water leaves the reservoirs, so that no germ survives the trip, and it is spent on the way:\nby the time the water reaches a far end of the mains, there may be little left.\n\nSome 390 **sampling stations** on the streets are the city's taste buds. DEP opens them a few times a month and measures\nthe free chlorine, the temperature, the turbidity and the bacteria. Where the aqueducts' water enters the mains, at the\ntunnel shafts, it carries 0.75 mg/L; at the stations, 0.55 on the median.\n\n**Summer** is when the chlorine runs out. Warm water uses it up faster: in July 2025 one sample in ten had less than\n0.2 mg/L, against fewer than one in a hundred in December. Press play on the timeline and watch the dots turn red\nevery summer, or drag across the warm temperatures in the chart below.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every sample DEP took on the mains, with every other filter as a pill. Drag across it to keep a span of months; press play to walk through the seasons.",
+          "id": 2,
+          "links": [],
+          "title": "Samples, month by month since 2015",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 142,
+                "filters": "waterFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "samples",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 600,
+                "timeColumn": "t",
+                "timeline": "time"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "warm": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of samples with almost no free chlorine left (under 0.2 mg/L), by the temperature of the water: chlorine reacts faster in warm water and is used up before it reaches the far ends of the mains. Drag to keep some temperatures, on the map and the figures.",
+          "id": 3,
+          "links": [],
+          "title": "Warmer water, less chlorine left",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  waterFilters: { select: crossfilter }\nplot:\n  - mark: rectY\n    data: { from: samples, filterBy: $waterFilters }\n    x1: { sql: \"floor(temperature)\" }\n    x2: { sql: \"floor(temperature) + 1\" }\n    y: { sql: \"100 * avg(low)\" }\n    fill: '#E4572E'\n    inset: 1\n  - select: intervalX\n    as: $waterFilters\nxDomain: [0, 28]\nyDomain: [0, 100]\nxLabel: Water temperature (°C) →\nyLabel: ↑ % of samples under 0.2 mg/L\nmarginLeft: 44\nmarginBottom: 34\n",
+                "variables": "- param: waterFilters\n  column: temperature\n  from: temp_lo\n  to: temp_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map"
+              },
+              "height": 22,
+              "width": 15,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "story"
+              },
+              "height": 9,
+              "width": 9,
+              "x": 15,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "samples"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 15,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "median"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 19,
+              "y": 9
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "low"
+              },
+              "height": 4,
+              "width": 4,
+              "x": 15,
+              "y": 13
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "coliform"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 19,
+              "y": 13
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "warm"
+              },
+              "height": 5,
+              "width": 9,
+              "x": 15,
+              "y": 17
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "timeline"
+              },
+              "height": 5,
+              "width": 24,
+              "x": 0,
+              "y": 22
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "seasons"
+              },
+              "height": 9,
+              "width": 15,
+              "x": 0,
+              "y": 27
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "about"
+              },
+              "height": 9,
+              "width": 9,
+              "x": 15,
+              "y": 27
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "city",
+      "kepler",
+      "mosaic",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2015-01-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "America/New_York",
+      "to": "now"
+    },
+    "title": "What New York's tap water tastes of: chlorine on the mains",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Every sample DEP took on the city's mains since 2015.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Samples",
+          "multi": false,
+          "name": "samples",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "samples",
+              "refId": "samples",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every sample DEP took at a sampling station on New York's water mains since 2015, with the\n-- station's place (none for the few unplaced, or no longer sampled): free chlorine (mg/L), water temperature (°C), turbidity (NTU), total coliform and E. coli\n-- (MPN per 100 mL, 0 where none was found), the month of the year (m) and whether the chlorine was almost gone\n-- (low: under 0.2 mg/L). From NYC Open Data's Distribution Water Quality (datasets/nyc-tap-water).\nSELECT s.site, s.time AS t, s.chlorine, s.temperature, s.turbidity, s.coliform, s.ecoli,\n       month(s.time)::INTEGER AS m, (s.chlorine \u003c 0.2)::INTEGER AS low,\n       coalesce(s.borough, st.borough) AS borough, st.latitude, st.longitude\nFROM read_parquet('http://feeds/datasets/nyc-tap-water/samples.parquet') s\nLEFT JOIN read_parquet('http://feeds/datasets/nyc-tap-water/stations.parquet') st USING (site)\nWHERE s.chlorine IS NOT NULL",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "DEP's sampling stations, placed on the street map.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Stations",
+          "multi": false,
+          "name": "stations",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "stations",
+              "refId": "stations",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: DEP's sampling stations on the city's mains, placed where the two streets of their description\n-- meet (or at their address), with how many samples each has and when they start and end.\nSELECT site, borough, description, latitude, longitude, located, samples, first_sample, last_sample\nFROM read_parquet('http://feeds/datasets/nyc-tap-water/stations.parquet')",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "description": "Keep the samples of some boroughs.",
+          "hide": "dontHide",
+          "includeAll": true,
+          "label": "Borough",
+          "multi": true,
+          "name": "borough",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "values",
+              "refId": "borough",
+              "sql": "SELECT DISTINCT borough AS value FROM $samples ORDER BY 1"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": false,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "From",
+          "name": "tFrom",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "To",
+          "name": "tTo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Temperature from",
+          "name": "temp_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Temperature to",
+          "name": "temp_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Area",
+          "name": "waterArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "waterFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$samples",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "t",
+                  "from": "$tFrom",
+                  "label": "Sampled",
+                  "name": "time",
+                  "to": "$tTo",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "temperature",
+                  "from": "$temp_lo",
+                  "label": "Water temperature (°C)",
+                  "name": "temperature",
+                  "to": "$temp_hi",
+                  "type": "range"
+                },
+                {
+                  "column": "borough",
+                  "label": "Borough",
+                  "name": "borough",
+                  "type": "in",
+                  "variable": "$borough"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$waterArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "waterFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
