@@ -1,0 +1,4 @@
+# Madrid in real time (madrid-live, recorder feeds madrid-traffic and madrid-air): Informo's
+# traffic and incidents, a minute; air quality, five; the stations and districts, a week and a month.
+proxy_cache_path /var/cache/nginx/madrid levels=1:2 keys_zone=madrid:1m
+                 max_size=50m inactive=30d use_temp_path=off;

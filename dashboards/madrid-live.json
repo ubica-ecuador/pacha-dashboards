@@ -1,0 +1,3633 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "madrid-live"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "Madrid now and its week replayed, from the City Council's open feeds: Informo's 4,600 traffic points every five minutes and its incidents, the stations' hourly NO₂, and every building coloured by the weather stations' temperature under the sun of the moment. Traffic, Air and Climate tabs on one window. Nothing simulated.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 28,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Sources**, all from the City Council of Madrid, read through Pacha's gateway (which keeps each file as long as the city takes to renew it, so the city sees one request per file whoever is looking):\n\n- **Traffic**: Informo, *Tráfico. Datos en tiempo real* ([datos.madrid.es](https://datos.madrid.es), dataset 202087): `pm.xml`, every measuring point of the city's network (loops under the street; radar with a speed on the M-30), rewritten every five minutes. The **load** (0-100, a little over at a point past its capacity) is Informo's own mix of the vehicles an hour and the share of time a vehicle is over the loop, against what the street takes; the **level of service** is Informo's: flowing, slow, queues, jammed. Points Informo flags as faulty are left out. Where each point stands is converted from UTM (EPSG:25830).\n- **Incidents**: Informo's `incid_aytomadrid.xml`, works, closures and accidents on the City Council's roads (not the regional or national ones), and the NO₂ protocol's scenario when one is declared.\n- **Air quality**: *Calidad del aire. Tiempo real* (dataset 212531): today's hourly readings of the 24 stations, a new hour some seventy minutes after its end; the stations' places from dataset 212629.\n- **Weather**: *Datos meteorológicos. Datos en tiempo real* (dataset 300392): today's hourly temperature, humidity, wind, rain, pressure and radiation of the weather stations (26, not all measuring everything); their places from dataset 300360.\n- **Buildings**: OpenStreetMap's, from OpenFreeMap's base map tiles, through Kepler Plus's Buildings layer; the sun and its shadows are kepler's Light \u0026 Shadow at the window's end.\n- **Districts**: the city's geoportal SIGMA, the 21 municipal districts.\n\n**History.** None of these feeds keeps any. Pacha's recorder keeps every Informo file (feed `madrid-traffic`, about 4,900 rows every five minutes) the air quality hours (`madrid-air`) and the weather hours (`madrid-meteo`) for a week, from the day it first ran: before that the bar and the matrix are empty.\n\n**How it is built.** The server (DuckDB) reads the feeds and the recording and sums the traffic by district and quarter of an hour; that small cube, and the stations' hourly air and weather, are loaded into your browser (Chaski, DuckDB-WASM), where the bar, the profile, the district bars and the matrix filter each other at once (Mosaic). The traffic map's 4,600 points are worked out on the server for the same selection. One window, on the bar of any tab, holds for all of them. A building's temperature is the inverse-distance mean of the stations around it. A district's figures place each point where the latest file puts it; its load in a quarter is the mean of its points' readings, and the hour profile the mean of the districts.\n\n**What this is not.** No figure here is simulated or estimated: what is not in the feeds (transit delays, waiting times, crowding) is not shown.\n\nData: Ayuntamiento de Madrid, under the terms of its open data portal (free use, citing the source). Built on Pacha: DuckDB on the server, Chaski and Mosaic in the browser, Kepler.gl Plus maps and Time Brush.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The points with queues or jammed in each quarter, under every filter but the window's own.\nSELECT t AS time, sum(queued)::DOUBLE AS \"Points with queues or jammed\"\nFROM $cube WHERE $__crossfilter($cubeFilters, -time)\nGROUP BY t ORDER BY t"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From the recording of every file Informo writes (Pacha's recorder, kept a week): how many measuring points had queues or were jammed, on average over each quarter of an hour, in the districts and hours of the day picked below. Drag to pick a window, or move and stretch it; ▶ plays it. The window is part of the selection every panel below follows. The recording starts the day the recorder first ran: before it, the bar is hatched.",
+          "id": 10,
+          "links": [],
+          "title": "Window · points with queues or jammed, quarter by quarter",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#fc8d59",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "max",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "15m",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "followLatest": true,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "",
+                "loop": false,
+                "mosaicColumn": "t",
+                "mosaicSelection": "traffic",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 800,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-brush-air": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The median of the stations' NO2 each hour; an hour's reading stands at its middle.\nSELECT t - INTERVAL 30 MINUTE AS time, median(no2) AS \"NO₂ median\" FROM $air GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the stations' NO₂ each hour: today from the City Council's real-time file, the days before from the recording. Drag to pick a window, the same on every tab; ▶ plays it.",
+          "id": 17,
+          "links": [],
+          "title": "Window · NO₂, median of the stations hour by hour",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#4292c6",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "max",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "followLatest": true,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "",
+                "loop": false,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 800,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-brush-climate": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The median of the stations' temperature each hour; an hour's reading stands at its middle.\nSELECT t - INTERVAL 30 MINUTE AS time, median(temperature) AS \"Temperature median\" FROM $meteo\nWHERE temperature IS NOT NULL GROUP BY 1 ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the weather stations' temperature each hour: today from the City Council's real-time file, the days before from the recording. Drag to pick a window, the same on every tab; ▶ plays it, the buildings and the sun's shadows following.",
+          "id": 23,
+          "links": [],
+          "title": "Window · temperature, median of the stations hour by hour",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#f46d43",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "max",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 90,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "dashboard",
+                "followLatest": true,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "",
+                "loop": false,
+                "mosaicColumn": "",
+                "mosaicSelection": "",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "scrolled",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "top",
+                "pinnedStyle": "solid",
+                "playMotion": "smooth",
+                "publishIntervalMs": 1500,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 800,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "free",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-climate-series": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each weather station's hourly temperature over the time range (thin lines) and their median: today from the City Council's real-time file, the days before from the recording.",
+          "id": 25,
+          "links": [],
+          "title": "Temperature hour by hour · every station and their median",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "plot:\n  - mark: lineY\n    data: { from: meteo }\n    x: t\n    y: temperature\n    z: station\n    stroke: '#fdae61'\n    strokeOpacity: 0.3\n    curve: monotone-x\n  - mark: lineY\n    data: { from: meteo }\n    x: t\n    y: { median: temperature }\n    stroke: '#f46d43'\n    strokeWidth: 2.5\n    curve: monotone-x\nyGrid: true\nxTickFormat: '%a %H:%M'\nxLabel: null\nyLabel: ↑ °C · median orange\nmarginTop: 14\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-districts": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The mean load of each district's points in the window and the hours of the day picked (the mean of its quarters). Click a bar to pick a district, shift-click to add one; click it again to let go. The map, the matrix and the bar above follow.",
+          "id": 11,
+          "links": [],
+          "title": "Districts · mean load in the selection (click to pick)",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  traffic: { select: crossfilter }\nplot:\n  - mark: barX\n    data: { from: cube, filterBy: $traffic }\n    x: { avg: load }\n    y: district\n    fill: '#fd8d3c'\n    sort: { y: '-x' }\n  - select: toggleY\n    as: $traffic\nxLabel: Mean load (%) →\nyLabel: null\nmarginLeft: 150\nmarginTop: 6\nyTickSize: 0\n",
+                "variables": "- param: traffic\n  column: district\n  variable: district\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-guide": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 1,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Madrid's traffic now, and its week replayed.** Informo's 4,600 measuring points every five minutes and the incidents on the City Council's roads. **Everything below the figures follows one selection**: drag a window on the bar (▶ plays it; the same window on every tab), brush hours of the day on the profile, click districts on the bars. The map shows each point's mean load in the selection, the matrix every district quarter by quarter. Every figure is read from the City Council's feeds; none is simulated.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-guide-air": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 2,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Madrid's air, hour by hour.** The NO₂ of the City Council's 24 air quality stations: drag a window on the bar (the same window on every tab). The map spreads the stations' mean NO₂ in the window between them and gives each station its series (hover it).",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-guide-climate": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 3,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Madrid's heat, building by building.** The temperature of the City Council's weather stations spread over every building in view (OpenStreetMap's, from the base map), at the end of the window on the bar, with the sun's shadows of that moment. Hover a building for its temperature over the range; move the map for other streets.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-hours": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The mean load of the districts by Madrid's hour of the day (each district counts once), over the window and the districts picked. Drag across it to keep some hours only (the morning rush, the night); double-click to let go.",
+          "id": 12,
+          "links": [],
+          "title": "Hours of the day · mean load of the districts (drag to pick)",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  traffic: { select: crossfilter }\nplot:\n  - mark: areaY\n    data: { from: cube, filterBy: $traffic }\n    x: hour\n    y: { avg: load }\n    fill: '#fd8d3c'\n    fillOpacity: 0.25\n    curve: monotone-x\n  - mark: lineY\n    data: { from: cube, filterBy: $traffic }\n    x: hour\n    y: { avg: load }\n    stroke: '#fd8d3c'\n    curve: monotone-x\n  - mark: dot\n    data: { from: cube, filterBy: $traffic }\n    x: hour\n    y: { avg: load }\n    fill: '#fd8d3c'\n    r: 3\n  - select: intervalX\n    as: $traffic\nxDomain: [0, 23]\nxLabel: Hour of the day (Madrid) →\nyLabel: ↑ Mean load (%)\nmarginTop: 12\n",
+                "variables": "- param: traffic\n  column: hour\n  from: hour_lo\n  to: hour_hi\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-humidity-series": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median relative humidity of the stations that measure it, hour by hour over the time range.",
+          "id": 26,
+          "links": [],
+          "title": "Humidity hour by hour · median of the stations",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "plot:\n  - mark: lineY\n    data: { from: meteo }\n    x: t\n    y: { median: humidity }\n    stroke: '#4292c6'\n    strokeWidth: 2\n    curve: monotone-x\nyDomain: [0, 100]\nyGrid: true\nxTickFormat: '%a %H:%M'\nxLabel: null\nyLabel: ↑ Relative humidity (%)\nmarginTop: 14\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-incidents": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Every incident Informo lists, those in force first. An end equal to the start is how Informo writes\n-- one with no end given (planned works on certain hours, a tunnel's maintenance).\nWITH incidents AS (\n  -- Informo's incidents of the City Council (kept a minute): works, closures, accidents. Their times are\n  -- Madrid's. Many stay listed after the end their dates give: in force means started and not ended.\n  SELECT regexp_extract(x, '\u003cid_incidencia\u003e([^\u003c]*)\u003c/id_incidencia\u003e', 1) AS incident_id,\n         regexp_extract(x, '\u003cnom_tipo_incidencia\u003e([^\u003c]*)\u003c/nom_tipo_incidencia\u003e', 1) AS kind,\n         trim(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1)) AS description,\n         TRY_CAST(regexp_extract(x, '\u003cfh_inicio\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS starts,\n         TRY_CAST(regexp_extract(x, '\u003cfh_final\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS ends,\n         regexp_extract(x, '\u003ces_accidente\u003e([^\u003c]*)\u003c/es_accidente\u003e', 1) = 'S' AS accident,\n         regexp_extract(x, '\u003ces_obras\u003e([^\u003c]*)\u003c/es_obras\u003e', 1) = 'S' AS works,\n         regexp_extract(x, '\u003ces_contaminacion\u003e([^\u003c]*)\u003c/es_contaminacion\u003e', 1) = 'S' AS pollution,\n         nullif(trim(regexp_extract(x, '\u003cescenario_contaminacion\u003e([^\u003c]*)\u003c/escenario_contaminacion\u003e', 1)), '') AS pollution_scenario,\n         TRY_CAST(regexp_extract(x, '\u003clatitud\u003e([^\u003c]*)\u003c/latitud\u003e', 1) AS DOUBLE) AS latitude,\n         TRY_CAST(regexp_extract(x, '\u003clongitud\u003e([^\u003c]*)\u003c/longitud\u003e', 1) AS DOUBLE) AS longitude\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '(?s)\u003cIncidencia\u003e.*?\u003c/Incidencia\u003e')) AS x\n        FROM (SELECT http_get('http://feeds/madrid/informo/incidents.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\ndistricts AS (\n  -- The 21 districts, from the city's geoportal SIGMA through the gateway (kept a month), read as JSON.\n  SELECT f-\u003e'properties'-\u003e\u003e'COD_DIS_TX' AS district_id, f-\u003e'properties'-\u003e\u003e'NOMBRE' AS district,\n         ST_GeomFromGeoJSON(f-\u003e'geometry') AS geom\n  FROM (SELECT unnest(json_extract(r-\u003e\u003e'body', '$.features[*]')) AS f\n        FROM (SELECT http_get('http://feeds/madrid/districts.geojson') AS r) WHERE (r-\u003e\u003e'status') = '200')\n)\nSELECT starts \u003c= now() AND (ends IS NULL OR ends \u003e= now() OR ends = starts) AS \"In force\",\n       CASE kind WHEN 'Obras de mantenimiento en la vía' THEN 'Maintenance works'\n                 WHEN 'Obras en la vía' THEN 'Road works'\n                 WHEN 'Obras de larga duración en la vía' THEN 'Long-running works'\n                 WHEN 'Carriles cortados' THEN 'Lanes closed'\n                 WHEN 'Corte total' THEN 'Road closed'\n                 WHEN 'Accidente' THEN 'Accident'\n                 ELSE kind END AS \"Kind\", d.district AS \"District\", description AS \"Description\",\n       starts AS \"Starts\", CASE WHEN ends = starts THEN NULL ELSE ends END AS \"Ends\"\nFROM incidents i LEFT JOIN districts d ON ST_Contains(d.geom, ST_Point(i.longitude, i.latitude))\nORDER BY 1 DESC, starts DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every incident on the City Council's roads that Informo lists now, those in force by their dates first. Informo keeps some listed long after the end they give; an end equal to the start is how it writes one with no end (planned works on certain hours). The descriptions are Informo's, in Spanish.",
+          "id": 27,
+          "links": [],
+          "title": "Incidents Informo lists",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "In force"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 80
+                      },
+                      {
+                        "id": "mappings",
+                        "value": [
+                          {
+                            "options": {
+                              "false": {
+                                "color": "#8e8e8e",
+                                "index": 1,
+                                "text": "No"
+                              },
+                              "true": {
+                                "color": "text",
+                                "index": 0,
+                                "text": "Yes"
+                              }
+                            },
+                            "type": "value"
+                          }
+                        ]
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Kind"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 160
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "District"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 150
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Description"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.wrapText",
+                        "value": true
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Starts"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:YYYY-MM-DD HH:mm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Ends"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "time:YYYY-MM-DD HH:mm"
+                      },
+                      {
+                        "id": "custom.width",
+                        "value": 140
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The 21 districts, each coloured by the mean load of its points in the selection (every filter but the\n-- district's own, so the others stay to click); those picked on the bars are ringed.\nWITH load AS (\n  SELECT district, sum(load_sum) / sum(n) AS load, sum(queued) / count(DISTINCT t) AS queued\n  FROM $cube WHERE $__crossfilter($cubeFilters, -district) GROUP BY district\n),\nkept AS (SELECT DISTINCT district FROM $cube WHERE $__crossfilter($cubeFilters)),\npicked AS (SELECT (SELECT count(*) FROM kept) \u003c (SELECT count(DISTINCT district) FROM $cube) AS any)\nSELECT d.district, d.geometry, round(l.load, 1) AS mean_load, round(l.queued) AS points_with_queues,\n       CASE WHEN l.load \u003c 20 THEN 'under 20' WHEN l.load \u003c 30 THEN '20-30' WHEN l.load \u003c 40 THEN '30-40'\n            WHEN l.load \u003c 50 THEN '40-50' WHEN l.load \u003e= 50 THEN '50 and over' END AS mean_load_band,\n       picked.any AND d.district IN (SELECT district FROM kept) AS selected\nFROM $districts d LEFT JOIN load l USING (district) CROSS JOIN picked"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Informo's measuring points, each coloured by its mean load over the selection: the readings of the\n-- recording in the Time Brush's window, at the hours of the day brushed on the profile, in the districts\n-- picked; before anything is recorded, the latest file. The load (0-100, a little over at a point past its\n-- capacity) is Informo's mix of the vehicles an hour and the time a vehicle is over the loop, against what\n-- the street takes.\nWITH feed AS (\n  -- Informo's file, through the gateway (kept a minute): a \u003cpm\u003e per measuring point, where it stands\n  -- in UTM (EPSG:25830, a comma for the decimal point) and what it read in the last five minutes.\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/madrid/informo/pm.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\nlive AS (\n  SELECT regexp_extract(x, '\u003cidelem\u003e([^\u003c]*)\u003c/idelem\u003e', 1) AS id,\n         replace(replace(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1), '\u0026amp;', '\u0026'), '\u0026quot;', '\"') AS point,\n         -- Informo writes -1 for a reading it has not got.\n         nullif(TRY_CAST(regexp_extract(x, '\u003cintensidad\u003e([^\u003c]*)\u003c/intensidad\u003e', 1) AS DOUBLE), -1) AS intensity,\n         nullif(TRY_CAST(regexp_extract(x, '\u003ccarga\u003e([^\u003c]*)\u003c/carga\u003e', 1) AS DOUBLE), -1) AS load,\n         nullif(TRY_CAST(regexp_extract(x, '\u003cnivelServicio\u003e([^\u003c]*)\u003c/nivelServicio\u003e', 1) AS INTEGER), -1) AS level,\n         nullif(TRY_CAST(nullif(regexp_extract(x, '\u003cvelocidad\u003e([^\u003c]*)\u003c/velocidad\u003e', 1), '') AS DOUBLE), -1) AS speed,\n         regexp_extract(x, '\u003cerror\u003e([^\u003c]*)\u003c/error\u003e', 1) = 'S' AS faulty,\n         ST_Transform(ST_Point(TRY_CAST(replace(regexp_extract(x, '\u003cst_x\u003e([^\u003c]*)\u003c/st_x\u003e', 1), ',', '.') AS DOUBLE),\n                               TRY_CAST(replace(regexp_extract(x, '\u003cst_y\u003e([^\u003c]*)\u003c/st_y\u003e', 1), ',', '.') AS DOUBLE)),\n                      'EPSG:25830', 'EPSG:4326', always_xy := true) AS g,\n         strptime(regexp_extract(xml, '\u003cfecha_hora\u003e([^\u003c]*)\u003c/fecha_hora\u003e', 1), '%d/%m/%Y %H:%M:%S')::TIMESTAMP\n           AT TIME ZONE 'Europe/Madrid' AS read_at\n  FROM (SELECT xml, unnest(regexp_extract_all(xml, '(?s)\u003cpm\u003e.*?\u003c/pm\u003e')) AS x FROM feed)\n),\ndistricts AS (\n  -- The 21 districts, from the city's geoportal SIGMA through the gateway (kept a month), read as JSON.\n  SELECT f-\u003e'properties'-\u003e\u003e'COD_DIS_TX' AS district_id, f-\u003e'properties'-\u003e\u003e'NOMBRE' AS district,\n         ST_GeomFromGeoJSON(f-\u003e'geometry') AS geom\n  FROM (SELECT unnest(json_extract(r-\u003e\u003e'body', '$.features[*]')) AS f\n        FROM (SELECT http_get('http://feeds/madrid/districts.geojson') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nplaced AS (\n  -- Each point in its district, from where the latest file puts it.\n  SELECT l.id, d.district FROM live l JOIN districts d ON ST_Contains(d.geom, l.g)\n),\nsel AS (\n  -- The selection, as the Time Brush, the hour-of-day profile and the district bars write it: the window\n  -- (UTC; none: the whole range), the hours of the day (Madrid's) and the districts (none: all).\n  SELECT coalesce(try_cast($t0 AS TIMESTAMPTZ), $__timeFrom()::TIMESTAMPTZ) AS f,\n         coalesce(try_cast($t1 AS TIMESTAMPTZ), $__timeTo()::TIMESTAMPTZ) AS t,\n         coalesce(try_cast($hour_lo AS DOUBLE), -1) AS h0, coalesce(try_cast($hour_hi AS DOUBLE), 99) AS h1,\n         list_filter([${district:singlequote}], x -\u003e x \u003c\u003e '') AS districts\n),\nrec AS (\n  SELECT r.hex AS id, avg(r.load) AS load, avg(r.intensity) AS intensity,\n         100.0 * count(*) FILTER (WHERE r.level \u003e= 2) / count(*) AS pct_queued\n  FROM read_parquet([${traffic_files:singlequote}], union_by_name = true) r, sel\n  WHERE r.ts \u003e= sel.f AND r.ts \u003c sel.t AND NOT r.faulty AND r.load \u003e= 0\n    AND hour(timezone('Europe/Madrid', time_bucket(INTERVAL 15 MINUTE, r.ts))) BETWEEN sel.h0 AND sel.h1\n  GROUP BY r.hex\n),\nrecorded AS (SELECT count(*) \u003e 0 AS any FROM rec)\nSELECT l.id, coalesce(nullif(l.point, ''), 'Point ' || l.id) AS point, p.district,\n       ST_Y(l.g) AS latitude, ST_X(l.g) AS longitude,\n       round(CASE WHEN recorded.any THEN r.load ELSE l.load END) AS load,\n       CASE WHEN coalesce(r.load, l.load) \u003c 25 THEN '0-25' WHEN coalesce(r.load, l.load) \u003c 50 THEN '25-50'\n            WHEN coalesce(r.load, l.load) \u003c 75 THEN '50-75' ELSE '75 and over' END AS load_band,\n       round(CASE WHEN recorded.any THEN r.intensity ELSE l.intensity END) AS vehicles_per_hour,\n       round(r.pct_queued) AS pct_time_with_queues\nFROM live l JOIN placed p ON p.id = l.id CROSS JOIN sel CROSS JOIN recorded LEFT JOIN rec r ON r.id = l.id\nWHERE (len(sel.districts) = 0 OR list_contains(sel.districts, p.district))\n  AND CASE WHEN recorded.any THEN r.id IS NOT NULL ELSE NOT l.faulty AND l.load IS NOT NULL END\nORDER BY load"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The incidents in force now (Informo's dates: started, and not ended or with no end given). Their dates\n-- as text: a time column would give the map a time filter of its own.\nWITH incidents AS (\n  -- Informo's incidents of the City Council (kept a minute): works, closures, accidents. Their times are\n  -- Madrid's. Many stay listed after the end their dates give: in force means started and not ended.\n  SELECT regexp_extract(x, '\u003cid_incidencia\u003e([^\u003c]*)\u003c/id_incidencia\u003e', 1) AS incident_id,\n         regexp_extract(x, '\u003cnom_tipo_incidencia\u003e([^\u003c]*)\u003c/nom_tipo_incidencia\u003e', 1) AS kind,\n         trim(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1)) AS description,\n         TRY_CAST(regexp_extract(x, '\u003cfh_inicio\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS starts,\n         TRY_CAST(regexp_extract(x, '\u003cfh_final\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS ends,\n         regexp_extract(x, '\u003ces_accidente\u003e([^\u003c]*)\u003c/es_accidente\u003e', 1) = 'S' AS accident,\n         regexp_extract(x, '\u003ces_obras\u003e([^\u003c]*)\u003c/es_obras\u003e', 1) = 'S' AS works,\n         regexp_extract(x, '\u003ces_contaminacion\u003e([^\u003c]*)\u003c/es_contaminacion\u003e', 1) = 'S' AS pollution,\n         nullif(trim(regexp_extract(x, '\u003cescenario_contaminacion\u003e([^\u003c]*)\u003c/escenario_contaminacion\u003e', 1)), '') AS pollution_scenario,\n         TRY_CAST(regexp_extract(x, '\u003clatitud\u003e([^\u003c]*)\u003c/latitud\u003e', 1) AS DOUBLE) AS latitude,\n         TRY_CAST(regexp_extract(x, '\u003clongitud\u003e([^\u003c]*)\u003c/longitud\u003e', 1) AS DOUBLE) AS longitude\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '(?s)\u003cIncidencia\u003e.*?\u003c/Incidencia\u003e')) AS x\n        FROM (SELECT http_get('http://feeds/madrid/informo/incidents.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n)\nSELECT CASE kind WHEN 'Obras de mantenimiento en la vía' THEN 'Maintenance works'\n                 WHEN 'Obras en la vía' THEN 'Road works'\n                 WHEN 'Obras de larga duración en la vía' THEN 'Long-running works'\n                 WHEN 'Carriles cortados' THEN 'Lanes closed'\n                 WHEN 'Corte total' THEN 'Road closed'\n                 WHEN 'Accidente' THEN 'Accident'\n                 ELSE kind END AS kind, description, latitude, longitude,\n       'from ' || strftime(starts AT TIME ZONE 'Europe/Madrid', '%-d %b %Y %H:%M')\n         || CASE WHEN ends IS NULL OR ends = starts THEN ', no end given'\n                 ELSE ' to ' || strftime(ends AT TIME ZONE 'Europe/Madrid', '%-d %b %Y %H:%M') END AS dates\nFROM incidents\nWHERE starts \u003c= now() AND (ends IS NULL OR ends \u003e= now() OR ends = starts)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each of Informo's measuring points coloured by its mean load in the selection (the window, the hours of the day and the districts picked; before anything is recorded, the latest file), each district by the mean of its points, the districts picked ringed; the districts lie under the base map's streets, buildings and names. White dots: the incidents in force now.",
+          "id": 15,
+          "links": [],
+          "title": "Traffic in the selection: points, districts, incidents",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": true,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 40.425,
+                      "longitude": -3.69,
+                      "pitch": 0,
+                      "zoom": 10.6
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "visState": {
+                      "filters": [],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "district"
+                              },
+                              {
+                                "name": "mean_load"
+                              },
+                              {
+                                "name": "points_with_queues"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "point"
+                              },
+                              {
+                                "name": "district"
+                              },
+                              {
+                                "name": "load"
+                              },
+                              {
+                                "name": "vehicles_per_hour"
+                              },
+                              {
+                                "name": "pct_time_with_queues"
+                              }
+                            ],
+                            "grafana-D": [
+                              {
+                                "name": "kind"
+                              },
+                              {
+                                "name": "description"
+                              },
+                              {
+                                "name": "dates"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "incidents",
+                        "points",
+                        "districts"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-D",
+                            "isVisible": true,
+                            "label": "Incidents in force now",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": true,
+                              "opacity": 1,
+                              "outline": true,
+                              "overRoads": true,
+                              "radius": 4.5,
+                              "strokeColor": [
+                                20,
+                                20,
+                                20
+                              ],
+                              "thickness": 1.5
+                            }
+                          },
+                          "id": "incidents",
+                          "type": "point",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              217,
+                              239,
+                              139
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "isVisible": true,
+                            "label": "Mean load in the selection, Informo measuring points",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "0-25",
+                                    "#1a9850"
+                                  ],
+                                  [
+                                    "25-50",
+                                    "#d9ef8b"
+                                  ],
+                                  [
+                                    "50-75",
+                                    "#fc8d59"
+                                  ],
+                                  [
+                                    "75 and over",
+                                    "#d73027"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1a9850",
+                                  "#d9ef8b",
+                                  "#fc8d59",
+                                  "#d73027"
+                                ],
+                                "name": "Load bands",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 0.9,
+                              "outline": false,
+                              "overRoads": true,
+                              "radius": 2.8,
+                              "thickness": 1
+                            }
+                          },
+                          "id": "points",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "load_band",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              253,
+                              174,
+                              107
+                            ],
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "isVisible": true,
+                            "label": "Districts, mean load in the selection",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "under 20",
+                                    "#3a3a3a"
+                                  ],
+                                  [
+                                    "20-30",
+                                    "#5c4733"
+                                  ],
+                                  [
+                                    "30-40",
+                                    "#8a5a2b"
+                                  ],
+                                  [
+                                    "40-50",
+                                    "#c0661e"
+                                  ],
+                                  [
+                                    "50 and over",
+                                    "#e6550d"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#3a3a3a",
+                                  "#5c4733",
+                                  "#8a5a2b",
+                                  "#c0661e",
+                                  "#e6550d"
+                                ],
+                                "name": "District load bands",
+                                "type": "custom"
+                              },
+                              "enable3d": false,
+                              "filled": true,
+                              "opacity": 0.3,
+                              "strokeColor": [
+                                235,
+                                235,
+                                235
+                              ],
+                              "strokeOpacity": 0.5,
+                              "stroked": true,
+                              "thickness": 1,
+                              "underRoads": true
+                            }
+                          },
+                          "id": "districts",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "mean_load_band",
+                              "type": "string"
+                            },
+                            "colorScale": "customOrdinal"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": false,
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "selectionField": "selected",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-map-air": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The stations measuring NO2, hour by hour over the time range, each reading at the middle of its hour so a window\n-- of whole hours holds it. The map's time filter keeps the Time Brush's window: the surface spreads each station's\n-- mean in it, each station's card charts the whole range.\nSELECT t - INTERVAL 30 MINUTE AS time, station, station_kind, latitude, longitude, no2 FROM $air ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each station's mean NO₂ in the Time Brush's window spread between them (inverse distance, bands at fixed values so a colour means the same in every window), and each station's hourly NO₂ over the range: hover a station for its card. The EU's limit for an hour is 200 µg/m³; Madrid's protocol warns from 180.",
+          "id": 18,
+          "links": [],
+          "title": "NO₂ in the window: between the stations, and each one hour by hour",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": true,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 40.425,
+                      "longitude": -3.69,
+                      "pitch": 0,
+                      "zoom": 10.8
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-dark"
+                    },
+                    "visState": {
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "station"
+                              },
+                              {
+                                "name": "no2"
+                              },
+                              {
+                                "name": "station_kind"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "stations",
+                        "surface"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              66,
+                              146,
+                              198
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "NO₂ (µg/m³), hour by hour, air quality stations",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    40,
+                                    "#9ecae1"
+                                  ],
+                                  [
+                                    100,
+                                    "#4292c6"
+                                  ],
+                                  [
+                                    180,
+                                    "#807dba"
+                                  ],
+                                  [
+                                    200,
+                                    "#dd3497"
+                                  ],
+                                  [
+                                    null,
+                                    "#7a0177"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#9ecae1",
+                                  "#4292c6",
+                                  "#807dba",
+                                  "#dd3497",
+                                  "#7a0177"
+                                ],
+                                "name": "NO₂",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 9,
+                              "rowsAsset": "auto",
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 0.9,
+                              "sparkCards": "hover",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 6,
+                              "sparkDots": true,
+                              "sparkDotsOnTop": true,
+                              "sparkExtras": [],
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": 0,
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": true,
+                              "sparkRange": "dashboard",
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": true,
+                              "sparkUnit": " µg/m³",
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 2
+                            }
+                          },
+                          "id": "stations",
+                          "type": "sparkline",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "no2",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              66,
+                              146,
+                              198
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "NO₂ between the stations, mean in the window (µg/m³)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    40,
+                                    "#9ecae1"
+                                  ],
+                                  [
+                                    100,
+                                    "#4292c6"
+                                  ],
+                                  [
+                                    180,
+                                    "#807dba"
+                                  ],
+                                  [
+                                    200,
+                                    "#dd3497"
+                                  ],
+                                  [
+                                    null,
+                                    "#7a0177"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#9ecae1",
+                                  "#4292c6",
+                                  "#807dba",
+                                  "#dd3497",
+                                  "#7a0177"
+                                ],
+                                "name": "NO₂",
+                                "type": "custom"
+                              },
+                              "opacity": 0.35,
+                              "surfaceBands": true,
+                              "surfaceBreaks": "20, 40, 60, 80, 100, 140, 180, 200",
+                              "surfaceExtent": "hull",
+                              "surfaceFade": true,
+                              "surfaceIsolines": false,
+                              "surfaceLabelSize": 11,
+                              "surfaceLabels": true,
+                              "surfaceMargin": 1500,
+                              "surfaceMode": "interpolate",
+                              "surfaceNeighbours": "all",
+                              "surfacePower": 2,
+                              "surfaceReduce": "mean",
+                              "surfaceResolution": "high",
+                              "surfaceUnderBuildings": true
+                            }
+                          },
+                          "id": "surface",
+                          "type": "surface",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "no2",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": false,
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-map-climate": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The weather stations' temperature hour by hour over the time range, each reading at the middle of its hour, and how\n-- far it stands from the median of the stations that hour: the city's heat island at any hour and in any season, on\n-- one scale. The map's time filter keeps the Time Brush's window: each station's last reading in it colours the\n-- buildings around it, a building's card charts the whole range.\nSELECT station, latitude, longitude, t - INTERVAL 30 MINUTE AS time, temperature AS temp_c,\n       round(temperature - median(temperature) OVER (PARTITION BY t), 1) AS above_median\nFROM $meteo WHERE temperature IS NOT NULL ORDER BY time, station"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "OpenStreetMap's buildings in view (from the base map, within 3.5 km of the map's centre), each coloured by the temperature the stations around it read at the end of the Time Brush's window, in degrees above or below the median of the stations that hour (inverse distance, up to 4 km): the heat island at noon and at night alike, with kepler's Light \u0026 Shadow: the sun and its shadows of that moment, the night after dark. The dots are the stations; hover a building for its temperature over the range. Move or zoom the map for other streets.",
+          "id": 24,
+          "links": [],
+          "title": "Every building, by how much warmer the air around it is than the city, with the sun of that moment",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "openfreemap-positron",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": true,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -25,
+                      "dragRotate": true,
+                      "latitude": 40.4185,
+                      "longitude": -3.7035,
+                      "pitch": 55,
+                      "zoom": 15.2
+                    },
+                    "mapStyle": {
+                      "styleType": "openfreemap-positron",
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "visState": {
+                      "effects": [
+                        {
+                          "id": "sun",
+                          "isEnabled": true,
+                          "parameters": {
+                            "ambientLightColor": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "ambientLightIntensity": 1,
+                            "shadowColor": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "shadowIntensity": 0.5,
+                            "sunLightColor": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "sunLightIntensity": 1,
+                            "timeMode": "animation",
+                            "timestamp": 1795392000000,
+                            "timezone": "Europe/Madrid"
+                          },
+                          "type": "lightAndShadow"
+                        }
+                      ],
+                      "filters": [
+                        {
+                          "animationWindow": "free",
+                          "dataId": [
+                            "grafana-A"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "interval": "1-hour",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "side"
+                        }
+                      ],
+                      "interactionConfig": {
+                        "tooltip": {
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "station"
+                              },
+                              {
+                                "name": "temp_c"
+                              },
+                              {
+                                "name": "above_median"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerOrder": [
+                        "heat"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              109,
+                              67
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Air temperature around each building, °C above the city's median that hour",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "buildingsAggregate": "mean",
+                              "buildingsEmpty": "grey",
+                              "buildingsHeightScale": 1,
+                              "buildingsHideBasemap": true,
+                              "buildingsMaxDistance": 4000,
+                              "buildingsMode": "interpolate",
+                              "buildingsNeighbours": "auto",
+                              "buildingsOn": "basemap",
+                              "buildingsPower": 2,
+                              "buildingsReduce": "last",
+                              "buildingsSensorRadius": 6,
+                              "buildingsSensors": true,
+                              "buildingsShadow": 0.35,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": "auto",
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "hover",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": " °C vs median",
+                              "cardValueField": "color",
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    -3,
+                                    "#313695"
+                                  ],
+                                  [
+                                    -2,
+                                    "#4575B4"
+                                  ],
+                                  [
+                                    -1,
+                                    "#74ADD1"
+                                  ],
+                                  [
+                                    -0.5,
+                                    "#ABD9E9"
+                                  ],
+                                  [
+                                    0.5,
+                                    "#FFFFBF"
+                                  ],
+                                  [
+                                    1,
+                                    "#FEE090"
+                                  ],
+                                  [
+                                    2,
+                                    "#FDAE61"
+                                  ],
+                                  [
+                                    3,
+                                    "#F46D43"
+                                  ],
+                                  [
+                                    null,
+                                    "#D73027"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#313695",
+                                  "#4575B4",
+                                  "#74ADD1",
+                                  "#ABD9E9",
+                                  "#FFFFBF",
+                                  "#FEE090",
+                                  "#FDAE61",
+                                  "#F46D43",
+                                  "#D73027"
+                                ],
+                                "name": "°C above the city's median",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "opacity": 0.92,
+                              "outline": false,
+                              "radius": 10,
+                              "thickness": 2
+                            }
+                          },
+                          "id": "heat",
+                          "type": "buildings",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "above_median",
+                              "type": "real"
+                            },
+                            "colorScale": "custom"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": false,
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "showSidePanel": false,
+                "timeSync": "variables",
+                "timeVariables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-matrix": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each district's mean load in each quarter of an hour of the window, in the hours of the day picked: the rushes and the nights read across, the busy districts down. From the recording; empty before it starts.",
+          "id": 13,
+          "links": [],
+          "title": "Every district, quarter by quarter · mean load",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  traffic: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: matrix\n    label: Mean load (%)\n  - name: matrix\n    plot:\n      - mark: barX\n        data: { from: cube, filterBy: $traffic }\n        x1: t\n        x2: t_end\n        y: district\n        fill: { avg: load }\n        inset: 0\n        tip: true\n    colorScheme: inferno\n    colorDomain: [10, 55]\n    colorClamp: true\n    xTickFormat: '%a %H:%M'\n    xLabel: null\n    yLabel: null\n    marginLeft: 150\n    yTickSize: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "panel-no2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each station's hourly NO₂ over the time range (thin lines), the median of the stations and the highest: today from the City Council's real-time file, the days before from the recording. The EU's limit for an hour is 200 µg/m³; Madrid's protocol warns from 180.",
+          "id": 14,
+          "links": [],
+          "title": "NO₂ hour by hour · every station, their median and the highest",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "plot:\n  - mark: lineY\n    data: { from: air }\n    x: t\n    y: no2\n    z: station\n    stroke: '#9ecae1'\n    strokeOpacity: 0.3\n    curve: monotone-x\n  - mark: lineY\n    data: { from: air }\n    x: t\n    y: { median: no2 }\n    stroke: '#4292c6'\n    strokeWidth: 2.5\n    curve: monotone-x\n  - mark: lineY\n    data: { from: air }\n    x: t\n    y: { max: no2 }\n    stroke: '#dd3497'\n    strokeWidth: 1.5\n    curve: monotone-x\nyDomain: [0, 220]\nyGrid: true\nxTickFormat: '%a %H:%M'\nxLabel: null\nyLabel: ↑ NO₂ (µg/m³) · median blue, highest pink\nmarginTop: 14\n",
+                "variables": ""
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "stat-coolest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The coolest station in the latest hour published, named by the row.\nSELECT station AS \"Station\", temperature AS \"Temperature\" FROM $meteo\nWHERE t = (SELECT max(t) FROM $meteo WHERE temperature IS NOT NULL) AND temperature IS NOT NULL ORDER BY temperature LIMIT 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The coolest weather station in the latest hour published: the gap to the warmest is the city's heat island (and its parks and outskirts).",
+          "id": 21,
+          "links": [],
+          "title": "Coolest",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Temperature$/",
+                  "values": true
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-file": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- When Informo wrote its latest file (it writes one every five minutes), from the file itself.\nSELECT strptime(regexp_extract(r-\u003e\u003e'body', '\u003cfecha_hora\u003e([^\u003c]*)\u003c/fecha_hora\u003e', 1), '%d/%m/%Y %H:%M:%S')::TIMESTAMP\n         AT TIME ZONE 'Europe/Madrid' AS \"Informo's latest file\"\nFROM (SELECT http_get('http://feeds/madrid/informo/pm.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The time of the readings in Informo's latest file, which every figure 'now' comes from. Informo writes a file every five minutes, some five to ten minutes after its readings, and now and then skips one.",
+          "id": 4,
+          "links": [],
+          "title": "Traffic read",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-humidity": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The stations' median humidity in the latest hour published.\nSELECT median(humidity) AS \"Humidity\" FROM $meteo WHERE t = (SELECT max(t) FROM $meteo WHERE temperature IS NOT NULL)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median relative humidity of the stations that measure it, in the latest hour published.",
+          "id": 22,
+          "links": [],
+          "title": "Median humidity",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "humidity"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-incidents": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The incidents in force by their dates, and how many Informo lists.\nWITH incidents AS (\n  -- Informo's incidents of the City Council (kept a minute): works, closures, accidents. Their times are\n  -- Madrid's. Many stay listed after the end their dates give: in force means started and not ended.\n  SELECT regexp_extract(x, '\u003cid_incidencia\u003e([^\u003c]*)\u003c/id_incidencia\u003e', 1) AS incident_id,\n         regexp_extract(x, '\u003cnom_tipo_incidencia\u003e([^\u003c]*)\u003c/nom_tipo_incidencia\u003e', 1) AS kind,\n         trim(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1)) AS description,\n         TRY_CAST(regexp_extract(x, '\u003cfh_inicio\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS starts,\n         TRY_CAST(regexp_extract(x, '\u003cfh_final\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS ends,\n         regexp_extract(x, '\u003ces_accidente\u003e([^\u003c]*)\u003c/es_accidente\u003e', 1) = 'S' AS accident,\n         regexp_extract(x, '\u003ces_obras\u003e([^\u003c]*)\u003c/es_obras\u003e', 1) = 'S' AS works,\n         regexp_extract(x, '\u003ces_contaminacion\u003e([^\u003c]*)\u003c/es_contaminacion\u003e', 1) = 'S' AS pollution,\n         nullif(trim(regexp_extract(x, '\u003cescenario_contaminacion\u003e([^\u003c]*)\u003c/escenario_contaminacion\u003e', 1)), '') AS pollution_scenario,\n         TRY_CAST(regexp_extract(x, '\u003clatitud\u003e([^\u003c]*)\u003c/latitud\u003e', 1) AS DOUBLE) AS latitude,\n         TRY_CAST(regexp_extract(x, '\u003clongitud\u003e([^\u003c]*)\u003c/longitud\u003e', 1) AS DOUBLE) AS longitude\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '(?s)\u003cIncidencia\u003e.*?\u003c/Incidencia\u003e')) AS x\n        FROM (SELECT http_get('http://feeds/madrid/informo/incidents.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n)\nSELECT count(*) FILTER (WHERE starts \u003c= now() AND (ends IS NULL OR ends \u003e= now() OR ends = starts)) AS \"In force\",\n       count(*) AS \"Listed\"\nFROM incidents"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The incidents on the City Council's roads in force by their dates, of those Informo lists (it keeps some listed long after the end they give).",
+          "id": 7,
+          "links": [],
+          "title": "Incidents",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-load": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The points of Informo's latest file with a reading it trusts: their mean load and how many have queues or\n-- are jammed (level of service 2 or 3).\nWITH feed AS (\n  -- Informo's file, through the gateway (kept a minute): a \u003cpm\u003e per measuring point, where it stands\n  -- in UTM (EPSG:25830, a comma for the decimal point) and what it read in the last five minutes.\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/madrid/informo/pm.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\nlive AS (\n  SELECT regexp_extract(x, '\u003cidelem\u003e([^\u003c]*)\u003c/idelem\u003e', 1) AS id,\n         replace(replace(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1), '\u0026amp;', '\u0026'), '\u0026quot;', '\"') AS point,\n         -- Informo writes -1 for a reading it has not got.\n         nullif(TRY_CAST(regexp_extract(x, '\u003cintensidad\u003e([^\u003c]*)\u003c/intensidad\u003e', 1) AS DOUBLE), -1) AS intensity,\n         nullif(TRY_CAST(regexp_extract(x, '\u003ccarga\u003e([^\u003c]*)\u003c/carga\u003e', 1) AS DOUBLE), -1) AS load,\n         nullif(TRY_CAST(regexp_extract(x, '\u003cnivelServicio\u003e([^\u003c]*)\u003c/nivelServicio\u003e', 1) AS INTEGER), -1) AS level,\n         nullif(TRY_CAST(nullif(regexp_extract(x, '\u003cvelocidad\u003e([^\u003c]*)\u003c/velocidad\u003e', 1), '') AS DOUBLE), -1) AS speed,\n         regexp_extract(x, '\u003cerror\u003e([^\u003c]*)\u003c/error\u003e', 1) = 'S' AS faulty,\n         ST_Transform(ST_Point(TRY_CAST(replace(regexp_extract(x, '\u003cst_x\u003e([^\u003c]*)\u003c/st_x\u003e', 1), ',', '.') AS DOUBLE),\n                               TRY_CAST(replace(regexp_extract(x, '\u003cst_y\u003e([^\u003c]*)\u003c/st_y\u003e', 1), ',', '.') AS DOUBLE)),\n                      'EPSG:25830', 'EPSG:4326', always_xy := true) AS g,\n         strptime(regexp_extract(xml, '\u003cfecha_hora\u003e([^\u003c]*)\u003c/fecha_hora\u003e', 1), '%d/%m/%Y %H:%M:%S')::TIMESTAMP\n           AT TIME ZONE 'Europe/Madrid' AS read_at\n  FROM (SELECT xml, unnest(regexp_extract_all(xml, '(?s)\u003cpm\u003e.*?\u003c/pm\u003e')) AS x FROM feed)\n)\nSELECT round(avg(load), 1) AS \"Mean load\",\n       count(*) FILTER (WHERE level \u003e= 2) AS \"With queues or jammed\",\n       count(*) AS \"Points reporting\"\nFROM live WHERE NOT faulty AND load IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The mean load of the points in Informo's latest file with a reading it trusts. A point's load (0-100) is Informo's mix of the vehicles an hour and the share of time a vehicle is over the loop, against what the street takes.",
+          "id": 5,
+          "links": [],
+          "title": "Load now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "percent"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Mean load$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-no2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The station with the highest NO2 in the latest hour published, named by the row.\nWITH stations AS (\n  -- Where the 24 air quality stations stand (datos.madrid.es, through the gateway, kept a week).\n  SELECT CODIGO_CORTO::INTEGER AS station, ESTACION AS station_name, NOM_TIPO AS station_kind,\n         LATITUD::DOUBLE AS latitude, LONGITUD::DOUBLE AS longitude\n  FROM read_csv('http://feeds/madrid/air/stations.csv', delim = ';', header = true, all_varchar = true)\n),\nair AS (\n  -- Every hourly reading of the stations: today's from the city's real-time file (through the gateway,\n  -- kept five minutes; H01 is 00:00-01:00 Madrid time, stamped at its end), the days before from the\n  -- recording (Pacha's recorder, feed madrid-air, kept a week, each reading up to three times).\n  SELECT DISTINCT ts, station, magnitude, value FROM (\n    SELECT hour AS ts, station, magnitude, value FROM read_parquet([${air_files:singlequote}], union_by_name = true)\n    UNION ALL\n    SELECT (make_date(TRY_CAST(r-\u003e\u003e'ANO' AS INTEGER), TRY_CAST(r-\u003e\u003e'MES' AS INTEGER), TRY_CAST(r-\u003e\u003e'DIA' AS INTEGER))::TIMESTAMP\n              + to_hours(h)) AT TIME ZONE 'Europe/Madrid' AS ts,\n           TRY_CAST(r-\u003e\u003e'ESTACION' AS INTEGER) AS station, TRY_CAST(r-\u003e\u003e'MAGNITUD' AS INTEGER) AS magnitude,\n           TRY_CAST(r-\u003e\u003eprintf('H%02d', h) AS DOUBLE) AS value\n    FROM (SELECT unnest(json_extract(b-\u003e\u003e'body', '$.records[*]')) AS r\n          FROM (SELECT http_get('http://feeds/madrid/air/realtime.json') AS b) WHERE (b-\u003e\u003e'status') = '200'),\n         range(1, 25) t(h)\n    WHERE r-\u003e\u003eprintf('V%02d', h) = 'V'\n  )\n  WHERE value IS NOT NULL\n)\nSELECT s.station_name AS \"Station\", a.value AS \"NO₂\"\nFROM air a JOIN stations s USING (station)\nWHERE a.magnitude = 8 AND a.ts = (SELECT max(ts) FROM air WHERE magnitude = 8)\nORDER BY a.value DESC LIMIT 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The station with the highest NO₂ in the latest hour the City Council has published (about seventy minutes after the hour). The EU's limit for an hour is 200 µg/m³; Madrid's protocol warns from 180.",
+          "id": 8,
+          "links": [],
+          "title": "Highest NO₂",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^NO₂$/",
+                  "values": true
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-no2-median": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The median of the stations' NO2 in the latest hour published.\nSELECT median(no2) AS \"NO₂\" FROM $air WHERE t = (SELECT max(t) FROM $air)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median of the stations' NO₂ in the latest hour published (about seventy minutes after the hour).",
+          "id": 16,
+          "links": [],
+          "title": "Median NO₂",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "conμgm3"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-protocol": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scenario of Madrid's NO2 protocol when the City Council declares one: Informo lists it among its\n-- incidents (es_contaminacion), with its measures.\nWITH incidents AS (\n  -- Informo's incidents of the City Council (kept a minute): works, closures, accidents. Their times are\n  -- Madrid's. Many stay listed after the end their dates give: in force means started and not ended.\n  SELECT regexp_extract(x, '\u003cid_incidencia\u003e([^\u003c]*)\u003c/id_incidencia\u003e', 1) AS incident_id,\n         regexp_extract(x, '\u003cnom_tipo_incidencia\u003e([^\u003c]*)\u003c/nom_tipo_incidencia\u003e', 1) AS kind,\n         trim(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1)) AS description,\n         TRY_CAST(regexp_extract(x, '\u003cfh_inicio\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS starts,\n         TRY_CAST(regexp_extract(x, '\u003cfh_final\u003e([^\u003c.]*)', 1) AS TIMESTAMP) AT TIME ZONE 'Europe/Madrid' AS ends,\n         regexp_extract(x, '\u003ces_accidente\u003e([^\u003c]*)\u003c/es_accidente\u003e', 1) = 'S' AS accident,\n         regexp_extract(x, '\u003ces_obras\u003e([^\u003c]*)\u003c/es_obras\u003e', 1) = 'S' AS works,\n         regexp_extract(x, '\u003ces_contaminacion\u003e([^\u003c]*)\u003c/es_contaminacion\u003e', 1) = 'S' AS pollution,\n         nullif(trim(regexp_extract(x, '\u003cescenario_contaminacion\u003e([^\u003c]*)\u003c/escenario_contaminacion\u003e', 1)), '') AS pollution_scenario,\n         TRY_CAST(regexp_extract(x, '\u003clatitud\u003e([^\u003c]*)\u003c/latitud\u003e', 1) AS DOUBLE) AS latitude,\n         TRY_CAST(regexp_extract(x, '\u003clongitud\u003e([^\u003c]*)\u003c/longitud\u003e', 1) AS DOUBLE) AS longitude\n  FROM (SELECT unnest(regexp_extract_all(r-\u003e\u003e'body', '(?s)\u003cIncidencia\u003e.*?\u003c/Incidencia\u003e')) AS x\n        FROM (SELECT http_get('http://feeds/madrid/informo/incidents.xml') AS r) WHERE (r-\u003e\u003e'status') = '200')\n)\nSELECT coalesce(max(pollution_scenario), 'None declared') AS \"NO₂ protocol\"\nFROM incidents WHERE pollution"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The scenario of Madrid's protocol for NO₂ episodes (from 1, speed limits, to 4, cars without an environmental badge kept out) when the City Council declares one, as Informo lists it among its incidents.",
+          "id": 9,
+          "links": [],
+          "title": "NO₂ protocol",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-queued": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The points of Informo's latest file with a reading it trusts: their mean load and how many have queues or\n-- are jammed (level of service 2 or 3).\nWITH feed AS (\n  -- Informo's file, through the gateway (kept a minute): a \u003cpm\u003e per measuring point, where it stands\n  -- in UTM (EPSG:25830, a comma for the decimal point) and what it read in the last five minutes.\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/madrid/informo/pm.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\nlive AS (\n  SELECT regexp_extract(x, '\u003cidelem\u003e([^\u003c]*)\u003c/idelem\u003e', 1) AS id,\n         replace(replace(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1), '\u0026amp;', '\u0026'), '\u0026quot;', '\"') AS point,\n         -- Informo writes -1 for a reading it has not got.\n         nullif(TRY_CAST(regexp_extract(x, '\u003cintensidad\u003e([^\u003c]*)\u003c/intensidad\u003e', 1) AS DOUBLE), -1) AS intensity,\n         nullif(TRY_CAST(regexp_extract(x, '\u003ccarga\u003e([^\u003c]*)\u003c/carga\u003e', 1) AS DOUBLE), -1) AS load,\n         nullif(TRY_CAST(regexp_extract(x, '\u003cnivelServicio\u003e([^\u003c]*)\u003c/nivelServicio\u003e', 1) AS INTEGER), -1) AS level,\n         nullif(TRY_CAST(nullif(regexp_extract(x, '\u003cvelocidad\u003e([^\u003c]*)\u003c/velocidad\u003e', 1), '') AS DOUBLE), -1) AS speed,\n         regexp_extract(x, '\u003cerror\u003e([^\u003c]*)\u003c/error\u003e', 1) = 'S' AS faulty,\n         ST_Transform(ST_Point(TRY_CAST(replace(regexp_extract(x, '\u003cst_x\u003e([^\u003c]*)\u003c/st_x\u003e', 1), ',', '.') AS DOUBLE),\n                               TRY_CAST(replace(regexp_extract(x, '\u003cst_y\u003e([^\u003c]*)\u003c/st_y\u003e', 1), ',', '.') AS DOUBLE)),\n                      'EPSG:25830', 'EPSG:4326', always_xy := true) AS g,\n         strptime(regexp_extract(xml, '\u003cfecha_hora\u003e([^\u003c]*)\u003c/fecha_hora\u003e', 1), '%d/%m/%Y %H:%M:%S')::TIMESTAMP\n           AT TIME ZONE 'Europe/Madrid' AS read_at\n  FROM (SELECT xml, unnest(regexp_extract_all(xml, '(?s)\u003cpm\u003e.*?\u003c/pm\u003e')) AS x FROM feed)\n)\nSELECT round(avg(load), 1) AS \"Mean load\",\n       count(*) FILTER (WHERE level \u003e= 2) AS \"With queues or jammed\",\n       count(*) AS \"Points reporting\"\nFROM live WHERE NOT faulty AND load IS NOT NULL"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How many of the points in Informo's latest file had queues or were jammed (its level of service 2 or 3), of about 4,600 reporting.",
+          "id": 6,
+          "links": [],
+          "title": "Jams now",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^With queues or jammed$/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-temp": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The stations' median temperature in the latest hour published.\nSELECT median(temperature) AS \"Temperature\" FROM $meteo WHERE t = (SELECT max(t) FROM $meteo WHERE temperature IS NOT NULL)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The median temperature of the weather stations in the latest hour the City Council has published.",
+          "id": 19,
+          "links": [],
+          "title": "Median temperature",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-warmest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The warmest station in the latest hour published, named by the row.\nSELECT station AS \"Station\", temperature AS \"Temperature\" FROM $meteo\nWHERE t = (SELECT max(t) FROM $meteo WHERE temperature IS NOT NULL) AND temperature IS NOT NULL ORDER BY temperature DESC LIMIT 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The warmest weather station in the latest hour published.",
+          "id": 20,
+          "links": [],
+          "title": "Warmest",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 1,
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/^Temperature$/",
+                  "values": true
+                },
+                "showPercentChange": false,
+                "textMode": "value_and_name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-guide"
+                        },
+                        "height": 3,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-file"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 0,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-load"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 6,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-queued"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 12,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-incidents"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 18,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-brush"
+                        },
+                        "height": 5,
+                        "width": 24,
+                        "x": 0,
+                        "y": 7
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map"
+                        },
+                        "height": 21,
+                        "width": 16,
+                        "x": 0,
+                        "y": 12
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-districts"
+                        },
+                        "height": 12,
+                        "width": 8,
+                        "x": 16,
+                        "y": 12
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-hours"
+                        },
+                        "height": 9,
+                        "width": 8,
+                        "x": 16,
+                        "y": 24
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-matrix"
+                        },
+                        "height": 12,
+                        "width": 24,
+                        "x": 0,
+                        "y": 33
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-incidents"
+                        },
+                        "height": 10,
+                        "width": 24,
+                        "x": 0,
+                        "y": 45
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Traffic"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-guide-air"
+                        },
+                        "height": 2,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-no2"
+                        },
+                        "height": 4,
+                        "width": 8,
+                        "x": 0,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-no2-median"
+                        },
+                        "height": 4,
+                        "width": 8,
+                        "x": 8,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-protocol"
+                        },
+                        "height": 4,
+                        "width": 8,
+                        "x": 16,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-brush-air"
+                        },
+                        "height": 5,
+                        "width": 24,
+                        "x": 0,
+                        "y": 6
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map-air"
+                        },
+                        "height": 18,
+                        "width": 24,
+                        "x": 0,
+                        "y": 11
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-no2"
+                        },
+                        "height": 9,
+                        "width": 24,
+                        "x": 0,
+                        "y": 29
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Air"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-guide-climate"
+                        },
+                        "height": 2,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-temp"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 0,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-warmest"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 6,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-coolest"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 12,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-humidity"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 18,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-brush-climate"
+                        },
+                        "height": 5,
+                        "width": 24,
+                        "x": 0,
+                        "y": 6
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map-climate"
+                        },
+                        "height": 20,
+                        "width": 24,
+                        "x": 0,
+                        "y": 11
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-climate-series"
+                        },
+                        "height": 9,
+                        "width": 14,
+                        "x": 0,
+                        "y": 31
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-humidity-series"
+                        },
+                        "height": 9,
+                        "width": 10,
+                        "x": 14,
+                        "y": 31
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Climate"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 15,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "About the data"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "air-quality",
+      "buildings",
+      "chaski",
+      "city",
+      "duckdb",
+      "kepler",
+      "live",
+      "mobility",
+      "mosaic",
+      "plus",
+      "weather"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5m",
+        "15m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "Europe/Madrid",
+      "to": "now"
+    },
+    "title": "Madrid now and this week: traffic, air and heat from the City Council's feeds",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The traffic recording's files that overlap the time range, from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded traffic files",
+          "multi": true,
+          "name": "traffic_files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/madrid-traffic/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" \u003e= $__timeFrom() AND \"from\" \u003c= $__timeTo()\nUNION ALL SELECT 'http://feeds/recordings/madrid-traffic-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The air quality recording's files that overlap the time range, from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded air quality files",
+          "multi": true,
+          "name": "air_files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/madrid-air/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" \u003e= $__timeFrom() AND \"from\" \u003c= $__timeTo()\nUNION ALL SELECT 'http://feeds/recordings/madrid-air-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "definition": "",
+          "description": "The weather recording's files that overlap the time range, from the recorder's manifest, and an empty file that is always there, so a range with nothing recorded reads as no rows.",
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "Recorded weather files",
+          "multi": true,
+          "name": "meteo_files",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdb"
+            },
+            "group": "motherduck-duckdb-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "__legacyStringValue": "-- Explicit columns: a recorder that has just started writes [], with none to detect.\nSELECT url FROM read_json('http://feeds/recordings/madrid-meteo/manifest.json',\n                          columns = {url: 'VARCHAR', \"from\": 'TIMESTAMPTZ', \"to\": 'TIMESTAMPTZ'})\nWHERE \"to\" \u003e= $__timeFrom() AND \"from\" \u003c= $__timeTo()\nUNION ALL SELECT 'http://feeds/recordings/madrid-meteo-empty.parquet'"
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Traffic by district and quarter hour (recording)",
+          "multi": false,
+          "name": "cube",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "cube",
+              "refId": "cube",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the recording of Informo's points (Pacha's recorder, feed madrid-traffic: every file, every\n-- five minutes, kept a week) over the time range, summed by district and quarter of an hour, so the browser\n-- holds a small cube (21 districts, 96 quarters a day) instead of every reading. load is the mean load of the\n-- district's readings in the quarter (load_sum and n, to weight it); queued is the mean number of the district's points with queues or jammed in the\n-- quarter (Informo's level of service 2 or 3). hour is Madrid's hour of the day, for the profile's brush. The\n-- first quarter, which starts before the range, carries the range's start: the Time Brush's whole window\n-- leaves no row out.\nWITH feed AS (\n  -- Informo's file, through the gateway (kept a minute): a \u003cpm\u003e per measuring point, where it stands\n  -- in UTM (EPSG:25830, a comma for the decimal point) and what it read in the last five minutes.\n  SELECT r-\u003e\u003e'body' AS xml FROM (SELECT http_get('http://feeds/madrid/informo/pm.xml') AS r) WHERE (r-\u003e\u003e'status') = '200'\n),\nlive AS (\n  SELECT regexp_extract(x, '\u003cidelem\u003e([^\u003c]*)\u003c/idelem\u003e', 1) AS id,\n         replace(replace(regexp_extract(x, '\u003cdescripcion\u003e([^\u003c]*)\u003c/descripcion\u003e', 1), '\u0026amp;', '\u0026'), '\u0026quot;', '\"') AS point,\n         -- Informo writes -1 for a reading it has not got.\n         nullif(TRY_CAST(regexp_extract(x, '\u003cintensidad\u003e([^\u003c]*)\u003c/intensidad\u003e', 1) AS DOUBLE), -1) AS intensity,\n         nullif(TRY_CAST(regexp_extract(x, '\u003ccarga\u003e([^\u003c]*)\u003c/carga\u003e', 1) AS DOUBLE), -1) AS load,\n         nullif(TRY_CAST(regexp_extract(x, '\u003cnivelServicio\u003e([^\u003c]*)\u003c/nivelServicio\u003e', 1) AS INTEGER), -1) AS level,\n         nullif(TRY_CAST(nullif(regexp_extract(x, '\u003cvelocidad\u003e([^\u003c]*)\u003c/velocidad\u003e', 1), '') AS DOUBLE), -1) AS speed,\n         regexp_extract(x, '\u003cerror\u003e([^\u003c]*)\u003c/error\u003e', 1) = 'S' AS faulty,\n         ST_Transform(ST_Point(TRY_CAST(replace(regexp_extract(x, '\u003cst_x\u003e([^\u003c]*)\u003c/st_x\u003e', 1), ',', '.') AS DOUBLE),\n                               TRY_CAST(replace(regexp_extract(x, '\u003cst_y\u003e([^\u003c]*)\u003c/st_y\u003e', 1), ',', '.') AS DOUBLE)),\n                      'EPSG:25830', 'EPSG:4326', always_xy := true) AS g,\n         strptime(regexp_extract(xml, '\u003cfecha_hora\u003e([^\u003c]*)\u003c/fecha_hora\u003e', 1), '%d/%m/%Y %H:%M:%S')::TIMESTAMP\n           AT TIME ZONE 'Europe/Madrid' AS read_at\n  FROM (SELECT xml, unnest(regexp_extract_all(xml, '(?s)\u003cpm\u003e.*?\u003c/pm\u003e')) AS x FROM feed)\n),\ndistricts AS (\n  -- The 21 districts, from the city's geoportal SIGMA through the gateway (kept a month), read as JSON.\n  SELECT f-\u003e'properties'-\u003e\u003e'COD_DIS_TX' AS district_id, f-\u003e'properties'-\u003e\u003e'NOMBRE' AS district,\n         ST_GeomFromGeoJSON(f-\u003e'geometry') AS geom\n  FROM (SELECT unnest(json_extract(r-\u003e\u003e'body', '$.features[*]')) AS f\n        FROM (SELECT http_get('http://feeds/madrid/districts.geojson') AS r) WHERE (r-\u003e\u003e'status') = '200')\n),\nplaced AS (\n  -- Each point in its district, from where the latest file puts it.\n  SELECT l.id, d.district FROM live l JOIN districts d ON ST_Contains(d.geom, l.g)\n)\nSELECT greatest(time_bucket(INTERVAL 15 MINUTE, r.ts), make_timestamptz(CAST(${__from} AS BIGINT) * 1000)) AS t,\n       time_bucket(INTERVAL 15 MINUTE, r.ts) + INTERVAL 15 MINUTE AS t_end,\n       hour(timezone('Europe/Madrid', time_bucket(INTERVAL 15 MINUTE, r.ts)))::DOUBLE AS hour,\n       p.district,\n       count(*)::DOUBLE AS n,\n       sum(r.load)::DOUBLE AS load_sum,\n       round(avg(r.load), 1)::DOUBLE AS load,\n       (count(*) FILTER (WHERE r.level \u003e= 2) / count(DISTINCT r.ts))::DOUBLE AS queued\nFROM read_parquet([${traffic_files:singlequote}], union_by_name = true) r JOIN placed p ON p.id = r.hex\nWHERE r.ts BETWEEN make_timestamptz(CAST(${__from} AS BIGINT) * 1000) AND make_timestamptz(CAST(${__to} AS BIGINT) * 1000) AND NOT r.faulty AND r.load \u003e= 0\nGROUP BY ALL",
+                  "refId": "cube"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The districts' boundaries (SIGMA)",
+          "multi": false,
+          "name": "districts",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "districts",
+              "refId": "districts",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the 21 districts' boundaries, as GeoJSON text for the map.\nWITH districts AS (\n  -- The 21 districts, from the city's geoportal SIGMA through the gateway (kept a month), read as JSON.\n  SELECT f-\u003e'properties'-\u003e\u003e'COD_DIS_TX' AS district_id, f-\u003e'properties'-\u003e\u003e'NOMBRE' AS district,\n         ST_GeomFromGeoJSON(f-\u003e'geometry') AS geom\n  FROM (SELECT unnest(json_extract(r-\u003e\u003e'body', '$.features[*]')) AS f\n        FROM (SELECT http_get('http://feeds/madrid/districts.geojson') AS r) WHERE (r-\u003e\u003e'status') = '200')\n)\nSELECT district, district_id, ST_AsGeoJSON(geom)::VARCHAR AS geometry FROM districts",
+                  "refId": "districts"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "NO₂ by station and hour",
+          "multi": false,
+          "name": "air",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "air",
+              "refId": "air",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: every hourly NO2 reading of the stations over the time range, where each station stands; a\n-- reading is stamped with its hour's end.\nWITH stations AS (\n  -- Where the 24 air quality stations stand (datos.madrid.es, through the gateway, kept a week).\n  SELECT CODIGO_CORTO::INTEGER AS station, ESTACION AS station_name, NOM_TIPO AS station_kind,\n         LATITUD::DOUBLE AS latitude, LONGITUD::DOUBLE AS longitude\n  FROM read_csv('http://feeds/madrid/air/stations.csv', delim = ';', header = true, all_varchar = true)\n),\nair AS (\n  -- Every hourly reading of the stations: today's from the city's real-time file (through the gateway,\n  -- kept five minutes; H01 is 00:00-01:00 Madrid time, stamped at its end), the days before from the\n  -- recording (Pacha's recorder, feed madrid-air, kept a week, each reading up to three times).\n  SELECT DISTINCT ts, station, magnitude, value FROM (\n    SELECT hour AS ts, station, magnitude, value FROM read_parquet([${air_files:singlequote}], union_by_name = true)\n    UNION ALL\n    SELECT (make_date(TRY_CAST(r-\u003e\u003e'ANO' AS INTEGER), TRY_CAST(r-\u003e\u003e'MES' AS INTEGER), TRY_CAST(r-\u003e\u003e'DIA' AS INTEGER))::TIMESTAMP\n              + to_hours(h)) AT TIME ZONE 'Europe/Madrid' AS ts,\n           TRY_CAST(r-\u003e\u003e'ESTACION' AS INTEGER) AS station, TRY_CAST(r-\u003e\u003e'MAGNITUD' AS INTEGER) AS magnitude,\n           TRY_CAST(r-\u003e\u003eprintf('H%02d', h) AS DOUBLE) AS value\n    FROM (SELECT unnest(json_extract(b-\u003e\u003e'body', '$.records[*]')) AS r\n          FROM (SELECT http_get('http://feeds/madrid/air/realtime.json') AS b) WHERE (b-\u003e\u003e'status') = '200'),\n         range(1, 25) t(h)\n    WHERE r-\u003e\u003eprintf('V%02d', h) = 'V'\n  )\n  WHERE value IS NOT NULL\n)\nSELECT a.ts AS t, s.station_name AS station, s.station_kind, s.latitude, s.longitude, a.value AS no2\nFROM air a JOIN stations s USING (station)\nWHERE a.magnitude = 8 AND a.ts BETWEEN make_timestamptz(CAST(${__from} AS BIGINT) * 1000) AND make_timestamptz(CAST(${__to} AS BIGINT) * 1000)\nORDER BY t",
+                  "refId": "air"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Temperature, humidity and wind by station and hour",
+          "multi": false,
+          "name": "meteo",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "meteo",
+              "refId": "meteo",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the weather stations' hourly temperature, humidity and wind over the time range, where each\n-- station stands, one row per station and hour with each quantity in its column (null where the station does not\n-- measure it). A reading is stamped with its hour's end.\nWITH meteo_stations AS (\n  -- Where the weather stations stand (datos.madrid.es, dataset 300360, through the gateway, kept a week).\n  SELECT \"CÓDIGO_CORTO\"::INTEGER AS station, ESTACION AS station_name,\n         LATITUD::DOUBLE AS latitude, LONGITUD::DOUBLE AS longitude\n  FROM read_csv('http://feeds/madrid/meteo/stations.csv', delim = ';', header = true, all_varchar = true)\n),\nmeteo AS (\n  -- Every hourly reading of the weather stations: today's from the city's real-time file (through the gateway,\n  -- kept five minutes; H01 is 00:00-01:00 Madrid time, stamped at its end), the days before from the recording\n  -- (Pacha's recorder, feed madrid-meteo, kept a week, each reading up to three times).\n  SELECT DISTINCT ts, station, magnitude, value FROM (\n    SELECT hour AS ts, station, magnitude, value FROM read_parquet([${meteo_files:singlequote}], union_by_name = true)\n    UNION ALL\n    SELECT (make_date(TRY_CAST(r-\u003e\u003e'ANO' AS INTEGER), TRY_CAST(r-\u003e\u003e'MES' AS INTEGER), TRY_CAST(r-\u003e\u003e'DIA' AS INTEGER))::TIMESTAMP\n              + to_hours(h)) AT TIME ZONE 'Europe/Madrid' AS ts,\n           TRY_CAST(r-\u003e\u003e'ESTACION' AS INTEGER) AS station, TRY_CAST(r-\u003e\u003e'MAGNITUD' AS INTEGER) AS magnitude,\n           TRY_CAST(r-\u003e\u003eprintf('H%02d', h) AS DOUBLE) AS value\n    FROM (SELECT unnest(json_extract(b-\u003e\u003e'body', '$.records[*]')) AS r\n          FROM (SELECT http_get('http://feeds/madrid/meteo/realtime.json') AS b) WHERE (b-\u003e\u003e'status') = '200'),\n         range(1, 25) t(h)\n    WHERE r-\u003e\u003eprintf('V%02d', h) = 'V'\n  )\n  WHERE value IS NOT NULL\n)\nSELECT m.ts AS t, s.station_name AS station, s.latitude, s.longitude,\n       max(m.value) FILTER (WHERE m.magnitude = 83) AS temperature,\n       max(m.value) FILTER (WHERE m.magnitude = 86) AS humidity,\n       max(m.value) FILTER (WHERE m.magnitude = 81) AS wind,\n       max(m.value) FILTER (WHERE m.magnitude = 82) AS wind_from\nFROM meteo m JOIN meteo_stations s USING (station)\nWHERE m.magnitude IN (81, 82, 83, 86) AND m.ts BETWEEN make_timestamptz(CAST(${__from} AS BIGINT) * 1000) AND make_timestamptz(CAST(${__to} AS BIGINT) * 1000)\nGROUP BY ALL\nORDER BY t",
+                  "refId": "meteo"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onTimeRangeChanged",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "The selection",
+          "multi": false,
+          "name": "cubeFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$cube",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "t",
+                  "from": "$t0",
+                  "label": "Window",
+                  "name": "time",
+                  "to": "$t1",
+                  "type": "range"
+                },
+                {
+                  "column": "hour",
+                  "from": "$hour_lo",
+                  "label": "Hours of the day",
+                  "name": "hour",
+                  "to": "$hour_hi",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "district",
+                  "label": "Districts",
+                  "name": "district",
+                  "type": "in",
+                  "variable": "$district"
+                }
+              ],
+              "kind": "filters",
+              "refId": "cubeFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The Time Brush window's start (UTC, ISO 8601); empty: the whole range.",
+          "hide": "hideVariable",
+          "label": "t0",
+          "name": "t0",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The Time Brush window's end (UTC, ISO 8601).",
+          "hide": "hideVariable",
+          "label": "t1",
+          "name": "t1",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The first hour of the day brushed on the profile (Madrid's).",
+          "hide": "hideVariable",
+          "label": "hour_lo",
+          "name": "hour_lo",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The last hour of the day brushed on the profile (Madrid's).",
+          "hide": "hideVariable",
+          "label": "hour_hi",
+          "name": "hour_hi",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The districts clicked on the bars.",
+          "hide": "hideVariable",
+          "label": "district",
+          "name": "district",
+          "query": "",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}

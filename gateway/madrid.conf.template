@@ -1,0 +1,137 @@
+    # Madrid's City Council in real time, behind madrid-live and its recorded
+    # feeds madrid-traffic and madrid-air. No key. The city sends every file
+    # with no-store: that header is ignored and each file kept as long as the
+    # city takes to renew it, a visitor getting the previous copy while nginx
+    # fetches the next in the background, so the city sees one request per
+    # file per interval whoever is looking. Stored gzipped, served plain.
+    #
+    # Informo's traffic measuring points (pm.xml, about 2.2 MB, ~4,900 points),
+    # rewritten every five minutes; kept a minute, so the recorder, polling
+    # every minute, keeps each file within two of its writing. Read with
+    # http_get (one GET) in a dashboard, never read_text: a renewal between
+    # DuckDB's HEAD and its GET would cut the file.
+    location = /madrid/informo/pm.xml {
+        set $madrid_informo informo.madrid.es;
+        proxy_pass https://$madrid_informo/informo/tmadrid/pm.xml;
+        proxy_set_header Host $madrid_informo;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache madrid;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 1m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_cache_lock on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # Informo's traffic incidents of the City Council (works, closures,
+    # accidents, and the NO2 protocol's scenario when one is on), about 100 KB,
+    # renewed every five minutes; kept a minute.
+    location = /madrid/informo/incidents.xml {
+        set $madrid_informo informo.madrid.es;
+        proxy_pass https://$madrid_informo/informo/tmadrid/incid_aytomadrid.xml;
+        proxy_set_header Host $madrid_informo;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache madrid;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 1m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_cache_lock on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # Air quality in real time: today's hourly readings of the 24 stations, a
+    # record per station and pollutant (ciudadesabiertas.madrid.es, about
+    # 130 KB), a new hour some twenty minutes past it; kept five minutes.
+    location = /madrid/air/realtime.json {
+        set $madrid_open ciudadesabiertas.madrid.es;
+        proxy_pass https://$madrid_open/dynamicAPI/API/query/calair_tiemporeal.json?pageSize=5000;
+        proxy_set_header Host $madrid_open;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache madrid;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 5m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_cache_lock on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # Where the 24 air quality stations stand and what each measures
+    # (datos.madrid.es, dataset 212629, a CSV of 5 KB); kept a week.
+    location = /madrid/air/stations.csv {
+        set $madrid_datos datos.madrid.es;
+        proxy_pass https://$madrid_datos/dataset/212629-0-estaciones-control-aire/resource/212629-0-estaciones-control-aire-csv/download/212629-0-estaciones-control-aire-csv;
+        proxy_set_header Host $madrid_datos;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache madrid;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 7d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # The 21 districts' boundaries, from the city's geoportal SIGMA (a GeoJSON
+    # of about 390 KB in WGS84); kept a month.
+    location = /madrid/districts.geojson {
+        set $madrid_sigma sigma.madrid.es;
+        proxy_pass https://$madrid_sigma/hosted/rest/services/CARTOGRAFIA/LIMITES_ADMINISTRATIVOS/MapServer/3/query?where=1%3D1&outFields=COD_DIS_TX,NOMBRE&outSR=4326&f=geojson;
+        proxy_set_header Host $madrid_sigma;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache madrid;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 30d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # Weather in real time: today's hourly readings of the City Council's
+    # weather stations, a record per station and quantity (temperature,
+    # humidity, wind, rain, pressure, radiation; ciudadesabiertas.madrid.es,
+    # about 90 KB), in the air quality file's shape; kept five minutes.
+    location = /madrid/meteo/realtime.json {
+        set $madrid_open ciudadesabiertas.madrid.es;
+        proxy_pass https://$madrid_open/dynamicAPI/API/query/meteo_tiemporeal.json?pageSize=5000;
+        proxy_set_header Host $madrid_open;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache madrid;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 5m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_cache_lock on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # Where the weather stations stand and what each measures (datos.madrid.es,
+    # dataset 300360, a CSV of 5 KB); kept a week.
+    location = /madrid/meteo/stations.csv {
+        set $madrid_datos datos.madrid.es;
+        proxy_pass https://$madrid_datos/dataset/300360-0-meteorologicos-estaciones/resource/300360-1-meteorologicos-estaciones-csv/download/300360-1-meteorologicos-estaciones-csv;
+        proxy_set_header Host $madrid_datos;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_cache madrid;
+        proxy_cache_key $uri;
+        proxy_ignore_headers Cache-Control Expires Set-Cookie;
+        proxy_cache_valid 200 7d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }

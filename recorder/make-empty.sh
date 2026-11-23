@@ -2,7 +2,9 @@
 # Writes recorder/fallback/flights-empty.parquet: flights.sql's columns, no
 # rows; recorder/fallback/aemo-scada-empty.parquet, aemo-scada.sql's; and
 # recorder/fallback/ais-denmark-empty/<table>.parquet, each of ais-denmark.sql's
-# tables with no rows. Pacha's gateway serves recorder/fallback/ (mounted by its
+# tables with no rows; and recorder/fallback/madrid-traffic-empty.parquet,
+# madrid-air-empty.parquet and madrid-meteo-empty.parquet, their feeds'.
+# Pacha's gateway serves recorder/fallback/ (mounted by its
 # compose.dashboards.yaml) when nothing has been recorded, so a history panel
 # returns nothing instead of failing.
 # Run it whenever a feed's columns change; tests/stack/flight-recorder.test.mjs
@@ -55,5 +57,16 @@ for table in tables:
     os.chown(out, $(id -u), $(id -g))
     print(out, os.path.getsize(out), 'bytes')
 os.chown('recorder/fallback/ais-denmark-empty', $(id -u), $(id -g))
+# Madrid: an Informo file with no measuring point, an air file with no record.
+for feed, body, name in (('madrid-traffic', '<pms><fecha_hora>01/01/1970 01:00:00</fecha_hora></pms>', 'pm.xml'),
+                         ('madrid-air', '{\"records\": []}', 'air.json'),
+                         ('madrid-meteo', '{\"records\": []}', 'meteo.json')):
+    open(f'/tmp/{name}', 'w').write(body)
+    c.sql(f\"SET VARIABLE source = '/tmp/{name}'\")
+    sql = open(f'recorder/feeds/{feed}.sql').read()
+    out = f'recorder/fallback/{feed}-empty.parquet'
+    c.sql(f\"COPY ({sql}) TO '{out}' (FORMAT parquet, COMPRESSION zstd)\")
+    os.chown(out, $(id -u), $(id -g))
+    print(out, os.path.getsize(out), 'bytes')
 PY
 "
