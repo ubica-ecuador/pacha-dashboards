@@ -1,0 +1,1599 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "citibike-pulse"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Citi Bike's network of stations on an average weekday or weekend day of September 2026: where the bikes leave from and pile up in each hour, the busiest links between parts of the city, and the bikes left out of place. Drag across the hours to see the morning rush turn around in the evening; draw an area to follow it.",
+    "editable": true,
+    "elements": {
+      "about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### About the data\n\n- **Trips**: Citi Bike's [system data](https://citibikenyc.com/system-data) (Lyft), September 2026: 4.97 million\n  trips in New York between two stations (dockless e-bike trips left out). Jersey City and Hoboken publish their\n  own files: their stations appear only where trips from New York ended.\n- **An average day**: a month's counts divided by its 21 working days (Weekday) or its 9 Saturdays, Sundays and\n  Labor Day (Weekend). A bike counts out in the hour its trip started and in in the hour it ended, New York time.\n- **Links** join H3 cells of about 0.7 km² (resolution 8): station to station, trips are too thin to draw.\n\nBuilt by `datasets/citibike/build.sh` in pacha-dashboards, from any month.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "emptying": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT name AS \"Station\", round(o) AS \"Out\", round(i) AS \"In\", round(i - o) AS \"Balance\"\nFROM (SELECT name, sum(bikes_out) AS o, sum(bikes_in) AS i FROM $hourly WHERE day = $day AND $__crossfilter($bikeFilters) GROUP BY name) ORDER BY i - o ASC LIMIT 8"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The stations that lose the most bikes over the hours kept, on an average day: more trips start there than end there.",
+          "id": 8,
+          "links": [],
+          "title": "Emptying most",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "filterable": false,
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Balance"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F28C38",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Station"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 260
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "filling": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT name AS \"Station\", round(o) AS \"Out\", round(i) AS \"In\", round(i - o) AS \"Balance\"\nFROM (SELECT name, sum(bikes_out) AS o, sum(bikes_in) AS i FROM $hourly WHERE day = $day AND $__crossfilter($bikeFilters) GROUP BY name) ORDER BY i - o DESC LIMIT 8"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The stations that gain the most bikes over the hours kept, on an average day.",
+          "id": 9,
+          "links": [],
+          "title": "Filling most",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "auto",
+                    "filterable": false,
+                    "minWidth": 40
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Balance"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#4FA3E0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Station"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 260
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "cellHeight": "sm",
+                "footer": {
+                  "show": false
+                },
+                "showHeader": true
+              }
+            },
+            "version": ""
+          }
+        }
+      },
+      "hours": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips started in each hour of an average weekday (white) and weekend day (violet), in the area drawn if any. Drag across the hours to see where the bikes go in them; the map and figures follow. Click outside the brush to keep the whole day.",
+          "id": 2,
+          "links": [],
+          "title": "Trips hour by hour: drag to pick the hours",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  bikeFilters: { select: crossfilter }\nplot:\n  - mark: lineY\n    data: { from: hourly, filterBy: $bikeFilters }\n    x: hour\n    y: { sum: bikes_out }\n    stroke: day\n    strokeWidth: 2.5\n    curve: monotone-x\n  - select: intervalX\n    as: $bikeFilters\ncolorDomain: [Weekday, Weekend]\ncolorRange: ['#E8E8E8', '#B07CE8']\nxDomain: [0, 24]\nxTicks: [0, 3, 6, 9, 12, 15, 18, 21, 24]\nxLabel: Hour of departure (New York) →\nyLabel: ↑ trips started in the hour · weekday (white) · weekend (violet)\nmarginLeft: 52\nmarginBottom: 34\n",
+                "variables": "- param: bikeFilters\n  column: hour\n  from: hFrom\n  to: hTo\n"
+              }
+            },
+            "version": "2.3.2"
+          }
+        }
+      },
+      "map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Each station in the hours kept, on the day picked (the area drawn on this map left out, so every station\n-- stays): bikes taken out and brought in on an average day, and the balance. Orange stations empty (more bikes\n-- leave than arrive), blue ones fill; the larger the dot, the more bikes the hours leave out of place there.\n-- The filters name bare columns: they go on $hourly alone, before the join.\nWITH b AS (\n  SELECT name, sum(bikes_out) AS o, sum(bikes_in) AS i FROM $hourly\n  WHERE day = $day AND $__crossfilter($bikeFilters, -area) GROUP BY name\n)\nSELECT s.name, s.latitude, s.longitude, round(b.o, 1) AS bikes_out, round(b.i, 1) AS bikes_in,\n       round(b.i - b.o, 1) AS balance, abs(b.i - b.o) AS out_of_place,\n       -- the colour: the balance as a share of the station's traffic, -60 % (emptying) to +60 % (filling)\n       greatest(-0.6, least(0.6, (b.i - b.o) / (b.i + b.o))) AS colour\nFROM b JOIN $stations s USING (name)\nWHERE b.i + b.o \u003e= 1\nORDER BY out_of_place"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The busiest links between parts of the city in the hours kept, on the day picked: trips between H3 cells of\n-- about 0.7 km² on an average day, summed over the hours. The 300 busiest, drawn as animated arcs, wider and\n-- faster the more trips they carry. The hour filter names the bare column hour, which $links has too.\nWITH l AS (\n  SELECT cell0, cell1, any_value(lat0) AS lat0, any_value(lng0) AS lng0, any_value(lat1) AS lat1,\n         any_value(lng1) AS lng1, sum(trips) AS trips\n  FROM $links WHERE day = $day AND $__crossfilter($bikeFilters, -area)\n  GROUP BY cell0, cell1\n)\nSELECT lat0, lng0, lat1, lng1, round(trips) AS trips FROM l ORDER BY trips DESC LIMIT 300"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot is a Citi Bike station in the hours kept (drag across the chart of hours) on an average weekday or weekend day: orange where more bikes leave than arrive, blue where they pile up, larger the more bikes end up out of place. The arcs are the busiest links between parts of the city (H3 cells of about 0.7 km²). Draw an area to keep its stations in the figures.",
+          "id": 1,
+          "links": [],
+          "title": "Where the bikes go: stations emptying and filling, ${day}",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "areaVariable": "bikeArea",
+                "basemap": "openfreemap-dark",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.735,
+                      "longitude": -73.965,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 11.4
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-dark",
+                      "threeDBuildingColor": [
+                        9,
+                        9,
+                        9
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false,
+                          "show": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {}
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "bikes_out"
+                              },
+                              {
+                                "name": "bikes_in"
+                              },
+                              {
+                                "name": "balance"
+                              }
+                            ],
+                            "grafana-B": [
+                              {
+                                "name": "trips"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "stations",
+                        "links"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              79,
+                              163,
+                              224
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Balance of the hours kept",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#D9480F",
+                                  "#F28C38",
+                                  "#F6C08A",
+                                  "#A9CFEF",
+                                  "#4FA3E0",
+                                  "#1C6DB5"
+                                ],
+                                "name": "Emptying to filling",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": false,
+                              "radius": 6,
+                              "radiusRange": [
+                                3,
+                                22
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 0.99
+                            }
+                          },
+                          "id": "stations",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "colour",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "sizeField": {
+                              "name": "out_of_place",
+                              "type": "real"
+                            },
+                            "sizeScale": "sqrt",
+                            "strokeColorField": null,
+                            "strokeColorScale": "quantile"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              235,
+                              235,
+                              235
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat0": "lat0",
+                              "lat1": "lat1",
+                              "lng0": "lng0",
+                              "lng1": "lng1"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Busiest links",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    5,
+                                    "#4CC9F0"
+                                  ],
+                                  [
+                                    15,
+                                    "#73BF69"
+                                  ],
+                                  [
+                                    50,
+                                    "#FADE2A"
+                                  ],
+                                  [
+                                    null,
+                                    "#F2495C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#4CC9F0",
+                                  "#73BF69",
+                                  "#FADE2A",
+                                  "#F2495C"
+                                ],
+                                "name": "Km per trip",
+                                "type": "custom"
+                              },
+                              "elevationScale": 1,
+                              "historyField": "color",
+                              "opacity": 0.55,
+                              "sizeRange": [
+                                0.5,
+                                4
+                              ],
+                              "targetArrowEnabled": false,
+                              "targetArrowShape": "chevron",
+                              "targetArrowSize": 16,
+                              "thickness": 1,
+                              "trafficAnimate": true,
+                              "trafficArcHeight": 0.25,
+                              "trafficCycle": 6,
+                              "trafficDashLength": 0.5,
+                              "trafficDirectionMode": "straight",
+                              "trafficGlow": false,
+                              "trafficLaneBend": 0.12,
+                              "trafficLapsRange": [
+                                1,
+                                5
+                              ],
+                              "trafficShape": "arc",
+                              "trafficSpacing": 40,
+                              "trafficStyle": "comets",
+                              "trafficTiming": "together",
+                              "trafficTrail": 0.5
+                            }
+                          },
+                          "id": "links",
+                          "type": "traffic",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "reverseColorScale": "quantile",
+                            "reverseSizeScale": "linear",
+                            "reverseSpeedScale": "linear",
+                            "sizeField": {
+                              "name": "trips",
+                              "type": "real"
+                            },
+                            "sizeScale": "linear",
+                            "speedField": {
+                              "name": "trips",
+                              "type": "real"
+                            },
+                            "speedScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicColumns": "",
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "rasterServerUrl": "",
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "stat5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(bikes_out) AS \"Trips\" FROM $hourly WHERE day = $day AND $__crossfilter($bikeFilters)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips started in the hours kept on an average day of the kind picked (in the area drawn, if any).",
+          "id": 5,
+          "links": [],
+          "title": "Trips in the hours kept",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#E8E8E8",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT sum(greatest(i - o, 0)) AS \"Bikes\" FROM (SELECT name, sum(bikes_out) AS o, sum(bikes_in) AS i FROM $hourly WHERE day = $day AND $__crossfilter($bikeFilters) GROUP BY name)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Over the hours kept, the bikes that pile up at the stations that gain more than they lose: what Citi Bike's trucks and its Bike Angels have to carry back for the system to stay in balance.",
+          "id": 6,
+          "links": [],
+          "title": "Bikes left out of place",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#4FA3E0",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT count(*) AS \"Stations\" FROM (SELECT name, sum(bikes_out) AS o, sum(bikes_in) AS i FROM $hourly WHERE day = $day AND $__crossfilter($bikeFilters) GROUP BY name) WHERE o + i \u003e= 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Stations with at least one trip in the hours kept on an average day.",
+          "id": 7,
+          "links": [],
+          "title": "Stations",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#B07CE8",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "noValue": "–",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "story": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 10,
+          "links": [],
+          "title": "",
+          "transparent": true,
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### How New York's bike share breathes\n\nCiti Bike is a network of some 2,400 stations and the trips between them: about **180,000 on an average weekday**\nof September 2026. Each trip takes a bike from one dock and leaves it at another.\n\n**Breathe in.** From 7 to 10 in the morning the bikes leave the East Village, the Lower East Side, Hell's Kitchen,\nBrooklyn and Queens, and pile up around Penn Station and Grand Central, in Hudson Square and at the Brooklyn Navy\nYard: some **8,000 bikes**, one trip in four, end up where they are not wanted.\n\n**Breathe out.** From 5 in the evening the flow turns around, and by midnight the city has given almost all of them\nback: over the whole day only 1,500 end up out of place. On a weekend there is no rush to undo.\n\nDrag across the hours in the chart and watch the city fill and empty; draw an area on the map to follow one part.\n",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "map"
+              },
+              "height": 24,
+              "width": 15,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "story"
+              },
+              "height": 10,
+              "width": 9,
+              "x": 15,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "stat5"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 15,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "stat6"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 18,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "stat7"
+              },
+              "height": 4,
+              "width": 3,
+              "x": 21,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "hours"
+              },
+              "height": 10,
+              "width": 9,
+              "x": 15,
+              "y": 14
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "emptying"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 0,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "filling"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 8,
+              "y": 24
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "about"
+              },
+              "height": 10,
+              "width": 8,
+              "x": 16,
+              "y": 24
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "city",
+      "kepler",
+      "mosaic",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "2026-09-01T00:00:00.000Z",
+      "hideTimepicker": true,
+      "timezone": "America/New_York",
+      "to": "2026-10-01T00:00:00.000Z"
+    },
+    "title": "How New York's bike share breathes: Citi Bike hour by hour",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Citi Bike's stations in the month.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Stations",
+          "multi": false,
+          "name": "stations",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "stations",
+              "refId": "stations",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: Citi Bike's stations in the month, by name as the trips give it, placed at the median of the\n-- trips' coordinates there, with the trips that started and ended there (datasets/citibike in pacha-dashboards).\nSELECT name, latitude, longitude, trips_out, trips_in\nFROM read_parquet('http://feeds/datasets/citibike/stations.parquet')",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "Bikes out and in at each station, hour by hour, on an average day.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Hourly",
+          "multi": false,
+          "name": "hourly",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "hourly",
+              "refId": "hourly",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: for each station, kind of day (Weekday, or Weekend with the holidays) and hour of the day (New York\n-- time), the bikes taken out and brought in on an average day of that kind; with the station's place, so that an\n-- area drawn on the map can keep its stations.\nSELECT h.name, h.day, h.hour::INTEGER AS hour, h.bikes_out, h.bikes_in, s.latitude, s.longitude\nFROM read_parquet('http://feeds/datasets/citibike/hourly.parquet') h\nJOIN read_parquet('http://feeds/datasets/citibike/stations.parquet') s USING (name)",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "description": "The busiest links between parts of the city, hour by hour, on an average day.",
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Links",
+          "multi": false,
+          "name": "links",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "links",
+              "refId": "links",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: trips between H3 cells of about 0.7 km² (resolution 8) on an average day of each kind, by hour of\n-- departure: the 400 busiest pairs of cells in each hour, with the cells' centres.\nSELECT day, hour::INTEGER AS hour, cell0, cell1, lat0, lng0, lat1, lng1, trips\nFROM read_parquet('http://feeds/datasets/citibike/links.parquet')",
+                  "refId": "docks"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": false,
+          "current": {
+            "text": "Weekday",
+            "value": "Weekday"
+          },
+          "description": "An average working day, or an average Saturday, Sunday or holiday.",
+          "hide": "dontHide",
+          "includeAll": false,
+          "label": "Day",
+          "multi": false,
+          "name": "day",
+          "options": [
+            {
+              "selected": true,
+              "text": "Weekday",
+              "value": "Weekday"
+            },
+            {
+              "selected": false,
+              "text": "Weekend",
+              "value": "Weekend"
+            }
+          ],
+          "query": "Weekday, Weekend",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "7",
+            "value": "7"
+          },
+          "hide": "hideVariable",
+          "label": "Hours from",
+          "name": "hFrom",
+          "query": "7",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "10",
+            "value": "10"
+          },
+          "hide": "hideVariable",
+          "label": "Hours to",
+          "name": "hTo",
+          "query": "10",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Area",
+          "name": "bikeArea",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "label": "Filters",
+          "multi": false,
+          "name": "bikeFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$hourly",
+              "filters": [
+                {
+                  "column": "hour",
+                  "from": "$hFrom",
+                  "label": "Hours",
+                  "name": "hour",
+                  "to": "$hTo",
+                  "type": "range"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$bikeArea"
+                }
+              ],
+              "kind": "filters",
+              "refId": "bikeFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
