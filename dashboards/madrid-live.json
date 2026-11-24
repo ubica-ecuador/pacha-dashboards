@@ -2610,8 +2610,8 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1795451198196,
-                            1795484632732
+                            1795455000000,
+                            1795480200000
                           ],
                           "view": "side"
                         }
@@ -2665,7 +2665,7 @@
                         }
                       },
                       "joins": [],
-                      "layerBlending": "normal",
+                      "layerBlending": "additive",
                       "layerOrder": [
                         "pdhxfa",
                         "heat"
@@ -2866,7 +2866,7 @@
                               "buildingsPower": 2,
                               "buildingsReduce": "last",
                               "buildingsSensorRadius": 6,
-                              "buildingsSensors": true,
+                              "buildingsSensors": false,
                               "buildingsShadow": 0.35,
                               "cardAlertLabel": "",
                               "cardExtras": [],
@@ -2876,7 +2876,7 @@
                               "cardPinned": [],
                               "cardPlacement": "above",
                               "cardScale": "common",
-                              "cardShow": "hover",
+                              "cardShow": "tooltip",
                               "cardSize": "M",
                               "cardTimeField": "auto",
                               "cardUnit": " °C vs median",
@@ -2940,7 +2940,7 @@
                               "glowEnabled": false,
                               "glowExtent": 2,
                               "glowStrength": 0.5,
-                              "opacity": 1,
+                              "opacity": 0.4,
                               "outline": false,
                               "pulseDurationMs": 1000,
                               "pulseEnabled": false,
