@@ -376,6 +376,19 @@
                       "tooltip": false,
                       "viz": false
                     }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
                   }
                 },
                 "overrides": []
@@ -2351,7 +2364,21 @@
             "kind": "VizConfig",
             "spec": {
               "fieldConfig": {
-                "defaults": {},
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
                 "overrides": []
               },
               "options": {
@@ -2377,32 +2404,163 @@
                 "hoverMaxAgeSeconds": 60,
                 "hoverPublishSpike": false,
                 "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
                 "mapConfig": {
                   "config": {
                     "mapState": {
                       "bearing": -25,
                       "dragRotate": true,
-                      "latitude": 40.4185,
-                      "longitude": -3.7035,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 40.419567693985606,
+                      "longitude": -3.709937310754979,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
                       "pitch": 55,
-                      "zoom": 15.2
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 13.339508929944763
                     },
                     "mapStyle": {
-                      "styleType": "openfreemap-positron",
-                      "topLayerGroups": {},
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        64.2493441415438,
+                        75.42314312268185,
+                        102.42649066043215
+                      ],
+                      "topLayerGroups": {
+                        "road": false
+                      },
                       "visibleLayerGroups": {
                         "3d building": false,
                         "border": false,
                         "building": true,
+                        "buildingShadows": {
+                          "colour": [
+                            200,
+                            196,
+                            188
+                          ],
+                          "nightColour": [
+                            59,
+                            68,
+                            104
+                          ],
+                          "on": false,
+                          "opacity": 1,
+                          "shade": 1,
+                          "styleColour": true
+                        },
+                        "dayNightStyles": {
+                          "day": "openfreemap-liberty",
+                          "night": "openfreemap-fiord",
+                          "on": true
+                        },
                         "label": true,
                         "land": true,
                         "poi": false,
                         "relief": false,
                         "road": true,
+                        "streetLights": {
+                          "always": false,
+                          "colour": "warm",
+                          "intensity": 0.45,
+                          "on": false,
+                          "reach": 0.9
+                        },
                         "water": true
                       }
                     },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
                     "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
                       "effects": [
                         {
                           "id": "sun",
@@ -2427,7 +2585,7 @@
                             ],
                             "sunLightIntensity": 1,
                             "timeMode": "animation",
-                            "timestamp": 1795392000000,
+                            "timestamp": 1795389600000,
                             "timezone": "Europe/Madrid"
                           },
                           "type": "lightAndShadow"
@@ -2452,14 +2610,40 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            0,
-                            4102444800000
+                            1795464559088,
+                            1795476600000
                           ],
                           "view": "side"
                         }
                       ],
+                      "groupBys": [],
                       "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
                         "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
                           "enabled": true,
                           "fieldsToShow": {
                             "grafana-A": [
@@ -2474,12 +2658,177 @@
                               }
                             ]
                           }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
                         }
                       },
+                      "joins": [],
+                      "layerBlending": "normal",
                       "layerOrder": [
+                        "pdhxfa",
                         "heat"
                       ],
                       "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              244,
+                              109,
+                              67
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Copy of Air temperature around each building, °C above the city's median that hour",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "calloutAlertLabel": "auto",
+                              "calloutBase": "column",
+                              "calloutLift": 0,
+                              "calloutStem": 36,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    -3,
+                                    "#313695"
+                                  ],
+                                  [
+                                    -2,
+                                    "#4575B4"
+                                  ],
+                                  [
+                                    -1,
+                                    "#74ADD1"
+                                  ],
+                                  [
+                                    -0.5,
+                                    "#ABD9E9"
+                                  ],
+                                  [
+                                    0.5,
+                                    "#FFFFBF"
+                                  ],
+                                  [
+                                    1,
+                                    "#FEE090"
+                                  ],
+                                  [
+                                    2,
+                                    "#FDAE61"
+                                  ],
+                                  [
+                                    3,
+                                    "#F46D43"
+                                  ],
+                                  [
+                                    null,
+                                    "#D73027"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#313695",
+                                  "#4575B4",
+                                  "#74ADD1",
+                                  "#ABD9E9",
+                                  "#FFFFBF",
+                                  "#FEE090",
+                                  "#FDAE61",
+                                  "#F46D43",
+                                  "#D73027"
+                                ],
+                                "name": "°C above the city's median",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 1,
+                              "outline": false,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 0.9,
+                              "sparkCards": "auto",
+                              "sparkChangeColours": "neutral",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 7,
+                              "sparkDots": true,
+                              "sparkDotsOnTop": true,
+                              "sparkExtras": [],
+                              "sparkFill": true,
+                              "sparkMax": "auto",
+                              "sparkMin": "auto",
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": true,
+                              "sparkRange": "dashboard",
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": "",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "pdhxfa",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "above_median",
+                              "type": "real"
+                            },
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
+                          }
+                        },
                         {
                           "config": {
                             "color": [
@@ -2505,6 +2854,7 @@
                             "textLabel": [],
                             "visConfig": {
                               "allowHover": true,
+                              "billboard": false,
                               "buildingsAggregate": "mean",
                               "buildingsEmpty": "grey",
                               "buildingsHeightScale": 1,
@@ -2586,9 +2936,39 @@
                                 "type": "custom"
                               },
                               "filled": true,
-                              "opacity": 0.92,
+                              "fixedRadius": false,
+                              "glowEnabled": false,
+                              "glowExtent": 2,
+                              "glowStrength": 0.5,
+                              "opacity": 1,
                               "outline": false,
+                              "pulseDurationMs": 1000,
+                              "pulseEnabled": false,
+                              "pulseExpansion": 2,
+                              "pulseMode": "pulse",
+                              "pulseSpeed": 1,
+                              "pulseTimeField": "",
+                              "pulseTrigger": "continuous",
                               "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
                               "thickness": 2
                             }
                           },
@@ -2599,10 +2979,14 @@
                               "name": "above_median",
                               "type": "real"
                             },
-                            "colorScale": "custom"
+                            "colorScale": "custom",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantile"
                           }
                         }
-                      ]
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
                     }
                   },
                   "version": "v1"
@@ -2615,13 +2999,15 @@
                 "places": {},
                 "publishIntervalMs": 1500,
                 "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
                 "showSidePanel": false,
                 "timeSync": "variables",
                 "timeVariables": {
                   "from": "t0",
                   "to": "t1"
                 },
-                "tripLayerMode": "table",
                 "variableMappings": []
               }
             },
@@ -2742,6 +3128,19 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
@@ -2899,6 +3298,19 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "humidity"
                 },
                 "overrides": []
@@ -3485,6 +3897,19 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
@@ -3556,6 +3981,19 @@
                     "mode": "fixed"
                   },
                   "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
                   "unit": "celsius"
                 },
                 "overrides": []
