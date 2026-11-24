@@ -27,7 +27,7 @@
       }
     ],
     "cursorSync": "Crosshair",
-    "description": "Madrid now and its week replayed, from the City Council's open feeds: Informo's 4,600 traffic points every five minutes and its incidents, the stations' hourly NO₂, and every building coloured by the weather stations' temperature under the sun of the moment. Traffic, Air and Climate tabs on one window. Nothing simulated.",
+    "description": "Madrid now and its week replayed, from the City Council's open feeds: Informo's 4,600 traffic points every five minutes and its incidents, the stations' hourly NO₂, and every building coloured by the weather stations' temperature under the sun of the moment. Traffic, Air and Climate tabs on one window, nothing simulated; and a Buses tab, a weekday of EMT's buses as its timetable has them, with no map underneath.",
     "editable": true,
     "elements": {
       "panel-about": {
@@ -59,7 +59,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "**Sources**, all from the City Council of Madrid, read through Pacha's gateway (which keeps each file as long as the city takes to renew it, so the city sees one request per file whoever is looking):\n\n- **Traffic**: Informo, *Tráfico. Datos en tiempo real* ([datos.madrid.es](https://datos.madrid.es), dataset 202087): `pm.xml`, every measuring point of the city's network (loops under the street; radar with a speed on the M-30), rewritten every five minutes. The **load** (0-100, a little over at a point past its capacity) is Informo's own mix of the vehicles an hour and the share of time a vehicle is over the loop, against what the street takes; the **level of service** is Informo's: flowing, slow, queues, jammed. Points Informo flags as faulty are left out. Where each point stands is converted from UTM (EPSG:25830).\n- **Incidents**: Informo's `incid_aytomadrid.xml`, works, closures and accidents on the City Council's roads (not the regional or national ones), and the NO₂ protocol's scenario when one is declared.\n- **Air quality**: *Calidad del aire. Tiempo real* (dataset 212531): today's hourly readings of the 24 stations, a new hour some seventy minutes after its end; the stations' places from dataset 212629.\n- **Weather**: *Datos meteorológicos. Datos en tiempo real* (dataset 300392): today's hourly temperature, humidity, wind, rain, pressure and radiation of the weather stations (26, not all measuring everything); their places from dataset 300360.\n- **Buildings**: OpenStreetMap's, from OpenFreeMap's base map tiles, through Kepler Plus's Buildings layer; the sun and its shadows are kepler's Light \u0026 Shadow at the window's end.\n- **Districts**: the city's geoportal SIGMA, the 21 municipal districts.\n\n**History.** None of these feeds keeps any. Pacha's recorder keeps every Informo file (feed `madrid-traffic`, about 4,900 rows every five minutes) the air quality hours (`madrid-air`) and the weather hours (`madrid-meteo`) for a week, from the day it first ran: before that the bar and the matrix are empty.\n\n**How it is built.** The server (DuckDB) reads the feeds and the recording and sums the traffic by district and quarter of an hour; that small cube, and the stations' hourly air and weather, are loaded into your browser (Chaski, DuckDB-WASM), where the bar, the profile, the district bars and the matrix filter each other at once (Mosaic). The traffic map's 4,600 points are worked out on the server for the same selection. One window, on the bar of any tab, holds for all of them. A building's temperature is the inverse-distance mean of the stations around it. A district's figures place each point where the latest file puts it; its load in a quarter is the mean of its points' readings, and the hour profile the mean of the districts.\n\n**What this is not.** No figure here is simulated or estimated: what is not in the feeds (transit delays, waiting times, crowding) is not shown.\n\nData: Ayuntamiento de Madrid, under the terms of its open data portal (free use, citing the source). Built on Pacha: DuckDB on the server, Chaski and Mosaic in the browser, Kepler.gl Plus maps and Time Brush.",
+                "content": "**Sources**, all from the City Council of Madrid, read through Pacha's gateway (which keeps each file as long as the city takes to renew it, so the city sees one request per file whoever is looking):\n\n- **Traffic**: Informo, *Tráfico. Datos en tiempo real* ([datos.madrid.es](https://datos.madrid.es), dataset 202087): `pm.xml`, every measuring point of the city's network (loops under the street; radar with a speed on the M-30), rewritten every five minutes. The **load** (0-100, a little over at a point past its capacity) is Informo's own mix of the vehicles an hour and the share of time a vehicle is over the loop, against what the street takes; the **level of service** is Informo's: flowing, slow, queues, jammed. Points Informo flags as faulty are left out. Where each point stands is converted from UTM (EPSG:25830).\n- **Incidents**: Informo's `incid_aytomadrid.xml`, works, closures and accidents on the City Council's roads (not the regional or national ones), and the NO₂ protocol's scenario when one is declared.\n- **Air quality**: *Calidad del aire. Tiempo real* (dataset 212531): today's hourly readings of the 24 stations, a new hour some seventy minutes after its end; the stations' places from dataset 212629.\n- **Weather**: *Datos meteorológicos. Datos en tiempo real* (dataset 300392): today's hourly temperature, humidity, wind, rain, pressure and radiation of the weather stations (26, not all measuring everything); their places from dataset 300360.\n- **Buildings**: OpenStreetMap's, from OpenFreeMap's base map tiles, through Kepler Plus's Buildings layer; the sun and its shadows are kepler's Light \u0026 Shadow at the window's end.\n- **Districts**: the city's geoportal SIGMA, the 21 municipal districts.\n- **Buses**: EMT Madrid's GTFS timetable ([emtmadrid.es](https://www.emtmadrid.es), open data; MobilityData's mirror mdb-793), one ordinary weekday (Tuesday 24 November 2026): every stop of every bus, one trail per vehicle (a GTFS block). Built by `datasets/madrid-buses/build.sh` in pacha-dashboards, for any day.\n\n**History.** None of these feeds keeps any. Pacha's recorder keeps every Informo file (feed `madrid-traffic`, about 4,900 rows every five minutes) the air quality hours (`madrid-air`) and the weather hours (`madrid-meteo`) for a week, from the day it first ran: before that the bar and the matrix are empty.\n\n**How it is built.** The server (DuckDB) reads the feeds and the recording and sums the traffic by district and quarter of an hour; that small cube, and the stations' hourly air and weather, are loaded into your browser (Chaski, DuckDB-WASM), where the bar, the profile, the district bars and the matrix filter each other at once (Mosaic). The traffic map's 4,600 points are worked out on the server for the same selection. One window, on the bar of any tab, holds for all of them. A building's temperature is the inverse-distance mean of the stations around it. A district's figures place each point where the latest file puts it; its load in a quarter is the mean of its points' readings, and the hour profile the mean of the districts.\n\n**What this is not.** No figure here is simulated or estimated: what is not in the feeds (transit delays, waiting times, crowding) is not shown. The Buses tab is EMT's timetable, not where its buses really were.\n\nData: Ayuntamiento de Madrid, under the terms of its open data portal (free use, citing the source). Built on Pacha: DuckDB on the server, Chaski and Mosaic in the browser, Kepler.gl Plus maps and Time Brush.",
                 "mode": "markdown"
               }
             },
@@ -451,6 +451,176 @@
           }
         }
       },
+      "panel-buses-day": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: buses on a trip at each minute, from the start of the day (hours past 24 are the next morning).\n-- Sums are cast: a HUGEINT reaches the browser as text.\nSELECT round(epoch(a.minute - d.day::TIMESTAMP) / 3600, 3)::DOUBLE AS \"Hour\",\n       coalesce(sum(a.buses) FILTER (WHERE a.kind = 'Day'), 0)::INTEGER AS \"Day lines\",\n       coalesce(sum(a.buses) FILTER (WHERE a.kind = 'Night'), 0)::INTEGER AS \"Búhos (night lines)\"\nFROM read_parquet('http://feeds/datasets/madrid-buses/active.parquet') a, read_parquet('http://feeds/datasets/madrid-buses/day.parquet') d\nGROUP BY ALL ORDER BY 1"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Buses between the first and the last stop of a trip at each minute of the day, day lines and Búhos apart. Past 24 the hours run into the next morning.",
+          "id": 35,
+          "links": [],
+          "title": "Buses on the road, minute by minute",
+          "vizConfig": {
+            "group": "trend",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 18,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "none"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Hour"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.axisLabel",
+                        "value": "hour of the day (24 and on: after midnight)"
+                      },
+                      {
+                        "id": "min",
+                        "value": 4
+                      },
+                      {
+                        "id": "max",
+                        "value": 31
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Day lines"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#FFB347",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Búhos (night lines)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#6FA8FF",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "none"
+                },
+                "xField": "Hour"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
       "panel-climate-series": {
         "kind": "Panel",
         "spec": {
@@ -586,6 +756,43 @@
                   "showMiniMap": false
                 },
                 "content": "**Madrid's air, hour by hour.** The NO₂ of the City Council's 24 air quality stations: drag a window on the bar (the same window on every tab). The map spreads the stations' mean NO₂ in the window between them and gives each station its series (hover it).",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-guide-buses": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 29,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Madrid drawn by its buses.** No map underneath: every bus of EMT on an ordinary weekday, as its timetable has it, each a light that leaves a short trail from stop to stop. The streets, the squares and the M-30 come out of the buses alone. Press play under the map, or drag its time: after midnight the Búhos take over, 25 of their 32 lines from Cibeles. ▷ in Camera animation takes the camera once around the city.",
                 "mode": "markdown"
               }
             },
@@ -2357,6 +2564,297 @@
           }
         }
       },
+      "panel-map-buses": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: every stop of every bus on the day (datasets/madrid-buses, EMT's GTFS), one row each, in time order:\n-- a trip id, a time and a position make a Trip layer, one trail per bus. Times stay Madrid's clock time, passed as\n-- they are (kepler's clock reads them as UTC), so the map shows the hour a Madrileño would see wherever it is opened.\nSELECT 'Bus ' || bus AS trip_id, line, kind, time, latitude, longitude\nFROM read_parquet('http://feeds/datasets/madrid-buses/buses.parquet')\nORDER BY bus, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every bus of EMT Madrid on the day, from its GTFS timetable: one trip per vehicle, stop to stop, amber by day and blue for the Búhos at night. Nothing but the buses is drawn: the streets come out of them. Times are Madrid's; this is the timetable, not where the buses really were.",
+          "id": 34,
+          "links": [],
+          "title": "A weekday of EMT's buses, as scheduled, with no map underneath",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "no_map",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "hide",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": false,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": true,
+                      "latitude": 40.425,
+                      "longitude": -3.685,
+                      "pitch": 55,
+                      "zoom": 11.6
+                    },
+                    "mapStyle": {
+                      "styleType": "no_map"
+                    },
+                    "uiState": {
+                      "mapControls": {
+                        "mapLegend": {
+                          "active": false
+                        }
+                      }
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "currentTime": 1795509000000,
+                        "speed": 0.2
+                      },
+                      "cameraTour": {
+                        "stops": [
+                          {
+                            "camera": {
+                              "bearing": 0,
+                              "latitude": 40.425,
+                              "longitude": -3.685,
+                              "pitch": 55,
+                              "zoom": 11.6
+                            },
+                            "holdDurationMs": 0,
+                            "id": "orbit-0",
+                            "name": "North",
+                            "travelDurationMs": 15000
+                          },
+                          {
+                            "camera": {
+                              "bearing": 90,
+                              "latitude": 40.425,
+                              "longitude": -3.685,
+                              "pitch": 55,
+                              "zoom": 11.6
+                            },
+                            "holdDurationMs": 0,
+                            "id": "orbit-1",
+                            "name": "East",
+                            "travelDurationMs": 15000
+                          },
+                          {
+                            "camera": {
+                              "bearing": 180,
+                              "latitude": 40.425,
+                              "longitude": -3.685,
+                              "pitch": 55,
+                              "zoom": 11.6
+                            },
+                            "holdDurationMs": 0,
+                            "id": "orbit-2",
+                            "name": "South",
+                            "travelDurationMs": 15000
+                          },
+                          {
+                            "camera": {
+                              "bearing": 270,
+                              "latitude": 40.425,
+                              "longitude": -3.685,
+                              "pitch": 55,
+                              "zoom": 11.6
+                            },
+                            "holdDurationMs": 0,
+                            "id": "orbit-3",
+                            "name": "West",
+                            "travelDurationMs": 15000
+                          },
+                          {
+                            "camera": {
+                              "bearing": 360,
+                              "latitude": 40.425,
+                              "longitude": -3.685,
+                              "pitch": 55,
+                              "zoom": 11.6
+                            },
+                            "holdDurationMs": 0,
+                            "id": "orbit-4",
+                            "name": "North again",
+                            "travelDurationMs": 15000
+                          }
+                        ]
+                      },
+                      "filters": [],
+                      "interactionConfig": {
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "enabled": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "trip_id"
+                              },
+                              {
+                                "name": "line"
+                              },
+                              {
+                                "name": "kind"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "layerBlending": "additive",
+                      "layerOrder": [
+                        "buses"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              179,
+                              71
+                            ],
+                            "columnMode": "table",
+                            "columns": {
+                              "id": "trip_id",
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "timestamp": "time"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Buses",
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#FFB347",
+                                  "#6FA8FF"
+                                ],
+                                "name": "Day and night",
+                                "type": "custom"
+                              },
+                              "fadeTrail": true,
+                              "opacity": 0.85,
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "thickness": 1.6,
+                              "trailLength": 600
+                            }
+                          },
+                          "id": "buses",
+                          "type": "trip",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "kind",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": false,
+                "mosaicSelection": "",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
       "panel-map-climate": {
         "kind": "Panel",
         "spec": {
@@ -3035,6 +3533,298 @@
               }
             },
             "version": "2.3.2"
+          }
+        }
+      },
+      "stat-buses-fleet": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the vehicles of the day's timetable (GTFS blocks).\nSELECT buses AS \"Buses\" FROM read_parquet('http://feeds/datasets/madrid-buses/day.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every vehicle the timetable sends out on the day: a GTFS block, the runs one bus makes one after another.",
+          "id": 31,
+          "links": [],
+          "title": "Buses that run on the day",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F5F5F5",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-buses-lines": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the lines with at least one trip on the day, the Búhos (night lines) among them.\nSELECT lines AS \"Lines\" FROM read_parquet('http://feeds/datasets/madrid-buses/day.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Lines with at least one trip on the day, the night lines (Búhos) among them.",
+          "id": 32,
+          "links": [],
+          "title": "Lines",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#6FA8FF",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-buses-peak": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the most buses on a trip at the same minute (between a trip's first and last stop).\nSELECT max(b)::INTEGER AS \"Buses\" FROM (SELECT minute, sum(buses) AS b FROM read_parquet('http://feeds/datasets/madrid-buses/active.parquet') GROUP BY minute)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The most buses running at once on the day, minute by minute, between the first and the last stop of a trip.",
+          "id": 30,
+          "links": [],
+          "title": "Buses on the road at the peak",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FFB347",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "stat-buses-trips": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Server side: the trips of the day's timetable, end to end of a line.\nSELECT trips AS \"Trips\" FROM read_parquet('http://feeds/datasets/madrid-buses/day.parquet')"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Trips from one end of a line to the other on the day.",
+          "id": 33,
+          "links": [],
+          "title": "Trips",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#F5F5F5",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "unit": "locale"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
           }
         }
       },
@@ -4368,6 +5158,110 @@
                 }
               },
               "title": "Climate"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-guide-buses"
+                        },
+                        "height": 2,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-buses-peak"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 0,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-buses-fleet"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 6,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-buses-lines"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 12,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "stat-buses-trips"
+                        },
+                        "height": 4,
+                        "width": 6,
+                        "x": 18,
+                        "y": 2
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map-buses"
+                        },
+                        "height": 24,
+                        "width": 24,
+                        "x": 0,
+                        "y": 6
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-buses-day"
+                        },
+                        "height": 8,
+                        "width": 24,
+                        "x": 0,
+                        "y": 30
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Buses"
             }
           },
           {

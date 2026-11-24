@@ -60,8 +60,9 @@ test('follows the dashboards conventions', () => {
   assert.deepEqual(dashboard.spec.tags, [
     'air-quality', 'buildings', 'chaski', 'city', 'duckdb', 'kepler', 'live', 'mobility', 'mosaic', 'plus', 'weather',
   ]);
-  // Traffic, Air, Climate and About the data, as fiware-valencia: each with its own Time Brush on the one window.
-  assert.deepEqual(dashboard.spec.layout.spec.tabs.map((t) => t.spec.title), ['Traffic', 'Air', 'Climate', 'About the data']);
+  // Traffic, Air, Climate and About the data, as fiware-valencia: each with its own Time Brush on the one window; and
+  // Buses, a weekday of EMT's timetable on a map of its own clock, with no Time Brush.
+  assert.deepEqual(dashboard.spec.layout.spec.tabs.map((t) => t.spec.title), ['Traffic', 'Air', 'Climate', 'Buses', 'About the data']);
   const brushes = panelsByType(dashboard, 'ubica-timebrush-panel');
   assert.equal(brushes.length, 3);
   for (const b of brushes) assert.deepEqual(b.vizConfig.spec.options.variables, { from: 't0', to: 't1' });
@@ -187,6 +188,30 @@ test('the recording: a cube by district and quarter hour, and the points in a wi
   if (air.length) assert.deepEqual(await columns(air[0].url), await columns('http://feeds/recordings/madrid-air-empty.parquet'));
 });
 
+test("the Buses tab: a weekday of EMT's timetable, every bus a trip in Madrid", async () => {
+  const buses = mapTitled('A weekday of EMT');
+  const sql = buses.data.spec.queries[0].spec.query.spec.rawSql;
+  assert.match(sql, /http:\/\/feeds\/datasets\/madrid-buses\/buses\.parquet/);
+  assert.match(sql, /AS trip_id/);
+  assert.equal(buses.vizConfig.spec.options.basemap, 'no_map');
+  const [day] = await duckdb(STACK_URL, `SELECT * FROM read_parquet('http://feeds/datasets/madrid-buses/day.parquet')`);
+  // some 2,000 buses on some 230 lines make some 38,000 trips on a weekday
+  assert.ok(Number(day.buses) > 1500 && Number(day.buses) < 3000, `buses ${day.buses}`);
+  assert.ok(Number(day.lines) > 150 && Number(day.lines) < 300, `lines ${day.lines}`);
+  assert.ok(Number(day.trips) > 20_000, `trips ${day.trips}`);
+  const [b] = await duckdb(STACK_URL, `SELECT count(*) AS n, count(DISTINCT bus) AS buses,
+      count(*) FILTER (WHERE latitude BETWEEN 40.3 AND 40.6 AND longitude BETWEEN -3.9 AND -3.5) AS inside,
+      count(DISTINCT line) FILTER (WHERE kind = 'Night') AS night
+    FROM read_parquet('http://feeds/datasets/madrid-buses/buses.parquet')`);
+  assert.equal(Number(b.inside), Number(b.n));
+  assert.equal(Number(b.buses), Number(day.buses));
+  assert.ok(Number(b.night) >= 20, `night lines ${b.night}`);
+  // at the morning peak most of the fleet is out at once
+  const [p] = await duckdb(STACK_URL, `SELECT max(n)::INTEGER AS peak FROM (SELECT minute, sum(buses) AS n
+      FROM read_parquet('http://feeds/datasets/madrid-buses/active.parquet') GROUP BY minute)`);
+  assert.ok(Number(p.peak) > 0.6 * Number(day.buses) && Number(p.peak) <= Number(day.buses), `peak ${p.peak}`);
+});
+
 test('opens with no panel in error', { skip: noPlus }, async () => {
   const view = await openDashboard(`/d/${UID}`, { datasets: ['cube', 'districts', 'air', 'meteo'], timeoutMs: 150_000 });
   try {
@@ -197,9 +222,10 @@ test('opens with no panel in error', { skip: noPlus }, async () => {
     ]) {
       await view.panel(title);
     }
-    for (const tab of ['Air', 'Climate']) {
+    for (const tab of ['Air', 'Climate', 'Buses']) {
       await view.page.getByRole('tab', { name: tab }).click();
-      await view.page.waitForTimeout(8000);
+      // the Buses map loads a million stops from the server
+      await view.page.waitForTimeout(tab === 'Buses' ? 60000 : 8000);
       assert.equal(await view.panelErrors(), 0, tab);
     }
     assert.equal(await view.panelErrors(), 0);
