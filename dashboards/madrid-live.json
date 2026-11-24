@@ -1797,15 +1797,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 40.37695101640015,
-                      "longitude": -3.759298671896571,
+                      "latitude": 40.414753706228396,
+                      "longitude": -3.700366192321471,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
                       "pitch": 59.154635300956286,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 11.420163690018413
+                      "zoom": 14.520982140110473
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -1814,7 +1814,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-fiord",
+                      "styleType": "openfreemap-bright",
                       "threeDBuildingColor": [
                         230.92517894351974,
                         227.2005792831404,
@@ -1829,9 +1829,9 @@
                         "building": true,
                         "buildingShadows": {
                           "colour": [
-                            214,
-                            214,
-                            213
+                            192,
+                            192,
+                            192
                           ],
                           "nightColour": [
                             59,
@@ -1839,8 +1839,8 @@
                             104
                           ],
                           "on": true,
-                          "opacity": 1,
-                          "shade": 1,
+                          "opacity": 0.81,
+                          "shade": 0.66,
                           "styleColour": false
                         },
                         "dayNightStyles": {
@@ -1910,20 +1910,20 @@
                               255,
                               255
                             ],
-                            "ambientLightIntensity": 0.68,
+                            "ambientLightIntensity": 1.32,
                             "shadowColor": [
-                              0,
-                              0,
-                              0
+                              77,
+                              74,
+                              68
                             ],
-                            "shadowIntensity": 0.376,
+                            "shadowIntensity": 0.344,
                             "shadowMapResolution": 1,
                             "sunLightColor": [
                               255,
                               255,
                               255
                             ],
-                            "sunLightIntensity": 1.16,
+                            "sunLightIntensity": 1.6,
                             "timeMode": "animation",
                             "timestamp": 1795446120000,
                             "timezone": "America/Guayaquil"
@@ -1950,8 +1950,8 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1795458879544,
-                            1795476600000
+                            1795431600000,
+                            1795449320456
                           ],
                           "view": "side"
                         }
@@ -2215,7 +2215,7 @@
                               "glowEnabled": false,
                               "glowExtent": 2,
                               "glowStrength": 0.5,
-                              "opacity": 0.33,
+                              "opacity": 0.49,
                               "outline": false,
                               "pulseDurationMs": 1000,
                               "pulseEnabled": false,
