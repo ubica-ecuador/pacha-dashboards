@@ -1011,7 +1011,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": -80.70980653769178,
+                      "bearing": 171.78315535050217,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -1060,15 +1060,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 40.42066444014387,
-                      "longitude": -3.6902351878932396,
+                      "latitude": 40.44564479894504,
+                      "longitude": -3.691561964582099,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 45.971415976112745,
+                      "pitch": 54.76779255971533,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 12.460491070055234
+                      "zoom": 15.110344813843227
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -1077,7 +1077,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-dark",
+                      "styleType": "openfreemap-fiord",
                       "threeDBuildingColor": [
                         12.887291085429352,
                         12.887291085429352,
@@ -1087,16 +1087,19 @@
                         "3d building": true,
                         "label": true,
                         "poi": true,
-                        "road": false
+                        "road": true
                       },
                       "visibleLayerGroups": {
-                        "3d building": false,
+                        "3d building": true,
                         "border": false,
                         "building": true,
+                        "buildingShadows": false,
+                        "dayNightStyles": false,
                         "label": true,
                         "land": true,
                         "relief": false,
                         "road": true,
+                        "streetLights": false,
                         "water": true
                       }
                     },
@@ -1268,13 +1271,13 @@
                               "fixedSize": false,
                               "flowContext": {
                                 "camera": {
-                                  "bearing": -80.70980653769178,
-                                  "height": 711,
-                                  "latitude": 40.42066444014387,
-                                  "longitude": -3.6902351878932396,
-                                  "pitch": 45.971415976112745,
-                                  "width": 1499,
-                                  "zoom": 12.460491070055234
+                                  "bearing": 171.78315535050217,
+                                  "height": 814,
+                                  "latitude": 40.44564479894504,
+                                  "longitude": -3.691561964582099,
+                                  "pitch": 54.76779255971533,
+                                  "width": 1708,
+                                  "zoom": 15.110344813843227
                                 },
                                 "tallest": 0
                               },
@@ -1340,6 +1343,19 @@
                             "visConfig": {
                               "allowHover": true,
                               "billboard": false,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": "auto",
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "S",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
                               "colorRange": {
                                 "category": "Custom",
                                 "colors": [
@@ -1356,7 +1372,7 @@
                               "glowEnabled": false,
                               "glowExtent": 2,
                               "glowStrength": 0.5,
-                              "opacity": 0.78,
+                              "opacity": 0.9,
                               "outline": false,
                               "pulseDurationMs": 1000,
                               "pulseEnabled": false,
@@ -1375,7 +1391,15 @@
                               "streetsAggregate": "count",
                               "streetsClasses": "all",
                               "streetsEmpty": "hide",
+                              "streetsFlow": true,
+                              "streetsFlowLaps": [
+                                1,
+                                6
+                              ],
+                              "streetsFlowSpeed": "slower",
+                              "streetsFlowStyle": "dots",
                               "streetsIdField": "",
+                              "streetsInBaseMap": true,
                               "streetsJoin": true,
                               "streetsJoinDistance": 1000,
                               "streetsJoinGap": 120,
@@ -1389,7 +1413,7 @@
                               "streetsSensors": true,
                               "streetsSnap": 25,
                               "streetsTimeField": "auto",
-                              "streetsWidth": 2.5,
+                              "streetsWidth": 3,
                               "strokeColorRange": {
                                 "category": "Uber",
                                 "colors": [
@@ -1403,7 +1427,11 @@
                                 "name": "Global Warming",
                                 "type": "sequential"
                               },
-                              "thickness": 1
+                              "thickness": 1,
+                              "trafficCycle": 4,
+                              "trafficDashLength": 0.5,
+                              "trafficGlow": false,
+                              "trafficSpacing": 40
                             }
                           },
                           "id": "0nc68jb",
@@ -1646,7 +1674,11 @@
                             "heightScale": "linear",
                             "radiusScale": "linear",
                             "sizeScale": "linear",
-                            "strokeColorScale": "quantile"
+                            "strokeColorField": {
+                              "name": "mean_load_band",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "customOrdinal"
                           }
                         }
                       ],
