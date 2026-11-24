@@ -1951,7 +1951,7 @@
                           "type": "timeRange",
                           "value": [
                             1795458879544,
-                            1795482279544
+                            1795476600000
                           ],
                           "view": "side"
                         }
@@ -2103,13 +2103,7 @@
                               "sparkDotRadius": 6,
                               "sparkDots": true,
                               "sparkDotsOnTop": true,
-                              "sparkExtras": [
-                                {
-                                  "field": "no2",
-                                  "label": "",
-                                  "unit": ""
-                                }
-                              ],
+                              "sparkExtras": [],
                               "sparkFill": true,
                               "sparkMax": "auto",
                               "sparkMin": 0,
