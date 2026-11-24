@@ -2475,7 +2475,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-fiord",
+                      "styleType": "openfreemap-dark",
                       "threeDBuildingColor": [
                         64.2493441415438,
                         75.42314312268185,
@@ -2506,7 +2506,7 @@
                         },
                         "dayNightStyles": {
                           "day": "openfreemap-liberty",
-                          "night": "openfreemap-fiord",
+                          "night": "openfreemap-dark",
                           "on": true
                         },
                         "label": true,
@@ -2516,9 +2516,9 @@
                         "road": true,
                         "streetLights": {
                           "always": false,
-                          "colour": "warm",
-                          "intensity": 0.45,
-                          "on": false,
+                          "colour": "sodium",
+                          "intensity": 1.05,
+                          "on": true,
                           "reach": 0.9
                         },
                         "water": true
@@ -2610,8 +2610,8 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1795464559088,
-                            1795476600000
+                            1795451198196,
+                            1795484632732
                           ],
                           "view": "side"
                         }
