@@ -2441,7 +2441,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": -25,
+                      "bearing": 111.07018255131534,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -2490,15 +2490,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 40.419567693985606,
-                      "longitude": -3.709937310754979,
+                      "latitude": 40.42011203639444,
+                      "longitude": -3.7096830794425886,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_2D",
                       "maxPitch": 85,
-                      "pitch": 55,
+                      "pitch": 60.24129398460473,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 13.339508929944763
+                      "zoom": 15.326899237785756
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -2507,7 +2507,7 @@
                         0
                       ],
                       "mapStyles": {},
-                      "styleType": "openfreemap-dark",
+                      "styleType": "openfreemap-liberty",
                       "threeDBuildingColor": [
                         64.2493441415438,
                         75.42314312268185,
@@ -2537,13 +2537,15 @@
                           "styleColour": true
                         },
                         "dayNightStyles": {
+                          "blendMode": "additive",
+                          "blendWhen": "night",
                           "day": "openfreemap-liberty",
                           "night": "openfreemap-dark",
                           "on": true
                         },
                         "label": true,
                         "land": true,
-                        "poi": false,
+                        "poi": true,
                         "relief": false,
                         "road": true,
                         "streetLights": {
@@ -2642,8 +2644,8 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1795455000000,
-                            1795480200000
+                            1795444206734,
+                            1795525200000
                           ],
                           "view": "side"
                         }
@@ -2697,7 +2699,7 @@
                         }
                       },
                       "joins": [],
-                      "layerBlending": "additive",
+                      "layerBlending": "normal",
                       "layerOrder": [
                         "pdhxfa",
                         "heat"
@@ -2735,44 +2737,6 @@
                               "calloutStem": 36,
                               "colorRange": {
                                 "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    -3,
-                                    "#313695"
-                                  ],
-                                  [
-                                    -2,
-                                    "#4575B4"
-                                  ],
-                                  [
-                                    -1,
-                                    "#74ADD1"
-                                  ],
-                                  [
-                                    -0.5,
-                                    "#ABD9E9"
-                                  ],
-                                  [
-                                    0.5,
-                                    "#FFFFBF"
-                                  ],
-                                  [
-                                    1,
-                                    "#FEE090"
-                                  ],
-                                  [
-                                    2,
-                                    "#FDAE61"
-                                  ],
-                                  [
-                                    3,
-                                    "#F46D43"
-                                  ],
-                                  [
-                                    null,
-                                    "#D73027"
-                                  ]
-                                ],
                                 "colors": [
                                   "#313695",
                                   "#4575B4",
@@ -2853,10 +2817,10 @@
                           "type": "callout",
                           "visualChannels": {
                             "colorField": {
-                              "name": "above_median",
+                              "name": "temp_c",
                               "type": "real"
                             },
-                            "colorScale": "custom",
+                            "colorScale": "quantize",
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
@@ -2914,65 +2878,24 @@
                               "cardUnit": " °C vs median",
                               "cardValueField": "color",
                               "colorRange": {
-                                "category": "Custom",
-                                "colorMap": [
-                                  [
-                                    -3,
-                                    "#313695"
-                                  ],
-                                  [
-                                    -2,
-                                    "#4575B4"
-                                  ],
-                                  [
-                                    -1,
-                                    "#74ADD1"
-                                  ],
-                                  [
-                                    -0.5,
-                                    "#ABD9E9"
-                                  ],
-                                  [
-                                    0.5,
-                                    "#FFFFBF"
-                                  ],
-                                  [
-                                    1,
-                                    "#FEE090"
-                                  ],
-                                  [
-                                    2,
-                                    "#FDAE61"
-                                  ],
-                                  [
-                                    3,
-                                    "#F46D43"
-                                  ],
-                                  [
-                                    null,
-                                    "#D73027"
-                                  ]
-                                ],
+                                "category": "Uber",
                                 "colors": [
-                                  "#313695",
-                                  "#4575B4",
-                                  "#74ADD1",
-                                  "#ABD9E9",
-                                  "#FFFFBF",
-                                  "#FEE090",
-                                  "#FDAE61",
-                                  "#F46D43",
-                                  "#D73027"
+                                  "#00939C",
+                                  "#6BB5B9",
+                                  "#AAD7D9",
+                                  "#F4B198",
+                                  "#DF744E",
+                                  "#C22E00"
                                 ],
-                                "name": "°C above the city's median",
-                                "type": "custom"
+                                "name": "Uber Viz Diverging",
+                                "type": "diverging"
                               },
                               "filled": true,
                               "fixedRadius": false,
                               "glowEnabled": false,
                               "glowExtent": 2,
                               "glowStrength": 0.5,
-                              "opacity": 0.4,
+                              "opacity": 0.72,
                               "outline": false,
                               "pulseDurationMs": 1000,
                               "pulseEnabled": false,
@@ -3011,7 +2934,7 @@
                               "name": "above_median",
                               "type": "real"
                             },
-                            "colorScale": "custom",
+                            "colorScale": "quantize",
                             "sizeScale": "linear",
                             "strokeColorScale": "quantile"
                           }
