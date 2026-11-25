@@ -1,0 +1,61 @@
+    # NOAA CO-OPS (Tides and Currents) water levels behind us-tides-surge, no
+    # key. The station list of the water-level gauges with their flood levels
+    # (metres over each station's own zero, STND), kept a day.
+    location = /noaa-tides/stations.json {
+        proxy_pass http://127.0.0.1:8091/mdapi/prod/webapi/stations.json?type=waterlevels&expand=floodlevels&units=metric;
+        proxy_cache noaa_tides;
+        proxy_cache_key noaa-tides-stations;
+        proxy_cache_valid 200 1d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_read_timeout 120s;
+        proxy_cache_lock on;
+        proxy_cache_lock_timeout 120s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # A station's datums (MHHW, MLLW... over its zero), which turn its flood
+    # levels into heights over its mean higher high water. They change once in
+    # decades: kept a month.
+    location ~ "^/noaa-tides/datums/([0-9]{7})\.json$" {
+        proxy_pass http://127.0.0.1:8091/mdapi/prod/webapi/stations/$1/datums.json?units=metric;
+        proxy_cache noaa_tides;
+        proxy_cache_key noaa-tides-datums-$1;
+        proxy_cache_valid 200 30d;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_intercept_errors on;
+        error_page 404 429 500 502 503 504 = @noaa_tides_no_datums;
+        proxy_ignore_client_abort on;
+        proxy_read_timeout 120s;
+        proxy_cache_lock_timeout 120s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    location @noaa_tides_no_datums {
+        default_type application/json;
+        return 200 '{"datums": []}';
+    }
+    # A station's last 48 hours, every six minutes, in metres over its mean
+    # higher high water (MHHW), UTC, as CSV: water_level is what the gauge
+    # measured, predictions the astronomical tide. NOAA adds a reading every six
+    # minutes; a copy is renewed past a quarter of an hour, in the background,
+    # so a visitor never waits on it after the first. An error with nothing
+    # kept is a header and no rows: one station down must not fail the read of
+    # the other 238.
+    location ~ "^/noaa-tides/(water_level|predictions)/([0-9]{7})\.csv$" {
+        proxy_pass http://127.0.0.1:8091/api/prod/datagetter?product=$1&station=$2&range=48&datum=MHHW&units=metric&time_zone=gmt&format=csv&application=pacha;
+        proxy_cache noaa_tides;
+        proxy_cache_key noaa-tides-$1-$2;
+        proxy_cache_valid 200 15m;
+        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_intercept_errors on;
+        error_page 404 429 500 502 503 504 = @noaa_tides_none;
+        proxy_ignore_client_abort on;
+        proxy_read_timeout 120s;
+        proxy_cache_lock_timeout 120s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    location @noaa_tides_none {
+        default_type text/csv;
+        return 200 'Date Time, Value\n';
+    }

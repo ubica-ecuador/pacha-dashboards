@@ -1,0 +1,29 @@
+# NOAA CO-OPS water levels behind us-tides-surge: a copy of each station's
+# last 48 hours (observed and predicted) and of its datums, and a throttle that
+# holds what reaches NOAA to ten requests a second.
+proxy_cache_path /var/cache/nginx/noaa_tides levels=1:2 keys_zone=noaa_tides:10m
+                 max_size=500m inactive=30d use_temp_path=off;
+map $host $noaa_tides_bucket {
+    default noaa_tides;
+}
+limit_req_zone $noaa_tides_bucket zone=noaa_tides_upstream:1m rate=10r/s;
+
+# The throttle, as the IOC's in Pacha: only the noaa-tides locations call it,
+# from inside this container. Past ten a second requests wait in line (up to
+# 600, more than one refresh of every station) rather than reach NOAA at once.
+server {
+    listen 127.0.0.1:8091;
+    resolver 127.0.0.11 valid=300s ipv6=off;
+    proxy_ssl_server_name on;
+
+    location / {
+        limit_req zone=noaa_tides_upstream burst=600;
+        set $noaa_coops api.tidesandcurrents.noaa.gov;
+        proxy_pass https://$noaa_coops$request_uri;
+        proxy_set_header Host $noaa_coops;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_set_header Accept-Encoding gzip;
+        gunzip on;
+        proxy_read_timeout 60s;
+    }
+}
