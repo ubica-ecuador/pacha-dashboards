@@ -21,10 +21,10 @@
         proxy_cache noaa_tides;
         proxy_cache_key noaa-tides-datums-$1;
         proxy_cache_valid 200 30d;
-        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_use_stale error timeout updating http_403 http_429 http_500 http_502 http_503 http_504;
         proxy_cache_background_update on;
         proxy_intercept_errors on;
-        error_page 404 429 500 502 503 504 = @noaa_tides_no_datums;
+        error_page 403 404 429 500 502 503 504 = @noaa_tides_no_datums;
         proxy_ignore_client_abort on;
         proxy_read_timeout 120s;
         proxy_cache_lock_timeout 120s;
@@ -34,24 +34,40 @@
         default_type application/json;
         return 200 '{"datums": []}';
     }
-    # A station's last 48 hours, every six minutes, in metres over its mean
-    # higher high water (MHHW), UTC, as CSV: water_level is what the gauge
-    # measured, predictions the astronomical tide. NOAA adds a reading every six
-    # minutes; a copy is renewed past a quarter of an hour, in the background,
-    # so a visitor never waits on it after the first. An error with nothing
-    # kept is a header and no rows: one station down must not fail the read of
-    # the other 238.
-    location ~ "^/noaa-tides/(water_level|predictions)/([0-9]{7})\.csv$" {
-        proxy_pass http://127.0.0.1:8091/api/prod/datagetter?product=$1&station=$2&range=48&datum=MHHW&units=metric&time_zone=gmt&format=csv&application=pacha;
+    # A station's measured water of the last 48 hours, every six minutes, in
+    # metres over its mean higher high water (MHHW), UTC, as CSV. NOAA's data
+    # API turns a host away (403) after a few hundred requests in a burst, so a
+    # copy is renewed only past the hour, in the background: a visitor never
+    # waits on it after the first. An error with nothing kept is a header and
+    # no rows: one station down must not fail the read of the rest.
+    location ~ "^/noaa-tides/water_level/([0-9]{7})\.csv$" {
+        proxy_pass http://127.0.0.1:8091/api/prod/datagetter?product=water_level&station=$1&range=48&datum=MHHW&units=metric&time_zone=gmt&format=csv&application=pacha;
         proxy_cache noaa_tides;
-        proxy_cache_key noaa-tides-$1-$2;
-        proxy_cache_valid 200 15m;
-        proxy_cache_use_stale error timeout updating http_429 http_500 http_502 http_503 http_504;
+        proxy_cache_key noaa-tides-water_level-$1;
+        proxy_cache_valid 200 1h;
+        proxy_cache_use_stale error timeout updating http_403 http_429 http_500 http_502 http_503 http_504;
         proxy_cache_background_update on;
         proxy_intercept_errors on;
-        error_page 404 429 500 502 503 504 = @noaa_tides_none;
+        error_page 403 404 429 500 502 503 504 = @noaa_tides_none;
         proxy_ignore_client_abort on;
         proxy_read_timeout 120s;
+        proxy_cache_lock_timeout 120s;
+        add_header X-Cache-Status $upstream_cache_status always;
+    }
+    # A station's predicted tide (the tide tables), every six minutes, over
+    # MHHW, for the 96 hours from the start of a UTC day
+    # (/noaa-tides/predictions/<id>/<YYYYMMDD>.csv): a prediction does not
+    # change, so each day's copy is fetched once and kept.
+    location ~ "^/noaa-tides/predictions/([0-9]{7})/(20[0-9]{6})\.csv$" {
+        proxy_pass http://127.0.0.1:8091/api/prod/datagetter?product=predictions&station=$1&begin_date=$2&range=96&datum=MHHW&units=metric&time_zone=gmt&format=csv&application=pacha;
+        proxy_cache noaa_tides;
+        proxy_cache_key noaa-tides-predictions-$1-$2;
+        proxy_cache_valid 200 7d;
+        proxy_intercept_errors on;
+        error_page 403 404 429 500 502 503 504 = @noaa_tides_none;
+        proxy_ignore_client_abort on;
+        proxy_read_timeout 120s;
+        proxy_cache_lock on;
         proxy_cache_lock_timeout 120s;
         add_header X-Cache-Status $upstream_cache_status always;
     }
