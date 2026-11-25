@@ -1,0 +1,1861 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "us-tides-surge"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Crosshair",
+    "description": "NOAA’s tide gauges on the coasts of the United States and its islands over the last 48 hours: the tide travelling along each coast on a map, under the wind, with play; how far the water ran above or below the tide tables, gauge by gauge, in a grid; the gauges that passed their flood level; and the clicked gauge measured against its prediction and its flood level.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Where the data comes from\n\n- **Tide gauges**: NOAA’s [Center for Operational Oceanographic Products and Services](https://tidesandcurrents.noaa.gov/) (CO-OPS), its National Water Level Observation Network: the gauges on the coasts of the United States, Alaska, Hawaii, Puerto Rico, the Virgin Islands, Guam and American Samoa, read from its public data API (no key). The readings of the last days are **preliminary**, not yet verified by NOAA.\n- **Predictions**: the astronomical tide NOAA computes for each gauge from its harmonic constituents, the tide tables.\n- **Flood levels**: each gauge’s minor flood level, NOAA’s where it has one, else the National Weather Service’s, from its metadata API; about three gauges in four have one.\n- Taken are the tidal gauges (not the Great Lakes) with at least 12 hours of readings in the window.\n- **Wind**: NOAA’s GFS weather model, the wind 10 m over the ground and the sea, every three hours, read from PacIOOS’s ERDDAP (dataset `ncep_global`), on a three-degree grid from 16° N to 70° N and 180° W to 60° W.\n\n### How it is computed\n\n- **Heights are metres over each gauge’s mean higher high water (MHHW)**, the average of each day’s higher high tide over NOAA’s epoch (1983–2001): 0 is an ordinary high tide there, whatever the gauge’s own zero. The flood levels, which NOAA gives over the gauge’s zero, are moved onto MHHW with its datums.\n- **Over the tide tables** is measured minus predicted: the water the tide did not bring. Wind and air pressure (a storm surge), rivers in flood, and also what the predictions leave out: the sea’s rise since the epoch and its slow swings over the seasons and the years. So a coast can sit 0.2 or 0.3 m over its tables for days with no storm; a storm shows as a sharp rise on top of that.\n- **The map’s colour** is the measured water in bands: under an ordinary high tide by how much, over it, 0.3 m or more over it, and past the gauge’s flood level.\n- **The cards** over the gauges (Kepler Plus 3D Callouts) draw each gauge’s 48 hours over or under its tables, half-hour by half-hour, on one scale from −0.8 to +0.8 m; hovering the gauge’s series below moves a line across all of them, and across the timeline and the grid.\n- **The streamlines** are the wind each half hour, weighed between the model’s three-hour steps; they play with the gauges under the map. A wind blowing onshore for hours piles the water against a coast: the surge.\n- **The grid** orders the gauges coast by coast, each from one end to the other as the tide runs along it: Alaska from west to east, the Pacific from north to south, the Pacific islands from west to east, the Gulf of Mexico from west to east, the Atlantic and the Caribbean from north to south.\n- **Times are UTC**, every six minutes, the 48 hours before the current six-minute step.\n\n### How it works\n\nThe server reads each gauge (the measured water, the prediction and the datums of each) through Pacha’s gateway, which keeps a copy of each and renews it in the background once it is an hour old (the predictions once a day, the datums once a month), and hands the readings to your browser (Chaski). The filters, play, the map and the grid (Mosaic) are answered there, without going back to the server. **Reload the page** to bring in new readings.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-count": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Gauges with a reading in the window and the filters.",
+          "id": 4,
+          "links": [],
+          "title": "Tide gauges",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  tideFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: tides, filterBy: $tideFilters }\n    text: { sql: \"(count(DISTINCT id) FILTER (WHERE has_reading = 1))::VARCHAR\" }\n    frameAnchor: middle\n    fill: '#5794F2'\n    fontSize: 44\n    fontWeight: 500\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-flooding": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Gauges whose water passed their minor flood level (NOAA’s, else the Weather Service’s) at least once in the window and the filters, of those that have one.",
+          "id": 12,
+          "links": [],
+          "title": "Over their flood level",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  tideFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: tides, filterBy: $tideFilters }\n    text: { sql: \"(count(DISTINCT id) FILTER (WHERE flooding = 1))::VARCHAR\" }\n    frameAnchor: middle\n    dy: -9\n    fill: '#F2495C'\n    fontSize: 32\n    fontWeight: 500\n  - mark: text\n    data: { from: tides, filterBy: $tideFilters }\n    text: { sql: \"'of ' || count(DISTINCT id) FILTER (WHERE flood IS NOT NULL AND has_reading = 1) || ' with a flood level'\" }\n    frameAnchor: middle\n    dy: 16\n    fill: currentColor\n    fontSize: 12\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-heatmap": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each row a gauge, coast by coast along the way the tide runs; each column six minutes. Red where the water stood over its predicted tide, blue where under. Drag across it to pick hours.",
+          "id": 8,
+          "links": [],
+          "title": "Over or under the tide tables, gauge by gauge",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  tideFilters: { select: crossfilter }\nvconcat:\n  - legend: color\n    for: grid\n    label: Measured minus predicted (m)\n  - name: grid\n    plot:\n      - mark: raster\n        data: { from: tides, filterBy: $tideFilters }\n        x: time\n        y: lane\n        fill: { sql: \"coalesce(max(above_tables), 0)\" }\n        fillOpacity: { max: has_reading }\n        width: 480\n        height: 262\n        pad: 0.99\n        imageRendering: pixelated\n      - mark: text\n        data: { from: tides }\n        x: { min: time }\n        y: { min: lane }\n        text: coast\n        textAnchor: start\n        lineAnchor: bottom\n        dx: 4\n        dy: -1\n        fill: currentColor\n        stroke: '#000000'\n        strokeOpacity: 0.6\n        strokeWidth: 3\n        paintOrder: stroke\n        fontSize: 12\n        fontWeight: 600\n      - select: intervalX\n        as: $tideFilters\n        field: time\n    colorScheme: rdbu\n    colorReverse: true\n    colorDomain: [-0.8, 0.8]\n    opacityDomain: [0, 1]\n    xDomain: Fixed\n    yDomain: [1, 262]\n    yReverse: true\n    yAxis: null\n    xLabel: null\n    xTickFormat: '%a %H:%M'\n    marginLeft: 4\n    marginRight: 4\n    marginTop: 18\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-hint": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 9,
+          "links": [],
+          "title": "A port",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Click a tide gauge on the map** to see its water here against its prediction and its flood level, over the last 48 hours.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-largest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The most the water ran over its predicted tide at one gauge, in the window and the filters.",
+          "id": 6,
+          "links": [],
+          "title": "Most over the tide tables",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  tideFilters: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: tides, filterBy: $tideFilters }\n    text: { sql: \"coalesce(printf('+%.2f m', max(above_tables)), '–')\" }\n    frameAnchor: middle\n    dy: -9\n    fill: '#F2495C'\n    fontSize: 32\n    fontWeight: 500\n  - mark: text\n    data: { from: tides, filterBy: $tideFilters }\n    text: { sql: \"coalesce(arg_max(station || ', ' || state, above_tables), '')\" }\n    frameAnchor: middle\n    dy: 16\n    fill: currentColor\n    fontSize: 12\nxAxis: null\nyAxis: null\nmargin: 0\ncolorScale: identity\n",
+                "variables": ""
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      },
+      "panel-latest": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(latest) AS time FROM $tides"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The newest 15-minute reading of all the tide gauges. Each network arrives with its own delay: from minutes to a few hours.",
+          "id": 5,
+          "links": [],
+          "title": "Latest data",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "text",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "dateTimeFromNow"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- Every six-minute reading of every gauge (has_reading = 1), oldest first, so a gauge shows the\n-- latest one the time window holds on top. The time, coast and area filters reach the map from the\n-- Mosaic selection (mosaicSelection) and filter it on the GPU; the gauge search is here.\nSELECT id, station, state, coast, latitude, longitude, time, observed, predicted, above_tables, flood, water\nFROM $tides\nWHERE has_reading = 1 AND contains(lower(station), lower(${search:sqlstring}))\nORDER BY time, id"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The 48 hours of every gauge over or under its tide tables, half-hour by half-hour (the mean of\n-- its six-minute readings), for the Sparkline cards: the whole window whatever the time slider shows.\n-- No quote marks in these comments: Chaski would read a macro after one.\nSELECT id, station, latitude, longitude, time_bucket(INTERVAL 30 MINUTE, time) AS time,\n       round(avg(above_tables), 3) AS above_tables\nFROM $tides\nWHERE has_reading = 1 AND above_tables IS NOT NULL AND contains(lower(station), lower(${search:sqlstring}))\nGROUP BY ALL\nORDER BY id, time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The wind each half hour of the 48 hours (dataset wind), for the streamlines: the time slider\n-- under the map picks the half hour, as it does for the gauges.\nSELECT time, latitude, longitude, u, v FROM $wind ORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Each dot a gauge, coloured by its water over its mean higher high water (MHHW, an ordinary high tide there), and beside it a card of its 48 hours over (red) or under (blue) its tide tables; red past its flood level. Play the slider under the map, half an hour at a time, to watch the tide travel along the coasts. Click a gauge for its water against its prediction.",
+          "id": 3,
+          "links": [],
+          "title": "NOAA’s tide gauges — the water over an ordinary high tide",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "areaVariable": "tide_area",
+                "basemap": "dark-matter",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dimUnselected": false,
+                "flowRenderMode": "straight",
+                "followGrafanaTheme": true,
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 0,
+                      "dragRotate": false,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 39,
+                      "longitude": -112,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 0,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 2.75
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        15.035172933000911,
+                        15.035172933000911,
+                        15.035172933000911
+                      ],
+                      "topLayerGroups": {},
+                      "visibleLayerGroups": {
+                        "border": false,
+                        "building": true,
+                        "label": true,
+                        "land": true,
+                        "poi": true,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [
+                        {
+                          "animationWindow": "interval",
+                          "dataId": [
+                            "grafana-A",
+                            "grafana-C"
+                          ],
+                          "enabled": true,
+                          "id": "time",
+                          "name": [
+                            "time",
+                            "time"
+                          ],
+                          "plotType": {
+                            "aggregation": "average",
+                            "defaultTimeFormat": "L  H A",
+                            "interval": "30-minute",
+                            "type": "histogram"
+                          },
+                          "speed": 1,
+                          "type": "timeRange",
+                          "value": [
+                            0,
+                            4102444800000
+                          ],
+                          "view": "enlarged"
+                        }
+                      ],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "format": null,
+                                  "name": "station"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "state"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "time"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "observed"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "predicted"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "above_tables"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "flood"
+                                }
+                              ],
+                              "grafana-B": [
+                                {
+                                  "format": null,
+                                  "name": "station"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "time"
+                                },
+                                {
+                                  "format": null,
+                                  "name": "above_tables"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "station"
+                              },
+                              {
+                                "name": "country"
+                              },
+                              {
+                                "format": "L LT",
+                                "name": "time"
+                              },
+                              {
+                                "name": "above_low"
+                              },
+                              {
+                                "name": "fraction"
+                              },
+                              {
+                                "name": "trend"
+                              },
+                              {
+                                "name": "tide_range"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "tides",
+                        "tables",
+                        "wind"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              42,
+                              120,
+                              142
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Tide gauges",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "More than 1 m under (low tide)",
+                                    "#1F4E9C"
+                                  ],
+                                  [
+                                    "0.5 to 1 m under",
+                                    "#3D7FD1"
+                                  ],
+                                  [
+                                    "Up to 0.5 m under",
+                                    "#8FC1EE"
+                                  ],
+                                  [
+                                    "Over an ordinary high tide",
+                                    "#F2F2F2"
+                                  ],
+                                  [
+                                    "0.3 m or more over high tide",
+                                    "#FFB347"
+                                  ],
+                                  [
+                                    "Over its flood level",
+                                    "#F2495C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1F4E9C",
+                                  "#3D7FD1",
+                                  "#8FC1EE",
+                                  "#F2F2F2",
+                                  "#FFB347",
+                                  "#F2495C"
+                                ],
+                                "name": "Under and over high tide",
+                                "type": "custom"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 22,
+                              "radiusRange": [
+                                2.5,
+                                16
+                              ],
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "strokeColor": [
+                                24,
+                                28,
+                                36
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "More than 1 m under (low tide)",
+                                    "#1F4E9C"
+                                  ],
+                                  [
+                                    "0.5 to 1 m under",
+                                    "#3D7FD1"
+                                  ],
+                                  [
+                                    "Up to 0.5 m under",
+                                    "#8FC1EE"
+                                  ],
+                                  [
+                                    "Over an ordinary high tide",
+                                    "#F2F2F2"
+                                  ],
+                                  [
+                                    "0.3 m or more over high tide",
+                                    "#FFB347"
+                                  ],
+                                  [
+                                    "Over its flood level",
+                                    "#F2495C"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#1F4E9C",
+                                  "#3D7FD1",
+                                  "#8FC1EE",
+                                  "#F2F2F2",
+                                  "#FFB347",
+                                  "#F2495C"
+                                ],
+                                "name": "Under and over high tide",
+                                "type": "custom"
+                              },
+                              "thickness": 0.6
+                            }
+                          },
+                          "id": "tides",
+                          "type": "point",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "water",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "sizeField": null,
+                            "sizeScale": "linear",
+                            "strokeColorScale": "ordinal"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              242,
+                              242,
+                              242
+                            ],
+                            "columnMode": "points",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-B",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Over or under the tide tables, 48 hours",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "billboard": false,
+                              "calloutAlertLabel": "",
+                              "calloutBase": "column",
+                              "calloutLift": 0,
+                              "calloutStem": 36,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colors": [
+                                  "#2166AC",
+                                  "#67A9CF",
+                                  "#D1E5F0",
+                                  "#FDDBC7",
+                                  "#EF8A62",
+                                  "#B2182B"
+                                ],
+                                "name": "Under to over the tables",
+                                "type": "diverging"
+                              },
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.78,
+                              "outline": true,
+                              "radius": 7,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "rowsAsset": "auto",
+                              "showHighlightColor": true,
+                              "showNeighborOnHover": false,
+                              "sparkAlertWorst": false,
+                              "sparkAlerts": false,
+                              "sparkCardOpacity": 1,
+                              "sparkCards": "auto",
+                              "sparkChangeColours": "risingBad",
+                              "sparkCrossValue": true,
+                              "sparkCrosshair": true,
+                              "sparkDotRadius": 8,
+                              "sparkDots": false,
+                              "sparkFill": true,
+                              "sparkMax": 0.8,
+                              "sparkMin": -0.8,
+                              "sparkNoDataAfter": "auto",
+                              "sparkOverlap": "none",
+                              "sparkPinned": [],
+                              "sparkPublishCrosshair": true,
+                              "sparkScale": "common",
+                              "sparkSize": "S",
+                              "sparkTimeField": "auto",
+                              "sparkTooltip": false,
+                              "sparkUnit": "m",
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "thickness": 2
+                            }
+                          },
+                          "id": "tables",
+                          "type": "callout",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "above_tables",
+                              "type": "real"
+                            },
+                            "colorScale": "quantize",
+                            "sizeScale": "linear",
+                            "strokeColorScale": "quantize"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              200,
+                              214,
+                              229
+                            ],
+                            "columnMode": "components",
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude",
+                              "u": "u",
+                              "v": "v"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Wind at 10 m (GFS)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "animate": true,
+                              "calmOpacity": 0.1,
+                              "colorBySpeed": false,
+                              "colorRange": {
+                                "category": "ColorBrewer",
+                                "colors": [
+                                  "#FFF7FB",
+                                  "#DBDAEB",
+                                  "#9BB9D9",
+                                  "#4394C3",
+                                  "#0667A1",
+                                  "#023858"
+                                ],
+                                "name": "PuBu",
+                                "type": "sequential"
+                              },
+                              "cycleSeconds": 20,
+                              "density": 7000,
+                              "directionConvention": "from",
+                              "elevationScale": 1,
+                              "fixedSpeedRange": false,
+                              "gradientDirection": "downhill",
+                              "heightMeters": 0,
+                              "lifeFraction": 0.8,
+                              "lineLength": 30,
+                              "opacity": 0.55,
+                              "opacityBySpeed": true,
+                              "seamlessLoop": true,
+                              "smoothing": 3,
+                              "thickness": 1.4,
+                              "trailShare": 8,
+                              "widthBySpeed": false,
+                              "widthRange": [
+                                1,
+                                5
+                              ],
+                              "zoomResponse": 0.4
+                            }
+                          },
+                          "id": "wind",
+                          "type": "flowfield",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "mosaicArea": true,
+                "mosaicSelection": "tideFilters",
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "tripLayerMode": "table",
+                "variableMappings": [
+                  {
+                    "field": "id",
+                    "source": "click",
+                    "variable": "gauge"
+                  },
+                  {
+                    "field": "station",
+                    "source": "click",
+                    "variable": "gauge_name"
+                  }
+                ]
+              }
+            },
+            "version": "1.0.0"
+          }
+        }
+      },
+      "panel-read": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 7,
+          "links": [],
+          "title": "How to read it",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "**Colour**: water over an ordinary high tide, red past its flood level · **Streaks**: the wind · **Play** under the map · **Grid**: red over the tide tables, blue under · **Click** a gauge",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-series": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The clicked gauge every six minutes, from the copies the gateway keeps for the dataset: measured,\n-- predicted and its minor flood level, all in metres over its mean higher high water (MHHW).\n-- One GET per file and no HEAD: the gateway renews its copies in the background.\nSET force_download = true;\n-- With no gauge clicked, The Battery's copies are read and no row kept: a made-up id would reach NOAA.\nSET VARIABLE picked = regexp_full_match($gauge, '[0-9]{7}');\nSET VARIABLE gid = CASE WHEN getvariable('picked') THEN $gauge ELSE '8518750' END;\nSET VARIABLE wl = 'http://feeds/noaa-tides/water_level/' || getvariable('gid') || '.csv';\nSET VARIABLE pr = 'http://feeds/noaa-tides/predictions/' || getvariable('gid') || '/' || strftime((now() - INTERVAL 48 HOUR)::DATE, '%Y%m%d') || '.csv';\nSET VARIABLE dt = 'http://feeds/noaa-tides/datums/' || getvariable('gid') || '.json';\nSET VARIABLE flood = (\n  SELECT coalesce(s.floodlevels.nos_minor, s.floodlevels.nws_minor)::DOUBLE\n         - (SELECT list_filter(datums, d -\u003e d.name = 'MHHW')[1].value::DOUBLE\n            FROM read_json(getvariable('dt'), columns = {datums: 'STRUCT(name VARCHAR, value DOUBLE)[]'}))\n  FROM (SELECT unnest(stations) AS s FROM read_json('http://feeds/noaa-tides/stations.json', maximum_object_size = 100000000))\n  WHERE s.id = getvariable('gid')\n);\nWITH observed AS (\n  SELECT try_strptime(t, '%Y-%m-%d %H:%M') AS time, try_cast(v AS DOUBLE) AS v\n  FROM read_csv(getvariable('wl'), header = true, all_varchar = true, null_padding = true, names = ['t', 'v', 's', 'o', 'f', 'r', 'l', 'q'])\n),\npredicted AS (\n  SELECT try_strptime(t, '%Y-%m-%d %H:%M') AS time, try_cast(v AS DOUBLE) AS v\n  FROM read_csv(getvariable('pr'), header = true, all_varchar = true, null_padding = true, names = ['t', 'v'])\n)\n-- Each reading on its six-minute step (a few gauges read off the marks); the tide tables go on 12 hours\n-- past now.\nSELECT time, round(avg(o), 3) AS \"Measured\", round(avg(p), 3) AS \"Predicted (tide tables)\",\n       round(getvariable('flood'), 3) AS \"Minor flood level\"\nFROM (SELECT time_bucket(INTERVAL 6 MINUTE, time) AS time, v AS o, NULL::DOUBLE AS p FROM observed\n      UNION ALL\n      SELECT time_bucket(INTERVAL 6 MINUTE, time), NULL, v FROM predicted)\nWHERE getvariable('picked') AND time \u003e= now()::TIMESTAMP - INTERVAL 48 HOUR AND time \u003c= now()::TIMESTAMP + INTERVAL 12 HOUR\nGROUP BY time\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The clicked gauge every six minutes over the last 48 hours, in metres over its ordinary high tide (MHHW): measured, the tide tables’ prediction, and its minor flood level.",
+          "id": 10,
+          "links": [],
+          "title": "Measured and predicted — ${gauge_name}",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#8FC1EE",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": 1800000,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "lengthm"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Measured"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#8FC1EE",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Predicted (tide tables)"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#A0A0A8",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineStyle",
+                        "value": {
+                          "dash": [
+                            6,
+                            6
+                          ],
+                          "fill": "dash"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Minor flood level"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F2495C",
+                          "mode": "fixed"
+                        }
+                      },
+                      {
+                        "id": "custom.lineStyle",
+                        "value": {
+                          "dash": [
+                            6,
+                            6
+                          ],
+                          "fill": "dash"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.2.1"
+          }
+        }
+      },
+      "panel-timeline": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The 15-minute readings of the tide gauges through the day (UTC), with the other filters as pills. Drag to pick a window, or press play: the window travels through the day and the map shows each port’s tide at its end.",
+          "id": 1,
+          "links": [],
+          "title": "The last 48 hours (UTC)",
+          "vizConfig": {
+            "group": "ubica-chaski-filters-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "bins": 96,
+                "filters": "tideFilters",
+                "layout": "timeline",
+                "maxValues": 8,
+                "noun": "readings",
+                "playMode": "slide",
+                "playMotion": "smooth",
+                "selection": "",
+                "stepMs": 800,
+                "timeColumn": "",
+                "timeline": "time"
+              }
+            },
+            "version": "2.2.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-count"
+                        },
+                        "height": 3,
+                        "width": 3,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-largest"
+                        },
+                        "height": 3,
+                        "width": 5,
+                        "x": 3,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-flooding"
+                        },
+                        "height": 3,
+                        "width": 4,
+                        "x": 8,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-latest"
+                        },
+                        "height": 3,
+                        "width": 3,
+                        "x": 12,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-read"
+                        },
+                        "height": 3,
+                        "width": 9,
+                        "x": 15,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-timeline"
+                        },
+                        "height": 5,
+                        "width": 24,
+                        "x": 0,
+                        "y": 3
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-map"
+                        },
+                        "height": 23,
+                        "width": 13,
+                        "x": 0,
+                        "y": 8
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-heatmap"
+                        },
+                        "height": 23,
+                        "width": 11,
+                        "x": 13,
+                        "y": 8
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Map"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "conditionalRendering": {
+                "kind": "ConditionalRenderingGroup",
+                "spec": {
+                  "condition": "and",
+                  "items": [
+                    {
+                      "kind": "ConditionalRenderingVariable",
+                      "spec": {
+                        "operator": "equals",
+                        "value": "",
+                        "variable": "gauge"
+                      }
+                    }
+                  ],
+                  "visibility": "show"
+                }
+              },
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-hint"
+                        },
+                        "height": 2,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Hint"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "conditionalRendering": {
+                "kind": "ConditionalRenderingGroup",
+                "spec": {
+                  "condition": "and",
+                  "items": [
+                    {
+                      "kind": "ConditionalRenderingVariable",
+                      "spec": {
+                        "operator": "notEquals",
+                        "value": "",
+                        "variable": "gauge"
+                      }
+                    }
+                  ],
+                  "visibility": "show"
+                }
+              },
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-series"
+                        },
+                        "height": 9,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Port"
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "collapse": false,
+              "hideHeader": true,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 17,
+                        "width": 24,
+                        "x": 0,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Data"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "duckdb",
+      "kepler",
+      "maritime",
+      "mosaic",
+      "plus",
+      "water"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-48h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "US coasts: the tide, and the water the tide tables did not expect",
+    "variables": [
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "tides",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "tides",
+              "refId": "tides",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: NOAA's water-level gauges on the coasts of the United States and its islands\n-- (CO-OPS, Tides and Currents), the last 48 hours every six minutes, through the gateway,\n-- which keeps a copy of each station's measured water renewed every hour and its predictions\n-- for the day (one request per station and product).\n--\n-- Heights are metres over each station's mean higher high water (MHHW): 0 is an ordinary high\n-- tide there, whatever the station's own zero. observed is what the gauge measured, predicted\n-- the astronomical tide NOAA computes for it (the tide tables), and above_tables the difference:\n-- what wind, pressure and rivers added to the tide or took from it, with what the tables leave out\n-- (the sea's rise since NOAA's 1983-2001 epoch, its swings over the seasons). flood is the station's minor flood level over\n-- MHHW (NOS's, else the Weather Service's), where it has one.\n-- Kept: tidal stations (no Great Lakes) with 12 hours of readings or more in the window.\n-- The window: the 480 six-minute steps before the current one, so every day has the same columns.\n-- One GET per file and no HEAD: the gateway renews its copies in the background, and a copy\n-- renewed between DuckDB's HEAD and GET could come back cut. The setting outlives this query on\n-- the shared connection.\nSET force_download = true;\nSET VARIABLE window_end = time_bucket(INTERVAL 6 MINUTE, now()::TIMESTAMP);\nSET VARIABLE window_start = getvariable('window_end') - INTERVAL 48 HOUR;\nSET VARIABLE stations = (\n  SELECT list(s) FROM (\n    SELECT unnest(stations) AS s FROM read_json('http://feeds/noaa-tides/stations.json', maximum_object_size = 100000000)\n  ) WHERE s.tidal AND NOT s.greatlakes\n);\nSET VARIABLE ids = (SELECT list(s.id) FROM (SELECT unnest(getvariable('stations')) AS s));\nWITH stations AS (\n  SELECT s.id, s.name, s.state, s.lat::DOUBLE AS latitude, s.lng::DOUBLE AS longitude,\n         coalesce(s.floodlevels.nos_minor, s.floodlevels.nws_minor)::DOUBLE AS flood_stnd\n  FROM (SELECT unnest(getvariable('stations')) AS s)\n),\ndatums AS (\n  SELECT regexp_extract(filename, '([0-9]{7})\\.json$', 1) AS id,\n         list_filter(datums, d -\u003e d.name = 'MHHW')[1].value::DOUBLE AS mhhw_stnd\n  FROM read_json(list_transform(getvariable('ids'), i -\u003e 'http://feeds/noaa-tides/datums/' || i || '.json'),\n                 columns = {datums: 'STRUCT(name VARCHAR, value DOUBLE)[]'}, filename = true)\n),\nobserved AS (\n  SELECT regexp_extract(filename, '([0-9]{7})\\.csv$', 1) AS id, try_strptime(t, '%Y-%m-%d %H:%M') AS time, try_cast(v AS DOUBLE) AS observed\n  FROM read_csv(list_transform(getvariable('ids'), i -\u003e 'http://feeds/noaa-tides/water_level/' || i || '.csv'),\n                header = true, all_varchar = true, null_padding = true, filename = true,\n                names = ['t', 'v', 's', 'o', 'f', 'r', 'l', 'q'])\n),\npredicted AS (\n  SELECT regexp_extract(filename, '/predictions/([0-9]{7})/', 1) AS id, try_strptime(t, '%Y-%m-%d %H:%M') AS time, try_cast(v AS DOUBLE) AS predicted\n  FROM read_csv(list_transform(getvariable('ids'), i -\u003e 'http://feeds/noaa-tides/predictions/' || i || '/' || strftime(getvariable('window_start')::DATE, '%Y%m%d') || '.csv'),\n                header = true, all_varchar = true, null_padding = true, filename = true, names = ['t', 'v'])\n),\n-- A few gauges read off the six-minute marks (at :34 rather than :36): each reading goes to its\n-- six-minute step, so measured and predicted meet.\nreadings AS (\n  SELECT id, time, avg(observed) AS observed, avg(predicted) AS predicted\n  FROM (SELECT id, time_bucket(INTERVAL 6 MINUTE, time) AS time, observed, NULL::DOUBLE AS predicted FROM observed\n        UNION ALL\n        SELECT id, time_bucket(INTERVAL 6 MINUTE, time), NULL, predicted FROM predicted)\n  WHERE time \u003e= getvariable('window_start') AND time \u003c getvariable('window_end')\n  GROUP BY ALL\n),\nports AS (\n  SELECT id, count(observed) AS n, max(time) FILTER (WHERE observed IS NOT NULL) AS latest\n  FROM readings GROUP BY id HAVING count(observed) \u003e= 120\n),\nnamed AS (\n  SELECT s.*, p.latest, d.mhhw_stnd, round(s.flood_stnd - d.mhhw_stnd, 3) AS flood,\n    -- Where the coast is: Alaska, Hawaii and the Pacific islands by state, the Pacific coast west\n    -- of the Rockies, the Gulf of Mexico by its shores, the Caribbean, and the Atlantic the rest.\n    CASE\n      WHEN s.state = 'AK' THEN 'Alaska'\n      WHEN s.state IN ('HI', 'American Samoa') OR s.longitude \u003e 100 OR s.longitude \u003c -150 THEN 'Pacific islands'\n      WHEN s.longitude \u003c -115 THEN 'Pacific'\n      WHEN s.state IN ('PR', 'VI') THEN 'Caribbean'\n      WHEN s.state IN ('TX', 'LA', 'MS', 'AL') OR (s.state = 'FL' AND s.longitude \u003c -81.2 AND s.latitude \u003c 30.8) THEN 'Gulf of Mexico'\n      ELSE 'Atlantic'\n    END AS coast\n  FROM stations s JOIN ports p USING (id) LEFT JOIN datums d USING (id)\n),\n-- The row of each gauge in the grid: coast by coast, each from one end to the other as the tide\n-- runs along it, with five empty rows between them for the coast's name.\nlanes AS (\n  SELECT *, row_number() OVER (ORDER BY k, along, id) + 5 * k AS lane\n  FROM (SELECT *,\n          CASE coast WHEN 'Alaska' THEN 0 WHEN 'Pacific' THEN 1 WHEN 'Pacific islands' THEN 2\n                     WHEN 'Gulf of Mexico' THEN 3 WHEN 'Atlantic' THEN 4 ELSE 5 END AS k,\n          CASE coast WHEN 'Alaska' THEN longitude WHEN 'Gulf of Mexico' THEN longitude\n                     WHEN 'Pacific islands' THEN longitude ELSE -latitude END AS along\n        FROM named)\n),\ngrid AS (\n  SELECT unnest(generate_series(getvariable('window_start'), getvariable('window_end') - INTERVAL 6 MINUTE, INTERVAL 6 MINUTE)) AS time\n)\nSELECT s.id, s.name AS station, s.state, s.coast, s.latitude, s.longitude, g.time,\n       CASE WHEN r.observed IS NULL THEN 0 ELSE 1 END AS has_reading,\n       round(r.observed, 3) AS observed, round(r.predicted, 3) AS predicted,\n       round(r.observed - r.predicted, 3) AS above_tables,\n       s.flood,\n       CASE WHEN s.flood IS NOT NULL AND r.observed \u003e= s.flood THEN 1 ELSE 0 END AS flooding,\n       -- The height in words, for the map's colours: under an ordinary high tide by how much, over\n       -- it, and over the station's flood level.\n       CASE\n         WHEN r.observed IS NULL THEN NULL\n         WHEN s.flood IS NOT NULL AND r.observed \u003e= s.flood THEN 'Over its flood level'\n         WHEN r.observed \u003e= 0.3 THEN '0.3 m or more over high tide'\n         WHEN r.observed \u003e= 0 THEN 'Over an ordinary high tide'\n         WHEN r.observed \u003e= -0.5 THEN 'Up to 0.5 m under'\n         WHEN r.observed \u003e= -1.0 THEN '0.5 to 1 m under'\n         ELSE 'More than 1 m under (low tide)'\n       END AS water,\n       s.latest, s.lane\nFROM lanes s CROSS JOIN grid g\nLEFT JOIN readings r ON r.id = s.id AND r.time = g.time\nORDER BY g.time, s.id",
+                  "refId": "tides"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "wind",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "wind",
+              "refId": "wind",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: the wind 10 metres over the sea and the land around the gauges, from NOAA GFS\n-- through ERDDAP (PacIOOS ncep_global, the same grid as gfs-wind-synoptic), for the same 48\n-- hours as the tides: every three-hour step from 16 N to 70 N and 180 W to 60 W, every sixth\n-- cell of its half-degree grid, so a regular three-degree lattice, which the streamlines need.\n-- The gateway keeps each answer three hours, and the URL moves on every three hours too.\n--\n-- The steps are three hours apart and the map steps half an hour at a time, so each cell is\n-- drawn between two steps, u and v weighed by how far the half hour lies between them: the\n-- wind turns smoothly while the tide plays, and every half hour has its field.\nWITH steps AS (\n  SELECT column0 AS time, column1 AS latitude, column2 - 360 AS longitude, column3 AS u, column4 AS v\n  FROM read_csv(\n    format('http://feeds/erddap/griddap/ncep_global.csv0?ugrd10m%5B({0}):1:({1})%5D%5B(16.0):6:(70.0)%5D%5B(180.0):6:(300.0)%5D,vgrd10m%5B({0}):1:({1})%5D%5B(16.0):6:(70.0)%5D%5B(180.0):6:(300.0)%5D',\n      strftime(time_bucket(INTERVAL 3 HOUR, now()::TIMESTAMP - INTERVAL 48 HOUR), '%Y-%m-%dT%H:%M:%SZ'),\n      strftime(time_bucket(INTERVAL 3 HOUR, now()::TIMESTAMP) + INTERVAL 3 HOUR, '%Y-%m-%dT%H:%M:%SZ')),\n    header = false,\n    columns = {'column0': 'TIMESTAMP', 'column1': 'DOUBLE', 'column2': 'DOUBLE', 'column3': 'DOUBLE', 'column4': 'DOUBLE'},\n    nullstr = 'NaN')\n  WHERE column3 IS NOT NULL AND column4 IS NOT NULL\n),\nslots AS (\n  SELECT unnest(generate_series(time_bucket(INTERVAL 30 MINUTE, now()::TIMESTAMP - INTERVAL 48 HOUR),\n                                now()::TIMESTAMP, INTERVAL 30 MINUTE)) AS time\n),\nweights AS (\n  SELECT time, time_bucket(INTERVAL 3 HOUR, time) AS t0,\n         (epoch(time) - epoch(time_bucket(INTERVAL 3 HOUR, time))) / 10800.0 AS w\n  FROM slots\n)\nSELECT k.time, a.latitude, a.longitude,\n       round(a.u + k.w * (coalesce(b.u, a.u) - a.u), 2) AS u,\n       round(a.v + k.w * (coalesce(b.v, a.v) - a.v), 2) AS v\nFROM weights k\nJOIN steps a ON a.time = k.t0\nLEFT JOIN steps b ON b.time = k.t0 + INTERVAL 3 HOUR AND b.latitude = a.latitude AND b.longitude = a.longitude\nORDER BY k.time, a.latitude DESC, a.longitude",
+                  "refId": "tides"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "tide_from",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "tide_to",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "hide": "hideVariable",
+          "includeAll": true,
+          "label": "coasts",
+          "multi": true,
+          "name": "coasts",
+          "options": [],
+          "query": "Alaska, Pacific, Pacific islands, Gulf of Mexico, Atlantic, Caribbean",
+          "skipUrlSync": false,
+          "valuesFormat": "csv"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "search",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "name": "tide_area",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Gauge (NOAA station id)",
+          "name": "gauge",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "label": "Gauge",
+          "name": "gauge_name",
+          "query": "",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "tideFilters",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "dataset": "$tides",
+              "filters": [
+                {
+                  "as": "time",
+                  "column": "time",
+                  "from": "$tide_from",
+                  "label": "Time (UTC)",
+                  "name": "time",
+                  "to": "$tide_to",
+                  "type": "range",
+                  "upper": "closed"
+                },
+                {
+                  "column": "coast",
+                  "label": "Coast",
+                  "name": "coast",
+                  "type": "in",
+                  "variable": "$coasts"
+                },
+                {
+                  "column": "station",
+                  "label": "Port",
+                  "name": "station",
+                  "type": "search",
+                  "variable": "$search"
+                },
+                {
+                  "label": "Area",
+                  "lat": "latitude",
+                  "lng": "longitude",
+                  "name": "area",
+                  "type": "area",
+                  "variable": "$tide_area"
+                }
+              ],
+              "kind": "filters",
+              "refId": "tideFilters"
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      }
+    ]
+  }
+}
