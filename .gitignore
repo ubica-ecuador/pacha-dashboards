@@ -9,3 +9,5 @@ datasets/*/*/*.pnts
 datasets/*/*/tileset.json
 # CityJSON a build writes for the City Model layer (datasets/<name>/cityjson/).
 datasets/*/cityjson/
+# The Mapbox base map style, with its token (datasets/mapbox-basemap/build.sh).
+datasets/mapbox-basemap/style/
