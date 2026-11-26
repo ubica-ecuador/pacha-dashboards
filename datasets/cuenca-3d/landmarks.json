@@ -1,0 +1,2550 @@
+{
+  "_about": "Massing of the landmarks, one entry per OSM way. Frame: u metres from the facade inward along the footprint's long axis, v metres across from the facade's left as seen by someone standing in front of it. Heights in metres above the ground. Sources: OSM ways and building:part ways, es.wikipedia (Catedral Nueva 105 x 43.5 m, main dome 12 m wide and 53 m high; San Sebastian tower on the left of the facade, dome over the apse), and Wikimedia Commons photos (CC BY-SA) for towers, domes and heights scaled against facade widths. Second round (San Alfonso, San Blas, El Carmen, Todos Santos, Las Conceptas, La Merced, El Cenáculo, Buen Pastor, Corte Provincial de Justicia): towers, spires and domes from one Commons photo each, heights scaled against the facade's width; the Corte's dome stands on its corner over Parque Calderón.",
+  "landmarks": [
+    {
+      "osm": 1081353723,
+      "name": "Catedral de la Inmaculada Concepción (Catedral Nueva)",
+      "facade_az": 101.5,
+      "body": {
+        "top": 28,
+        "wall": "Wall, brick",
+        "roof": "Roof, brick"
+      },
+      "towers": [
+        {
+          "u": 7.8,
+          "v": 7.4,
+          "side": 14.8,
+          "depth": 15.6,
+          "stages": [
+            [
+              0,
+              30.5
+            ],
+            [
+              30.5,
+              43,
+              12.6
+            ]
+          ],
+          "wall": "Wall, brick",
+          "cap": "flat",
+          "cap_tone": "Roof, brick"
+        },
+        {
+          "u": 7.8,
+          "v": -7.4,
+          "side": 14.8,
+          "depth": 15.6,
+          "stages": [
+            [
+              0,
+              30.5
+            ],
+            [
+              30.5,
+              43,
+              12.6
+            ]
+          ],
+          "wall": "Wall, brick",
+          "cap": "flat",
+          "cap_tone": "Roof, brick"
+        },
+        {
+          "u": 0.75,
+          "v": 24.06,
+          "side": 18.4,
+          "depth": 1.5,
+          "stages": [
+            [
+              0,
+              31.5
+            ]
+          ],
+          "wall": "Wall, brick",
+          "cap": "flat",
+          "cap_tone": "Roof, brick"
+        }
+      ],
+      "domes": [
+        {
+          "osm_part": 1081353728,
+          "r": 7.0,
+          "drum": [
+            28,
+            34
+          ],
+          "rise": 8.0,
+          "lantern": [
+            2.2,
+            4.0
+          ]
+        },
+        {
+          "osm_part": 1081353727,
+          "r": 8.0,
+          "drum": [
+            28,
+            36
+          ],
+          "rise": 9.0,
+          "lantern": [
+            2.6,
+            4.5
+          ]
+        },
+        {
+          "osm_part": 1081353726,
+          "r": 7.0,
+          "drum": [
+            28,
+            34
+          ],
+          "rise": 8.0,
+          "lantern": [
+            2.2,
+            4.0
+          ]
+        }
+      ],
+      "dome_tone": "Tile, blue",
+      "drum_tone": "Wall, white",
+      "details": [
+        {
+          "wall": "front",
+          "c": 7.4,
+          "shape": "arch",
+          "z": 0,
+          "w": 5,
+          "h": 9,
+          "m": 0.6
+        },
+        {
+          "wall": "front",
+          "c": 7.4,
+          "shape": "bifora",
+          "z": 11,
+          "w": 3.6,
+          "h": 4.8,
+          "m": 0.35
+        },
+        {
+          "wall": "front",
+          "c": 7.4,
+          "shape": "bifora",
+          "z": 18.5,
+          "w": 4.4,
+          "h": 7,
+          "m": 1.0
+        },
+        {
+          "wall": "front",
+          "c": 7.4,
+          "inset": 1.16,
+          "shape": "arch",
+          "z": 32.5,
+          "w": 3.4,
+          "h": 7,
+          "m": 0.4
+        },
+        {
+          "wall": "front",
+          "c": 4.0,
+          "inset": 1.16,
+          "shape": "circle",
+          "z": 41,
+          "w": 0.6,
+          "n": 5,
+          "step": 1.7
+        },
+        {
+          "wall": "front",
+          "c": -7.4,
+          "shape": "arch",
+          "z": 0,
+          "w": 5,
+          "h": 9,
+          "m": 0.6
+        },
+        {
+          "wall": "front",
+          "c": -7.4,
+          "shape": "bifora",
+          "z": 11,
+          "w": 3.6,
+          "h": 4.8,
+          "m": 0.35
+        },
+        {
+          "wall": "front",
+          "c": -7.4,
+          "shape": "bifora",
+          "z": 18.5,
+          "w": 4.4,
+          "h": 7,
+          "m": 1.0
+        },
+        {
+          "wall": "front",
+          "c": -7.4,
+          "inset": 1.16,
+          "shape": "arch",
+          "z": 32.5,
+          "w": 3.4,
+          "h": 7,
+          "m": 0.4
+        },
+        {
+          "wall": "front",
+          "c": -10.8,
+          "inset": 1.16,
+          "shape": "circle",
+          "z": 41,
+          "w": 0.6,
+          "n": 5,
+          "step": 1.7
+        },
+        {
+          "wall": "left",
+          "c": 7.8,
+          "shape": "bifora",
+          "z": 11,
+          "w": 3.6,
+          "h": 4.8,
+          "m": 0.35
+        },
+        {
+          "wall": "left",
+          "c": 7.8,
+          "shape": "bifora",
+          "z": 18.5,
+          "w": 4.4,
+          "h": 7,
+          "m": 1.0
+        },
+        {
+          "wall": "left",
+          "c": 7.8,
+          "inset": 1.1,
+          "shape": "arch",
+          "z": 32.5,
+          "w": 3.4,
+          "h": 7,
+          "m": 0.4
+        },
+        {
+          "wall": "left",
+          "c": 4.4,
+          "inset": 1.1,
+          "shape": "circle",
+          "z": 41,
+          "w": 0.6,
+          "n": 5,
+          "step": 1.7
+        },
+        {
+          "wall": "left",
+          "c": 22,
+          "n": 7,
+          "step": 11,
+          "shape": "arch",
+          "blind": true,
+          "z": 17,
+          "w": 9,
+          "h": 10.5,
+          "band": 0.5
+        },
+        {
+          "wall": "left",
+          "c": 22,
+          "n": 7,
+          "step": 11,
+          "shape": "circle",
+          "z": 22.5,
+          "w": 3,
+          "hub": true
+        },
+        {
+          "wall": "left",
+          "c": 22,
+          "n": 7,
+          "step": 11,
+          "shape": "bifora",
+          "z": 9,
+          "w": 3.2,
+          "h": 5,
+          "m": 0.3
+        },
+        {
+          "wall": "right",
+          "c": 7.8,
+          "shape": "bifora",
+          "z": 11,
+          "w": 3.6,
+          "h": 4.8,
+          "m": 0.35
+        },
+        {
+          "wall": "right",
+          "c": 7.8,
+          "shape": "bifora",
+          "z": 18.5,
+          "w": 4.4,
+          "h": 7,
+          "m": 1.0
+        },
+        {
+          "wall": "right",
+          "c": 7.8,
+          "inset": 1.1,
+          "shape": "arch",
+          "z": 32.5,
+          "w": 3.4,
+          "h": 7,
+          "m": 0.4
+        },
+        {
+          "wall": "right",
+          "c": 4.4,
+          "inset": 1.1,
+          "shape": "circle",
+          "z": 41,
+          "w": 0.6,
+          "n": 5,
+          "step": 1.7
+        },
+        {
+          "wall": "right",
+          "c": 22,
+          "n": 7,
+          "step": 11,
+          "shape": "arch",
+          "blind": true,
+          "z": 17,
+          "w": 9,
+          "h": 10.5,
+          "band": 0.5
+        },
+        {
+          "wall": "right",
+          "c": 22,
+          "n": 7,
+          "step": 11,
+          "shape": "circle",
+          "z": 22.5,
+          "w": 3,
+          "hub": true
+        },
+        {
+          "wall": "right",
+          "c": 22,
+          "n": 7,
+          "step": 11,
+          "shape": "bifora",
+          "z": 9,
+          "w": 3.2,
+          "h": 5,
+          "m": 0.3
+        },
+        {
+          "wall": "front",
+          "c": 24.06,
+          "shape": "arch",
+          "z": 0,
+          "w": 8,
+          "h": 15,
+          "m": 1.0
+        },
+        {
+          "wall": "front",
+          "c": 24.06,
+          "shape": "arch",
+          "blind": true,
+          "z": 16.5,
+          "w": 13,
+          "h": 14,
+          "band": 0.6
+        },
+        {
+          "wall": "front",
+          "c": 24.06,
+          "shape": "circle",
+          "z": 23.5,
+          "w": 5.4,
+          "m": 0.5,
+          "hub": true
+        }
+      ],
+      "pinnacles": [
+        {
+          "u": 0.7,
+          "v": 0.7,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 14.9,
+          "v": 0.7,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 0.7,
+          "v": 14.1,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 14.9,
+          "v": 14.1,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 0.7,
+          "v": -0.7,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 14.9,
+          "v": -0.7,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 0.7,
+          "v": -14.1,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 14.9,
+          "v": -14.1,
+          "r": 0.9,
+          "z0": 30.5,
+          "z1": 34,
+          "rise": 2.6
+        },
+        {
+          "u": 16.5,
+          "v": 0.5,
+          "n": 8,
+          "du": 11,
+          "r": 0.7,
+          "z0": 26,
+          "z1": 29.5,
+          "rise": 2.2
+        },
+        {
+          "u": 16.5,
+          "v": -0.5,
+          "n": 8,
+          "du": 11,
+          "r": 0.7,
+          "z0": 26,
+          "z1": 29.5,
+          "rise": 2.2
+        }
+      ],
+      "pinnacle_wall": "Wall, brick",
+      "pinnacle_cap": "Roof, brick",
+      "_note": "Towers 14.8 x 15.6 m from the footprint's corners; heights from Commons photos (seen from the southeast and from Parque Calderón): cornice ~30.5 m, towers ~43 m, scaled so the main dome tops out near Wikipedia's 53 m. Openings: per tower a portal, two paired arched windows (the upper in a blind arch), the belfry arch and a row of small round holes; the central portal, the blind arch and the rose window; seven bays on each side, each a blind arch with a round window and a paired window under it."
+    },
+    {
+      "osm": 252683990,
+      "name": "El Sagrario (Catedral Vieja)",
+      "facade_az": 189.2,
+      "body": {
+        "top": 10,
+        "wall": "Wall, white",
+        "roof": "Clay tile"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            51.3
+          ],
+          "v": [
+            12,
+            30
+          ],
+          "eave": 13,
+          "ridge": 17.5,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 18,
+          "v": 5,
+          "side": 6.5,
+          "stages": [
+            [
+              0,
+              16
+            ],
+            [
+              16,
+              20.5,
+              5.2
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 2.2,
+          "cap_tone": "Cupola, white",
+          "lantern": [
+            0.6,
+            1.6
+          ]
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 21,
+          "z": 0,
+          "w": 3.6,
+          "h": 7.5,
+          "m": 0.6
+        },
+        {
+          "wall": "front",
+          "shape": "bifora",
+          "c": 21,
+          "z": 9.6,
+          "w": 3.0,
+          "h": 3.4,
+          "m": 0.3
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 21,
+          "z": 14.6,
+          "w": 1.8,
+          "m": 0.3,
+          "hub": true
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 8,
+          "z": 3.0,
+          "w": 1.8,
+          "h": 4.0,
+          "m": 0.5,
+          "n": 5,
+          "step": 8
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 11.8,
+          "w": 1.4,
+          "h": 2.6,
+          "m": 0.2
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 16.6,
+          "w": 1.6,
+          "h": 3.0,
+          "m": 0.2
+        }
+      ]
+    },
+    {
+      "osm": 673333866,
+      "name": "Iglesia de San Francisco",
+      "facade_az": 105.3,
+      "body": {
+        "top": 9,
+        "wall": "Wall, white",
+        "roof": "Clay tile"
+      },
+      "naves": [
+        {
+          "osm_part": 673333865,
+          "eave": 12,
+          "ridge": 16,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "osm_part": 673333862,
+          "side": 8.5,
+          "stages": [
+            [
+              0,
+              26
+            ],
+            [
+              26,
+              29,
+              7.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 4.0,
+          "cap_tone": "Cupola, white",
+          "lantern": [
+            1.0,
+            3.0
+          ]
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 10.8,
+          "w": 2.0,
+          "m": 0.3,
+          "hub": true
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 16.5,
+          "w": 2.8,
+          "h": 3.8,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 21.8,
+          "w": 2.6,
+          "blind": true
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 21.8,
+          "w": 1.4,
+          "m": 0.0,
+          "blind": true
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 26.4,
+          "w": 1.2,
+          "h": 2.2,
+          "m": 0.2
+        }
+      ]
+    },
+    {
+      "osm": 389946934,
+      "name": "Basílica del Santísimo Rosario (Santo Domingo)",
+      "facade_az": 102.8,
+      "body": {
+        "top": 13,
+        "wall": "Wall, white",
+        "roof": "Clay tile"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            70.3
+          ],
+          "v": [
+            5,
+            23.3
+          ],
+          "eave": 16,
+          "ridge": 21,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 5,
+          "v": 5,
+          "side": 10,
+          "stages": [
+            [
+              0,
+              27
+            ],
+            [
+              27,
+              32,
+              7.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 3.5,
+          "cap_tone": "Tile, glazed brown",
+          "lantern": [
+            1.4,
+            2.5
+          ]
+        },
+        {
+          "u": 5,
+          "v": -5,
+          "side": 10,
+          "stages": [
+            [
+              0,
+              27
+            ],
+            [
+              27,
+              32,
+              7.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 3.5,
+          "cap_tone": "Tile, glazed brown",
+          "lantern": [
+            1.4,
+            2.5
+          ]
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 14.15,
+          "z": 0,
+          "w": 3.2,
+          "h": 5.5,
+          "m": 0.4
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 14.15,
+          "z": 10.5,
+          "w": 2.2,
+          "h": 4,
+          "m": 0.3
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 14.15,
+          "z": 17.6,
+          "w": 1.2,
+          "m": 0.2
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": "front",
+          "shape": "arch",
+          "c": 0,
+          "z": 0,
+          "w": 2.8,
+          "h": 5,
+          "m": 0.3
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": "front",
+          "shape": "arch",
+          "c": 0,
+          "z": 0,
+          "w": 2.8,
+          "h": 5,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 10.5,
+          "w": 2.4,
+          "h": 3.4,
+          "m": 0.3
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 10.5,
+          "w": 2.4,
+          "h": 3.4,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 18.5,
+          "w": 2.6,
+          "h": 4,
+          "m": 0.3
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 18.5,
+          "w": 2.6,
+          "h": 4,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 27.8,
+          "w": 1.4,
+          "h": 3.2,
+          "m": 0.2
+        },
+        {
+          "tower": 1,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 27.8,
+          "w": 1.4,
+          "h": 3.2,
+          "m": 0.2
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 14,
+          "z": 6,
+          "w": 1.8,
+          "h": 4.5,
+          "m": 0.3,
+          "n": 8,
+          "step": 7
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 14,
+          "z": 6,
+          "w": 1.8,
+          "h": 4.5,
+          "m": 0.3,
+          "n": 8,
+          "step": 7
+        }
+      ]
+    },
+    {
+      "osm": 389948221,
+      "name": "Iglesia de San Sebastián",
+      "facade_az": 104.0,
+      "body": {
+        "top": 9,
+        "wall": "Wall, white",
+        "roof": "Clay tile"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            51.3
+          ],
+          "v": [
+            5,
+            11.4
+          ],
+          "eave": 9,
+          "ridge": 13.5,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 3.75,
+          "v": -3.75,
+          "side": 7.5,
+          "stages": [
+            [
+              0,
+              14
+            ],
+            [
+              14,
+              18.5,
+              6.2
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 2.9,
+          "cap_tone": "Tile, blue",
+          "lantern": [
+            1.1,
+            2.0
+          ]
+        }
+      ],
+      "domes": [
+        {
+          "u": -6,
+          "v": 9.45,
+          "r": 4.5,
+          "drum": [
+            13.5,
+            15.5
+          ],
+          "rise": 4.5,
+          "lantern": [
+            0.9,
+            2.0
+          ]
+        }
+      ],
+      "dome_tone": "Tile, blue",
+      "drum_tone": "Wall, white",
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "pointed",
+          "c": 8.2,
+          "z": 0,
+          "w": 3.0,
+          "h": 7.3,
+          "m": 0.5
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 8.2,
+          "z": 9.1,
+          "w": 1.3,
+          "m": 0.25,
+          "hub": true
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 2.7,
+          "z": 2.2,
+          "w": 1.0,
+          "h": 2.2,
+          "blind": true,
+          "band": 0.15
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 2.7,
+          "z": 5.2,
+          "w": 1.0,
+          "h": 2.2,
+          "blind": true,
+          "band": 0.15
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 10.3,
+          "w": 2.6,
+          "h": 2.9,
+          "m": 0.25
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 15.2,
+          "w": 1.1,
+          "h": 2.3,
+          "m": 0.2
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 12,
+          "z": 3.5,
+          "w": 1.4,
+          "h": 3.0,
+          "m": 0.2,
+          "n": 6,
+          "step": 6.5
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 12,
+          "z": 3.5,
+          "w": 1.4,
+          "h": 3.0,
+          "m": 0.2,
+          "n": 6,
+          "step": 6.5
+        }
+      ]
+    },
+    {
+      "osm": 302980837,
+      "name": "Basílica de Nuestra Señora del Perpetuo Socorro (San Alfonso)",
+      "facade_az": 192.7,
+      "body": {
+        "top": 10,
+        "wall": "Wall, white",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            55.1
+          ],
+          "v": [
+            0,
+            20.1
+          ],
+          "eave": 12,
+          "ridge": 18,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 3.75,
+          "v": 3.75,
+          "side": 7.5,
+          "stages": [
+            [
+              0,
+              17
+            ],
+            [
+              17,
+              23,
+              6.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "spire",
+          "cap_rise": 8,
+          "cap_tone": "Tile, blue"
+        },
+        {
+          "u": 3.75,
+          "v": -3.75,
+          "side": 7.5,
+          "stages": [
+            [
+              0,
+              17
+            ],
+            [
+              17,
+              23,
+              6.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "spire",
+          "cap_rise": 8,
+          "cap_tone": "Tile, blue"
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 10.05,
+          "z": 0,
+          "w": 3.2,
+          "h": 5.4,
+          "m": 0.5
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 10.05,
+          "z": 10.5,
+          "w": 2.0,
+          "m": 0.3,
+          "hub": true
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 10.05,
+          "z": 7.0,
+          "w": 1.6,
+          "h": 2.2,
+          "m": 0.2
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": "front",
+          "shape": "arch",
+          "c": 0,
+          "z": 0,
+          "w": 2.2,
+          "h": 4.2,
+          "m": 0.4
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": "front",
+          "shape": "arch",
+          "c": 0,
+          "z": 0,
+          "w": 2.2,
+          "h": 4.2,
+          "m": 0.4
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 11,
+          "w": 1.6,
+          "m": 0.2,
+          "hub": true
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right",
+            "back"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 11,
+          "w": 1.6,
+          "m": 0.2,
+          "hub": true
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 6.0,
+          "w": 1.0,
+          "h": 2.4,
+          "m": 0.2
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 6.0,
+          "w": 1.0,
+          "h": 2.4,
+          "m": 0.2
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 17.6,
+          "w": 2.4,
+          "h": 3.6,
+          "m": 0.25
+        },
+        {
+          "tower": 1,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 17.6,
+          "w": 2.4,
+          "h": 3.6,
+          "m": 0.25
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 22.1,
+          "w": 0.9,
+          "blind": true
+        },
+        {
+          "tower": 1,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 22.1,
+          "w": 0.9,
+          "blind": true
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 11,
+          "z": 1.8,
+          "w": 1.3,
+          "h": 3.2,
+          "m": 0.2,
+          "n": 7,
+          "step": 6
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 11,
+          "z": 8.0,
+          "w": 1.5,
+          "h": 3.4,
+          "m": 0.2,
+          "n": 7,
+          "step": 6
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 11,
+          "z": 1.8,
+          "w": 1.3,
+          "h": 3.2,
+          "m": 0.2,
+          "n": 7,
+          "step": 6
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 11,
+          "z": 8.0,
+          "w": 1.5,
+          "h": 3.4,
+          "m": 0.2,
+          "n": 7,
+          "step": 6
+        }
+      ]
+    },
+    {
+      "osm": 1081346188,
+      "name": "Iglesia de San Blas",
+      "facade_az": 279.5,
+      "body": {
+        "top": 11,
+        "wall": "Wall, pink marble",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            49.9
+          ],
+          "v": [
+            7.5,
+            21
+          ],
+          "eave": 16,
+          "ridge": 19.5,
+          "wall": "Wall, pink marble",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 2.5,
+          "v": 23.5,
+          "side": 5.5,
+          "depth": 4,
+          "stages": [
+            [
+              0,
+              16.5
+            ]
+          ],
+          "wall": "Wall, pink marble",
+          "cap": "flat",
+          "cap_tone": "Wall, pink marble"
+        }
+      ],
+      "details": [
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 14.25,
+          "z": 0,
+          "w": 3.4,
+          "h": 7.2,
+          "m": 0.7
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 5.1,
+          "z": 0,
+          "w": 2.8,
+          "h": 6.2,
+          "m": 0.6
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 23.4,
+          "z": 0,
+          "w": 2.8,
+          "h": 6.2,
+          "m": 0.6
+        },
+        {
+          "wall": "front",
+          "shape": "bifora",
+          "c": 14.25,
+          "z": 8.7,
+          "w": 3.6,
+          "h": 4.2,
+          "m": 0.4
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 12.2,
+          "w": 3.6,
+          "h": 3.2,
+          "m": 0.2
+        }
+      ]
+    },
+    {
+      "osm": 699286484,
+      "name": "Iglesia del Carmen de la Asunción",
+      "facade_az": 12.1,
+      "body": {
+        "top": 9,
+        "wall": "Wall, white",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            40.1
+          ],
+          "v": [
+            0,
+            12.3
+          ],
+          "eave": 11,
+          "ridge": 15,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 3,
+          "v": 3,
+          "side": 5.5,
+          "stages": [
+            [
+              0,
+              17
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 2.0,
+          "cap_tone": "Cupola, white"
+        }
+      ],
+      "trim_tone": "Stone trim",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "rect",
+          "c": 8.7,
+          "z": 0,
+          "w": 3.6,
+          "h": 7.0,
+          "blind": true
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 8.7,
+          "z": 0,
+          "w": 1.8,
+          "h": 3.8
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 8.7,
+          "z": 4.6,
+          "w": 0.7,
+          "h": 1.2
+        },
+        {
+          "wall": "front",
+          "shape": "rect",
+          "c": 6.4,
+          "z": 8.5,
+          "w": 0.9,
+          "h": 1.2
+        },
+        {
+          "wall": "front",
+          "shape": "rect",
+          "c": 11.0,
+          "z": 8.5,
+          "w": 0.9,
+          "h": 1.2
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 12.5,
+          "w": 1.6,
+          "h": 2.8,
+          "m": 0.2
+        }
+      ]
+    },
+    {
+      "osm": 461013827,
+      "name": "Iglesia de Todos Santos",
+      "facade_az": 131.1,
+      "body": {
+        "top": 9,
+        "wall": "Wall, white",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            51.5
+          ],
+          "v": [
+            0,
+            15.8
+          ],
+          "eave": 12,
+          "ridge": 15.5,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 3,
+          "v": 7.9,
+          "side": 6.9,
+          "stages": [
+            [
+              0,
+              16
+            ],
+            [
+              16,
+              20,
+              5.5
+            ],
+            [
+              20,
+              23.6,
+              4.1
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "spire",
+          "cap_rise": 3,
+          "cap_tone": "Cupola, white"
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 7.9,
+          "z": 0,
+          "w": 2.2,
+          "h": 5.3,
+          "m": 0.5
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 7.9,
+          "z": 9.3,
+          "w": 1.3,
+          "m": 0.3,
+          "hub": true
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 3.0,
+          "z": 0.8,
+          "w": 1.6,
+          "h": 3.6,
+          "blind": true,
+          "band": 0.2
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 12.8,
+          "z": 0.8,
+          "w": 1.6,
+          "h": 3.6,
+          "blind": true,
+          "band": 0.2
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 3.0,
+          "z": 7.2,
+          "w": 1.6,
+          "h": 3.2,
+          "blind": true,
+          "band": 0.2
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 12.8,
+          "z": 7.2,
+          "w": 1.6,
+          "h": 3.2,
+          "blind": true,
+          "band": 0.2
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 16.4,
+          "w": 2.6,
+          "h": 2.9,
+          "m": 0.2
+        },
+        {
+          "tower": 0,
+          "stage": 2,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 20.6,
+          "w": 1.2,
+          "h": 2.2,
+          "m": 0.15
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 12,
+          "z": 2.5,
+          "w": 1.6,
+          "h": 3.8,
+          "m": 0.25,
+          "n": 6,
+          "step": 6.5
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 12,
+          "z": 2.5,
+          "w": 1.6,
+          "h": 3.8,
+          "m": 0.25,
+          "n": 6,
+          "step": 6.5
+        }
+      ]
+    },
+    {
+      "osm": 634473919,
+      "name": "Iglesia y Monasterio de las Conceptas",
+      "facade_az": 274.4,
+      "body": {
+        "top": 8,
+        "wall": "Wall, white",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            14
+          ],
+          "v": [
+            0,
+            42
+          ],
+          "eave": 10,
+          "ridge": 13.5,
+          "wall": "Wall, white",
+          "roof": "Clay tile",
+          "along": "v"
+        }
+      ],
+      "towers": [
+        {
+          "u": 1.25,
+          "v": 8,
+          "side": 12.7,
+          "depth": 2.5,
+          "stages": [
+            [
+              0,
+              12.5
+            ],
+            [
+              12.5,
+              16,
+              8.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "flat",
+          "cap_tone": "Wall, white"
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "back"
+          ],
+          "shape": "arch",
+          "c": -4.6,
+          "z": 10.3,
+          "w": 1.3,
+          "h": 2.0,
+          "n": 5,
+          "step": 2.3,
+          "m": 0.15
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "back"
+          ],
+          "shape": "arch",
+          "c": -1.2,
+          "z": 13.1,
+          "w": 1.3,
+          "h": 2.0,
+          "n": 2,
+          "step": 2.4,
+          "m": 0.15
+        }
+      ]
+    },
+    {
+      "osm": 1141754088,
+      "name": "Iglesia de La Merced",
+      "facade_az": 103.9,
+      "body": {
+        "top": 9,
+        "wall": "Wall, white",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            55.8
+          ],
+          "v": [
+            2,
+            19.9
+          ],
+          "eave": 12,
+          "ridge": 16,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 4,
+          "v": 10.95,
+          "side": 5.5,
+          "stages": [
+            [
+              0,
+              17
+            ],
+            [
+              17,
+              23,
+              4.8
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "spire",
+          "cap_rise": 4.5,
+          "cap_tone": "Tile, blue"
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 10.95,
+          "z": 0,
+          "w": 2.8,
+          "h": 5.6,
+          "m": 0.6
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 10.95,
+          "z": 13.6,
+          "w": 1.6,
+          "m": 0.3,
+          "hub": true
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 6.5,
+          "z": 2.6,
+          "w": 1.2,
+          "h": 2.4,
+          "blind": true,
+          "band": 0.15
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 15.4,
+          "z": 2.6,
+          "w": 1.2,
+          "h": 2.4,
+          "blind": true,
+          "band": 0.15
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 6.5,
+          "z": 8.0,
+          "w": 1.2,
+          "h": 2.2,
+          "blind": true,
+          "band": 0.15
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 15.4,
+          "z": 8.0,
+          "w": 1.2,
+          "h": 2.2,
+          "blind": true,
+          "band": 0.15
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 13.4,
+          "w": 2.6,
+          "h": 3.6,
+          "m": 0.25
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 18.4,
+          "w": 1.2,
+          "h": 2.6,
+          "m": 0.15
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 10,
+          "z": 3.0,
+          "w": 1.5,
+          "h": 3.4,
+          "m": 0.2,
+          "n": 7,
+          "step": 6.5
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 10,
+          "z": 3.0,
+          "w": 1.5,
+          "h": 3.4,
+          "m": 0.2,
+          "n": 7,
+          "step": 6.5
+        }
+      ]
+    },
+    {
+      "osm": 1148691744,
+      "name": "Iglesia del Cenáculo",
+      "facade_az": 10.8,
+      "body": {
+        "top": 9,
+        "wall": "Wall, white",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            41.9
+          ],
+          "v": [
+            0,
+            18.1
+          ],
+          "eave": 13,
+          "ridge": 17,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 3.25,
+          "v": 3.25,
+          "side": 6.5,
+          "stages": [
+            [
+              0,
+              15
+            ],
+            [
+              15,
+              22,
+              5.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 3.5,
+          "cap_tone": "Tile, green",
+          "lantern": [
+            0.6,
+            1.2
+          ]
+        },
+        {
+          "u": 3.25,
+          "v": -3.25,
+          "side": 6.5,
+          "stages": [
+            [
+              0,
+              15
+            ],
+            [
+              15,
+              22,
+              5.5
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "dome",
+          "cap_rise": 3.5,
+          "cap_tone": "Tile, green",
+          "lantern": [
+            0.6,
+            1.2
+          ]
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 9.05,
+          "z": 0,
+          "w": 2.6,
+          "h": 5.5,
+          "m": 0.5
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 9.05,
+          "z": 11.0,
+          "w": 2.6,
+          "m": 0.4,
+          "hub": true
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": "front",
+          "shape": "arch",
+          "c": 0,
+          "z": 0,
+          "w": 1.8,
+          "h": 4.0,
+          "m": 0.3
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": "front",
+          "shape": "arch",
+          "c": 0,
+          "z": 0,
+          "w": 1.8,
+          "h": 4.0,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "left",
+            "right"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 8.8,
+          "w": 2.4,
+          "h": 3.2,
+          "m": 0.3
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right",
+            "back"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 8.8,
+          "w": 2.4,
+          "h": 3.2,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 16.3,
+          "w": 1.4,
+          "h": 3.0,
+          "m": 0.2
+        },
+        {
+          "tower": 1,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 16.3,
+          "w": 1.4,
+          "h": 3.0,
+          "m": 0.2
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": "front",
+          "shape": "circle",
+          "c": 0,
+          "z": 20.2,
+          "w": 1.0,
+          "blind": true
+        },
+        {
+          "tower": 1,
+          "stage": 1,
+          "wall": "front",
+          "shape": "circle",
+          "c": 0,
+          "z": 20.2,
+          "w": 1.0,
+          "blind": true
+        },
+        {
+          "wall": "left",
+          "shape": "arch",
+          "c": 10,
+          "z": 4.5,
+          "w": 1.6,
+          "h": 3.2,
+          "m": 0.25,
+          "n": 5,
+          "step": 6
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 10,
+          "z": 4.5,
+          "w": 1.6,
+          "h": 3.2,
+          "m": 0.25,
+          "n": 5,
+          "step": 6
+        }
+      ]
+    },
+    {
+      "osm": 1081346195,
+      "name": "Capilla del Buen Pastor",
+      "facade_az": 104.5,
+      "body": {
+        "top": 9,
+        "wall": "Wall, white",
+        "roof": "Clay tile",
+        "shape": "hip"
+      },
+      "naves": [
+        {
+          "u": [
+            0,
+            30
+          ],
+          "v": [
+            12,
+            24
+          ],
+          "eave": 12,
+          "ridge": 15.5,
+          "wall": "Wall, white",
+          "roof": "Clay tile"
+        }
+      ],
+      "towers": [
+        {
+          "u": 1.75,
+          "v": 13.75,
+          "side": 3.5,
+          "stages": [
+            [
+              0,
+              15
+            ],
+            [
+              15,
+              19,
+              3.0
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "spire",
+          "cap_rise": 3,
+          "cap_tone": "Slate"
+        },
+        {
+          "u": 1.75,
+          "v": 22.25,
+          "side": 3.5,
+          "stages": [
+            [
+              0,
+              15
+            ],
+            [
+              15,
+              19,
+              3.0
+            ]
+          ],
+          "wall": "Wall, white",
+          "cap": "spire",
+          "cap_rise": 3,
+          "cap_tone": "Slate"
+        }
+      ],
+      "trim_tone": "Trim, grey",
+      "details": [
+        {
+          "wall": "front",
+          "shape": "pointed",
+          "c": 18,
+          "z": 0,
+          "w": 2.2,
+          "h": 5.8,
+          "m": 0.4
+        },
+        {
+          "wall": "front",
+          "shape": "circle",
+          "c": 18,
+          "z": 9.3,
+          "w": 2.3,
+          "m": 0.3,
+          "hub": true
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": "front",
+          "shape": "pointed",
+          "c": 0,
+          "z": 8.1,
+          "w": 0.9,
+          "h": 3.1,
+          "m": 0.15
+        },
+        {
+          "tower": 1,
+          "stage": 0,
+          "wall": "front",
+          "shape": "pointed",
+          "c": 0,
+          "z": 8.1,
+          "w": 0.9,
+          "h": 3.1,
+          "m": 0.15
+        },
+        {
+          "tower": 0,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "pointed",
+          "c": 0,
+          "z": 15.9,
+          "w": 0.6,
+          "h": 2.2
+        },
+        {
+          "tower": 1,
+          "stage": 1,
+          "wall": [
+            "front",
+            "left",
+            "right",
+            "back"
+          ],
+          "shape": "pointed",
+          "c": 0,
+          "z": 15.9,
+          "w": 0.6,
+          "h": 2.2
+        }
+      ]
+    },
+    {
+      "osm": 1081357982,
+      "name": "Corte Provincial de Justicia del Azuay",
+      "facade_az": 15.3,
+      "body": {
+        "top": 16,
+        "wall": "Wall, stone",
+        "roof": "Grey roof",
+        "shape": "hip"
+      },
+      "towers": [
+        {
+          "u": 7,
+          "v": -7,
+          "side": 14,
+          "stages": [
+            [
+              0,
+              19
+            ]
+          ],
+          "wall": "Wall, stone",
+          "cap": "dome",
+          "cap_rise": 6,
+          "cap_tone": "Slate"
+        }
+      ],
+      "details": [
+        {
+          "wall": "front",
+          "shape": "rect",
+          "c": 2.5,
+          "z": 1.2,
+          "w": 1.3,
+          "h": 2.6,
+          "m": 0.2,
+          "n": 8,
+          "step": 3.2
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 2.5,
+          "z": 6.2,
+          "w": 1.4,
+          "h": 3.2,
+          "m": 0.25,
+          "n": 8,
+          "step": 3.2
+        },
+        {
+          "wall": "front",
+          "shape": "arch",
+          "c": 2.5,
+          "z": 11.2,
+          "w": 1.3,
+          "h": 3.0,
+          "m": 0.25,
+          "n": 8,
+          "step": 3.2
+        },
+        {
+          "wall": "right",
+          "shape": "rect",
+          "c": 16.5,
+          "z": 1.2,
+          "w": 1.3,
+          "h": 2.6,
+          "m": 0.2,
+          "n": 8,
+          "step": 3.2
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 16.5,
+          "z": 6.2,
+          "w": 1.4,
+          "h": 3.2,
+          "m": 0.25,
+          "n": 8,
+          "step": 3.2
+        },
+        {
+          "wall": "right",
+          "shape": "arch",
+          "c": 16.5,
+          "z": 11.2,
+          "w": 1.3,
+          "h": 3.0,
+          "m": 0.25,
+          "n": 8,
+          "step": 3.2
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right"
+          ],
+          "shape": "arch",
+          "c": 0,
+          "z": 0,
+          "w": 2.8,
+          "h": 4.6,
+          "m": 0.4
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 6.2,
+          "w": 3.0,
+          "h": 3.4,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right"
+          ],
+          "shape": "bifora",
+          "c": 0,
+          "z": 11.2,
+          "w": 3.0,
+          "h": 3.2,
+          "m": 0.3
+        },
+        {
+          "tower": 0,
+          "stage": 0,
+          "wall": [
+            "front",
+            "right",
+            "left",
+            "back"
+          ],
+          "shape": "circle",
+          "c": 0,
+          "z": 17.2,
+          "w": 1.4,
+          "m": 0.3
+        }
+      ]
+    }
+  ]
+}

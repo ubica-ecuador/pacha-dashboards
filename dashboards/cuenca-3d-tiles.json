@@ -1,0 +1,966 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "cuenca-3d-tiles"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Every building of Cuenca, Ecuador, in 3D from open data alone, read tile by tile as the map moves: Overture footprints, OpenStreetMap heights (estimated from neighbours where missing), roofs coloured from Sentinel-2, the centre's churches and the fronts round its squares.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### What it shows\n\nA realistic 3D base map of Cuenca from open data alone: every building of the city (about 208,000) at its height,\nits roof in the colour the satellite sees and hipped where that colour is clay tile, its walls and roof each in its\nown colour, the centre's churches and the fronts of the houses round its squares, lit by the sun of a September\nmorning.\n\nThe city is cut into some 700 tiles of about 550 m, each a [CityJSON](https://www.cityjson.org) file whose surfaces\ncarry their colour as a material. The map reads the tiles in its view (up to 48, the nearest the middle first) as it\nmoves; from afar it shows OpenStreetMap's blocks. Turn on Relief in the base map to stand the city on its valley.\n\n### Where the data comes from\n\n- **Footprints:** [Overture Maps](https://overturemaps.org) buildings, release 2026-11-18 (ODbL), which joins\n  OpenStreetMap's buildings with the footprints Google (Open Buildings) and Microsoft (ML Buildings) traced from\n  imagery with machine learning.\n- **Heights:** OpenStreetMap's `height`, else its `building:levels` x 3 m. A building with neither takes the\n  median of the measured buildings within 80 m (at least three), else 6 m. The table says how many are which.\n- **Roof colour:** [Sentinel-2](https://sentinels.copernicus.eu) L2A true colour of 12 September 2024 (Copernicus,\n  free and open), with 24 August 2023 where clouds or their shadows covered the city's edges (the scene's own cloud\n  classification, grown by 40 m), the mean of the 10 m pixels whose centre falls in the footprint, else the pixel under its centre,\n  sorted into seven tones by how red and how bright it is. A 10 m pixel is often wider than a roof: the colour\n  mixes in the street and the patio.\n- **Roofs' shape:** a rule on the roof's colour, not a measure: a roof the satellite sees as clay tile is hipped,\n  27° on every side, as the footprint's straight skeleton gives it (ridges, hips and faces sloping into patios), cut\n  flat 4 m over the eave on the widest buildings; any other roof is flat. Where OpenStreetMap gives a height it is the\n  top of the roof and the eave is lower; floors and estimates are taken as the eave. OpenStreetMap names a roof shape\n  for one building of the centre, so none is read from it.\n- **Walls:** a rule, not data: lime-washed under clay tile, ochre under weathered tile, plaster otherwise.\n- **Landmarks:** the centre's churches (the Catedral Nueva, El Sagrario, San Francisco, Santo Domingo, San\n  Sebastián, San Alfonso, San Blas, El Carmen, Todos Santos, Las Conceptas, La Merced, El Cenáculo, Buen Pastor) and\n  the Corte Provincial de Justicia on Parque Calderón are drawn from a short description of each (`datasets/cuenca-3d/landmarks.json`): nave and its gable roof, towers by stage, domes on\n  their drums with their lanterns. Footprints and the cathedral's three domes are OpenStreetMap's; sizes come from\n  Wikipedia (the cathedral is 105 x 43.5 m, its main dome 53 m high) and heights from Wikimedia Commons photos\n  scaled against each façade's width, so they are estimates to a metre or two.\n- **Portals:** the houses facing Parque Calderón across its streets open at the ground floor into arcades, as they\n  do: a wall of round arches on the street line (bays of about 3.3 m, 4.5 m high), the gallery 3 m deep behind it.\n  Which walls face the park comes from OpenStreetMap's outline of the park; the arches are a rule, not measured.\n  Each front follows street-level pictures of it ([Mapillary](https://www.mapillary.com), CC BY-SA, 2017 and 2025)\n  or Wikimedia Commons photos: white pillars on dark stone plinths under a ceiling of wooden beams; on Bolívar, iron\n  balconies over each arch and the Gobernación del Azuay's loggia; on Benigno Malo, wooden-framed windows under\n  moulded hoods and a parapet; on Sucre, framed windows, and a concrete block with a square portal. Upper floors are\n  3.8 m each.\n- **The other squares:** the houses round Plaza de San Francisco (portals of wooden posts under wooden balconies on\n  two sides, arches on the other two), Parque de San Sebastián, Plaza de La Merced (brick fronts) and Plaza 9 de\n  Octubre have their fronts drawn the same way, side by side as Mapillary's pictures show them; a side with no usable\n  picture keeps its plain walls. Their floors from OpenStreetMap, counted at 3 m,\n  are raised to these.\n\n### What is next\n\nHeights estimated by a model where OpenStreetMap has none, and more of the centre's landmarks and squares described\nthe same way.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-heights": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Buildings of the centre by where their height comes from.\nSELECT height_from AS \"Height from\", count(*) AS \"Buildings\", round(100.0 * count(*) / sum(count(*)) OVER (), 1) AS \"%\"\nFROM (SELECT DISTINCT building_id, height_from, height_m FROM read_parquet('http://feeds/datasets/cuenca-3d/surfaces.parquet') WHERE latitude BETWEEN -2.9035 AND -2.8925 AND longitude BETWEEN -79.0135 AND -78.9960)\nGROUP BY 1 ORDER BY 2 DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "OpenStreetMap's height, its floors x 3 m, the median of the measured buildings within 80 m (at least three), or 6 m.",
+          "id": 3,
+          "links": [],
+          "title": "Where each height comes from",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Cuenca as CityJSON tiles (datasets/cuenca-3d/tiles.py): the city cut into cells of about 550 m, each\n-- building in the cell of its middle, one file per cell with its roof and wall faces and each face's\n-- colour as a CityJSON material. One row per tile: the URL the browser fetches it from (the gateway\n-- serves the dataset's cityjson/ folder at /datasets/cuenca-3d/cityjson/) and the box its buildings\n-- cover. The City Model layer reads only the tiles in view, the nearest the middle first; from afar,\n-- OpenStreetMap's blocks.\nSELECT '${site:raw}/datasets/cuenca-3d/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/cuenca-3d/tiles.parquet'\nORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Every building of Cuenca (those in the map's view): its footprint from Overture Maps, its height from OpenStreetMap where someone measured it and from its measured neighbours where not, and its roof coloured by the satellite pixels over it (Sentinel-2, 12 September 2024, 10 m), hipped where they are clay tile; the centre's churches and the Corte Provincial de Justicia drawn from a description of each. Walls take a colour from the roof's kind, a rule, not data. The sun stands where it does at 10:00 on that day. Hover a surface for its building's facts.",
+          "id": 1,
+          "links": [],
+          "title": "Cuenca in 3D: every building of the city, read tile by tile",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -30,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -2.8972,
+                      "longitude": -79.005,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 60,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 17.2
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {
+                        "label": false,
+                        "poi": true,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "relief": false,
+                        "road": true,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [
+                        {
+                          "id": "light",
+                          "isEnabled": true,
+                          "parameters": {
+                            "ambientLightColor": [
+                              255,
+                              255,
+                              255
+                            ],
+                            "ambientLightIntensity": 1.15,
+                            "shadowColor": [
+                              40,
+                              44,
+                              52
+                            ],
+                            "shadowIntensity": 0.45,
+                            "sunLightColor": [
+                              255,
+                              250,
+                              240
+                            ],
+                            "sunLightIntensity": 1.2,
+                            "timeMode": "pick",
+                            "timestamp": 1726153200000,
+                            "timezone": "America/Guayaquil"
+                          },
+                          "type": "lightAndShadow"
+                        }
+                      ],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "name": "name"
+                              },
+                              {
+                                "name": "roof"
+                              },
+                              {
+                                "name": "eave_m"
+                              },
+                              {
+                                "name": "top_m"
+                              },
+                              {
+                                "name": "height_from"
+                              },
+                              {
+                                "name": "source"
+                              },
+                              {
+                                "name": "building_id"
+                              }
+                            ]
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "city"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Buildings (CityJSON tiles, coloured by their materials)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": " µg/m³",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 48,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "Clay tile",
+                                    "#C2603F"
+                                  ],
+                                  [
+                                    "Clay tile, dark",
+                                    "#9C4A32"
+                                  ],
+                                  [
+                                    "Clay tile, light",
+                                    "#D98A5F"
+                                  ],
+                                  [
+                                    "Cupola, white",
+                                    "#ECEAE4"
+                                  ],
+                                  [
+                                    "Dark roof",
+                                    "#5E5C5A"
+                                  ],
+                                  [
+                                    "Door, wood",
+                                    "#5A3B26"
+                                  ],
+                                  [
+                                    "Eave, wood",
+                                    "#5C3F2C"
+                                  ],
+                                  [
+                                    "Gallery ceiling",
+                                    "#5E574F"
+                                  ],
+                                  [
+                                    "Gallery, in shade",
+                                    "#4A443E"
+                                  ],
+                                  [
+                                    "Gallery, wooden beams",
+                                    "#4B3627"
+                                  ],
+                                  [
+                                    "Glass",
+                                    "#33373B"
+                                  ],
+                                  [
+                                    "Grey roof",
+                                    "#A8A6A2"
+                                  ],
+                                  [
+                                    "Light roof",
+                                    "#E8E4DC"
+                                  ],
+                                  [
+                                    "Opening",
+                                    "#2E2826"
+                                  ],
+                                  [
+                                    "Railing, iron",
+                                    "#2E2B29"
+                                  ],
+                                  [
+                                    "Roof, brick",
+                                    "#86574A"
+                                  ],
+                                  [
+                                    "Slate",
+                                    "#4C5562"
+                                  ],
+                                  [
+                                    "Stone trim",
+                                    "#DCC0A2"
+                                  ],
+                                  [
+                                    "Stone, dark",
+                                    "#57534E"
+                                  ],
+                                  [
+                                    "Tile, blue",
+                                    "#7D9AD0"
+                                  ],
+                                  [
+                                    "Tile, glazed brown",
+                                    "#8E5B47"
+                                  ],
+                                  [
+                                    "Tile, green",
+                                    "#6E8F72"
+                                  ],
+                                  [
+                                    "Trim, grey",
+                                    "#C9C5BC"
+                                  ],
+                                  [
+                                    "Trim, ochre",
+                                    "#C9A24E"
+                                  ],
+                                  [
+                                    "Wall, brick",
+                                    "#9A5A45"
+                                  ],
+                                  [
+                                    "Wall, lime-washed",
+                                    "#F1E8D8"
+                                  ],
+                                  [
+                                    "Wall, ochre",
+                                    "#E2CDA8"
+                                  ],
+                                  [
+                                    "Wall, pink marble",
+                                    "#B98A7E"
+                                  ],
+                                  [
+                                    "Wall, plaster",
+                                    "#D8D6D2"
+                                  ],
+                                  [
+                                    "Wall, stone",
+                                    "#C8AC92"
+                                  ],
+                                  [
+                                    "Wall, white",
+                                    "#F4F2EC"
+                                  ],
+                                  [
+                                    "Weathered tile",
+                                    "#A9785F"
+                                  ],
+                                  [
+                                    "Window, blue frame",
+                                    "#3E6FA8"
+                                  ],
+                                  [
+                                    "Window, wood frame",
+                                    "#6B4A33"
+                                  ],
+                                  [
+                                    "Wood, balustrade",
+                                    "#8A5B36"
+                                  ],
+                                  [
+                                    "Wood, posts",
+                                    "#7A4E2E"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#C2603F",
+                                  "#9C4A32",
+                                  "#D98A5F",
+                                  "#ECEAE4",
+                                  "#5E5C5A",
+                                  "#5A3B26",
+                                  "#5C3F2C",
+                                  "#5E574F",
+                                  "#4A443E",
+                                  "#4B3627",
+                                  "#33373B",
+                                  "#A8A6A2",
+                                  "#E8E4DC",
+                                  "#2E2826",
+                                  "#2E2B29",
+                                  "#86574A",
+                                  "#4C5562",
+                                  "#DCC0A2",
+                                  "#57534E",
+                                  "#7D9AD0",
+                                  "#8E5B47",
+                                  "#6E8F72",
+                                  "#C9C5BC",
+                                  "#C9A24E",
+                                  "#9A5A45",
+                                  "#F1E8D8",
+                                  "#E2CDA8",
+                                  "#B98A7E",
+                                  "#D8D6D2",
+                                  "#C8AC92",
+                                  "#F4F2EC",
+                                  "#A9785F",
+                                  "#3E6FA8",
+                                  "#6B4A33",
+                                  "#8A5B36",
+                                  "#7A4E2E"
+                                ],
+                                "name": "Cuenca roofs and walls",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorField": null,
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-measured": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- One row per building in the centre; measured = OpenStreetMap gave a height or floors.\nSELECT count(*) FILTER (WHERE height_from IN ('height (OSM)', 'floors (OSM)')) / count(*) AS measured\nFROM (SELECT DISTINCT building_id, height_from FROM read_parquet('http://feeds/datasets/cuenca-3d/surfaces.parquet') WHERE latitude BETWEEN -2.9035 AND -2.8925 AND longitude BETWEEN -79.0135 AND -78.9960)"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Share of the centre's buildings whose height comes from OpenStreetMap (a height or a number of floors); the rest are estimated.",
+          "id": 2,
+          "links": [],
+          "title": "Buildings with a measured height",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "none",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 24,
+              "width": 18,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-measured"
+              },
+              "height": 4,
+              "width": 6,
+              "x": 18,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-heights"
+              },
+              "height": 6,
+              "width": 6,
+              "x": 18,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 14,
+              "width": 6,
+              "x": 18,
+              "y": 10
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "city",
+      "duckdb",
+      "kepler",
+      "plus"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5m",
+        "15m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": true,
+      "timezone": "America/Guayaquil",
+      "to": "now"
+    },
+    "title": "Cuenca in 3D from open data",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "https://pacha.ubica.dev",
+            "value": "https://pacha.ubica.dev"
+          },
+          "hide": "hideVariable",
+          "label": "This site's https address (the CityJSON tiles)",
+          "name": "site",
+          "query": "https://pacha.ubica.dev",
+          "skipUrlSync": true
+        }
+      }
+    ]
+  }
+}
