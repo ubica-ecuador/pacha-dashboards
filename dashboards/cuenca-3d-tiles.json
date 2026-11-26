@@ -306,7 +306,7 @@
                         15
                       ],
                       "topLayerGroups": {
-                        "label": false,
+                        "label": true,
                         "poi": true,
                         "road": false
                       },
