@@ -1,0 +1,1386 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "bogota-rush-hour"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "How far you get from Plaza de Bolívar, in the centre of Bogotá, in 5, 10 and 20 minutes by car, leaving at each hour of a Tuesday, in the traffic Mapbox expects for that hour (Isochrone API, driving-traffic).",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 8,
+          "links": [],
+          "title": "About the data",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Where the data comes from\n\n- **Isochrones**: [Mapbox’s Isochrone API](https://docs.mapbox.com/api/navigation/isochrone/), asked from Pacha’s gateway, which adds the token and keeps each answer for a month. By car, the *driving-traffic* profile with a departure time (`depart_at`) for each hour of Tuesday 1 December 2026, in Bogotá time: the contours reflect the traffic Mapbox expects then, from its current and historic traffic. Asked for another Tuesday at the same hour, it gives the same shape: it is a typical day, not a forecast of that date.\n- **Base map**: OpenFreeMap’s *Fiord* style, © OpenMapTiles © OpenStreetMap contributors; its streets and names are drawn over the rings.\n- **From**: the white marker, Plaza de Bolívar (4.5981° N, 74.0759° W), Bogotá’s main square, until you drag it. A drop is rounded to 0.002° (about 220 m), so nearby drops share the gateway’s copies; outside Bogotá and its outskirts the start goes back to the square. A new start asks Mapbox 24 times, some 10 seconds; one already asked comes from the gateway at once.\n\n### How it is computed\n\n- Each contour is the largest area reachable within 5, 10 or 20 minutes (Mapbox’s `denoise`), simplified to 40 m. By car the map draws rings, each contour less the shorter one, so no two shapes overlap.\n- **km²** is the area of that polygon on the WGS84 ellipsoid, holes and all: it counts parks, rivers and blocks a car cannot enter, like any isochrone.\n- The day has 24 departures; the Time Brush grows from midnight an hour at a time, the map and the card show its last departure, and every time on the dashboard is Bogotá’s clock (UTC−5).\n\n### How it works\n\nThe server asks Mapbox once (24 requests, kept a month by the gateway), measures the polygons in DuckDB (*spatial*) and hands them to your browser (Chaski). The Time Brush (Kepler Plus) writes the departure into a Mosaic Selection and two variables: the map follows the variables, the card and the chart the Selection, all in the browser.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-brush": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The bars under the brush: km² within 20 minutes by car for each departure.\nSELECT time, km2 AS \"20 min by car (km²)\"\nFROM $iso WHERE mode = 'car' AND minutes = 20\nORDER BY time"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "From midnight to the departure the map, the card and the chart show, an hour a step. Bars: the ground 20 minutes by car reach leaving then (km²), in the traffic Mapbox expects on a Tuesday.",
+          "id": 9,
+          "links": [],
+          "title": "Leaving at (Bogotá time): drag the window or press play",
+          "vizConfig": {
+            "group": "ubica-timebrush-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "fixedColor": "#FF9F43",
+                    "mode": "fixed"
+                  },
+                  "custom": {
+                    "aggregation": "max",
+                    "context": false,
+                    "drawStyle": "bars",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  },
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "suffix: km²"
+                },
+                "overrides": []
+              },
+              "options": {
+                "accentColor": "",
+                "backgroundColor": "",
+                "backgroundTransparency": 5,
+                "barColor": "",
+                "barsColor": "series",
+                "bucket": "1h",
+                "cursorColor": "",
+                "cursorFollow": true,
+                "cursorPublish": true,
+                "density": "comfortable",
+                "domain": "data",
+                "floatingPlace": {
+                  "anchorX": "center",
+                  "anchorY": "bottom",
+                  "dx": 0,
+                  "dy": 8,
+                  "height": 105,
+                  "width": 0.6
+                },
+                "followLatest": false,
+                "hatchGaps": true,
+                "hoverTooltip": true,
+                "instantVariable": "",
+                "loop": true,
+                "mosaicColumn": "time",
+                "mosaicSelection": "rush",
+                "output": "variables",
+                "outsideOpacity": 30,
+                "pinned": "never",
+                "pinnedControls": "all",
+                "pinnedHeight": 52,
+                "pinnedPosition": "floating",
+                "pinnedStyle": "solid",
+                "playMotion": "steps",
+                "publishIntervalMs": 900,
+                "publishWhileDragging": false,
+                "publishWhilePlaying": true,
+                "scale": "linear",
+                "selection": "range",
+                "showAxis": true,
+                "showHistogram": true,
+                "showPickers": true,
+                "showReadout": true,
+                "snap": true,
+                "snapTo": "buckets",
+                "stepMs": 1200,
+                "stickyOffset": 0,
+                "valueGuides": false,
+                "variables": {
+                  "from": "t0",
+                  "to": "t1"
+                },
+                "viewVariables": {
+                  "bucket": "",
+                  "from": "",
+                  "to": ""
+                },
+                "windowMode": "incremental",
+                "zoomToExternal": false
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-credit": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 11,
+          "links": [],
+          "title": "",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "Base map <a href=\"https://openfreemap.org\">OpenFreeMap</a> © <a href=\"https://www.openmaptiles.org/\">OpenMapTiles</a> © <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> · Isochrones: <a href=\"https://docs.mapbox.com/api/navigation/isochrone/\">Mapbox Isochrone API</a> © Mapbox · <b>By car</b> <span style=\"color:#FFE066\">5</span> · <span style=\"color:#FF9F43\">10</span> · <span style=\"color:#EE5253\">20 min</span>",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-curve": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Square kilometres within 5, 10 and 20 minutes by car of the start for each departure on a Tuesday, in Mapbox’s typical traffic.",
+          "id": 6,
+          "links": [],
+          "title": "Ground within reach by car, leaving at each hour (Bogotá time)",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  rush: { select: crossfilter }\nplot:\n  - mark: lineY\n    data: { from: iso }\n    x: hour\n    y: km2\n    z: minutes\n    stroke: reach\n    strokeWidth: 3\n    curve: monotone-x\n  - mark: dot\n    data: { from: iso }\n    x: hour\n    y: km2\n    fill: reach\n    r: 2.5\n    tip: true\n  - mark: ruleX\n    data: { from: iso, filterBy: $rush }\n    x: { max: hour }\n    stroke: currentColor\n    strokeWidth: 1.5\n  - mark: dot\n    data: { from: iso, filterBy: $rush }\n    x: { max: hour }\n    y: { sql: \"arg_max(km2, hour)\" }\n    fill: reach\n    stroke: currentColor\n    r: 7\ncolorDomain: ['20 min', '10 min', '5 min']\ncolorRange: ['#EE5253', '#FF9F43', '#FFE066']\nxDomain: [0, 24]\nxTicks: [0, 3, 6, 9, 12, 15, 18, 21, 24]\nxLabel: Leaving at (Bogotá time, hour) →\nyLabel: ↑ km² within reach\nyGrid: true\nmarginLeft: 50\nmarginBottom: 36\n",
+                "variables": ""
+              }
+            },
+            "version": "2.5.0"
+          }
+        }
+      },
+      "panel-lost": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT 1 - min(km2) / max(km2) AS lost FROM $iso WHERE mode = 'car' AND minutes = 20"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The share of the night’s 20-minute reach by car that the evening peak takes away.",
+          "id": 3,
+          "links": [],
+          "title": "Lost at the peak",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#EE5253",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "percentunit"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-map": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- By car, the last departure in the Time Brush's window (t0 to t1, ISO text in UTC, which is Bogota's clock\n-- here): the window grows from midnight, and the map shows where it has got to, one departure at a time,\n-- since rings of several hours piled on each other read as noise. The 20-minute ring first, so the shorter ones draw over it.\nSELECT time, leaving, minutes || ' min' AS reach, minutes, km2, geometry\nFROM $iso\nWHERE mode = 'car' AND time = (\n  SELECT coalesce(max(time), min(time)) FROM $iso\n  WHERE mode = 'car' AND strftime(time, '%Y-%m-%dT%H:%M:%S.000Z') BETWEEN ${t0:sqlstring} AND ${t1:sqlstring})\nORDER BY minutes DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "-- The start, as the server rounded it (the marker sits where it was dropped).\nSELECT any_value(origin) AS start FROM $iso"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Leaving from the white marker (Plaza de Bolívar at first; drag it anywhere in Bogotá and wait some 20 seconds for Mapbox) at the departure the Time Brush holds, on a Tuesday: the ground 5 (yellow), 10 (orange) and 20 minutes (red) by car reach in the traffic Mapbox expects then. Play the Time Brush to watch the city shrink at the peaks.",
+          "id": 5,
+          "links": [],
+          "title": "Drag the start: 5, 10 and 20 minutes by car, leaving at the brushed time",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {},
+                "basemap": "openfreemap-fiord",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": true,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": false,
+                "hoverSync": false,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -21.216195441141963,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": 4.581713079853003,
+                      "longitude": -74.08688562919187,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_3D",
+                      "maxPitch": 85,
+                      "pitch": 54.83246539373414,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 13.587390307840995
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-fiord",
+                      "threeDBuildingColor": [
+                        64.2493441415438,
+                        75.42314312268185,
+                        102.42649066043215
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": true
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": true,
+                        "buildingShadows": {
+                          "colour": [
+                            200,
+                            196,
+                            188
+                          ],
+                          "nightColour": [
+                            59,
+                            68,
+                            104
+                          ],
+                          "on": true,
+                          "opacity": 1,
+                          "overData": false,
+                          "shade": 1,
+                          "styleColour": true
+                        },
+                        "dayNightStyles": false,
+                        "label": true,
+                        "land": true,
+                        "relief": false,
+                        "road": true,
+                        "streetLights": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": false
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 0.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": false,
+                          "hideInvisibleLayers": false
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "config": {
+                            "compareMode": false,
+                            "compareType": "absolute",
+                            "fieldsToShow": {
+                              "grafana-A": [
+                                {
+                                  "name": "leaving"
+                                },
+                                {
+                                  "name": "reach"
+                                },
+                                {
+                                  "name": "km2"
+                                }
+                              ],
+                              "grafana-C": [
+                                {
+                                  "name": "start"
+                                }
+                              ]
+                            }
+                          },
+                          "enabled": true,
+                          "fieldsToShow": {
+                            "grafana-A": [
+                              {
+                                "format": "L LT",
+                                "name": "time"
+                              }
+                            ],
+                            "grafana-C": []
+                          }
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "additive",
+                      "layerOrder": [
+                        "origin",
+                        "car"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              130,
+                              154,
+                              227
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Start",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "angleDegrees": 0,
+                              "markerRadius": 12,
+                              "markers": [
+                                {
+                                  "color": [
+                                    255,
+                                    255,
+                                    255
+                                  ],
+                                  "id": "start",
+                                  "label": "Start: drag me",
+                                  "latVariable": "origin_lat",
+                                  "lngVariable": "origin_lng",
+                                  "position": [
+                                    -74.0759,
+                                    4.5981
+                                  ]
+                                }
+                              ],
+                              "symbol": "circle"
+                            }
+                          },
+                          "id": "origin",
+                          "type": "markers",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "sizeScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              255,
+                              159,
+                              67
+                            ],
+                            "columnMode": "geojson",
+                            "columns": {
+                              "geojson": "_geojson"
+                            },
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "By car, with traffic",
+                            "textLabel": [
+                              {
+                                "alignment": "center",
+                                "anchor": "start",
+                                "background": false,
+                                "backgroundColor": [
+                                  0,
+                                  0,
+                                  200,
+                                  255
+                                ],
+                                "collisionEnabled": false,
+                                "color": [
+                                  255,
+                                  255,
+                                  255
+                                ],
+                                "offset": [
+                                  0,
+                                  0
+                                ],
+                                "outlineColor": [
+                                  255,
+                                  0,
+                                  0,
+                                  255
+                                ],
+                                "outlineWidth": 0,
+                                "size": 18,
+                                "weight": 400
+                              }
+                            ],
+                            "visConfig": {
+                              "allowHover": true,
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "10 min",
+                                    "#FF9F43"
+                                  ],
+                                  [
+                                    "20 min",
+                                    "#EE5253"
+                                  ],
+                                  [
+                                    "5 min",
+                                    "#FFE066"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FF9F43",
+                                  "#EE5253",
+                                  "#FFE066"
+                                ],
+                                "name": "By car, with traffic",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": true,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 0.44,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Custom",
+                                "colorMap": [
+                                  [
+                                    "10 min",
+                                    "#FF9F43"
+                                  ],
+                                  [
+                                    "20 min",
+                                    "#EE5253"
+                                  ],
+                                  [
+                                    "5 min",
+                                    "#FFE066"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FF9F43",
+                                  "#EE5253",
+                                  "#FFE066"
+                                ],
+                                "name": "By car, with traffic",
+                                "type": "custom"
+                              },
+                              "strokeOpacity": 0.95,
+                              "stroked": true,
+                              "thickness": 1.5,
+                              "underRoads": true,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "car",
+                          "type": "geojson",
+                          "visualChannels": {
+                            "colorField": {
+                              "name": "reach",
+                              "type": "string"
+                            },
+                            "colorScale": "ordinal",
+                            "elevationOffsetScale": "linear",
+                            "heightScale": "linear",
+                            "radiusScale": "linear",
+                            "sizeScale": "linear",
+                            "strokeColorField": {
+                              "name": "reach",
+                              "type": "string"
+                            },
+                            "strokeColorScale": "ordinal"
+                          }
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": false,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": false,
+                "showSidePanel": false,
+                "timeSync": "off"
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-night": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT max(km2) AS \"km²\" FROM $iso WHERE mode = 'car' AND minutes = 20"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The most ground 20 minutes by car cover from the start, leaving at any hour of the night (the largest of the day).",
+          "id": 1,
+          "links": [],
+          "title": "Car, 20 min, at night",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#FF9F43",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "suffix: km²"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      },
+      "panel-now": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The ground within 5, 10 and 20 minutes by car of the start, leaving at the last departure the Time Brush holds.",
+          "id": 10,
+          "links": [],
+          "title": "Leaving at the brushed time, by car",
+          "vizConfig": {
+            "group": "ubica-chaski-mosaic-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "preaggregate": true,
+                "reads": "",
+                "spec": "params:\n  rush: { select: crossfilter }\nplot:\n  - mark: text\n    data: { from: iso, filterBy: $rush }\n    text: { sql: \"max(leaving) || '  ·  ' || round(arg_max(km2, time) FILTER (WHERE minutes = 20))::INTEGER || ' km² in 20 min'\" }\n    frameAnchor: middle\n    fill: '#FF9F43'\n    fontSize: 30\n    fontWeight: 600\n  - mark: text\n    data: { from: iso, filterBy: $rush }\n    text: { sql: \"round(arg_max(km2, time) FILTER (WHERE minutes = 5))::INTEGER || ' km² in 5  ·  ' || round(arg_max(km2, time) FILTER (WHERE minutes = 10))::INTEGER || ' km² in 10'\" }\n    frameAnchor: bottom\n    dy: -4\n    fill: currentColor\n    fontSize: 15\nxAxis: null\nyAxis: null\nmargin: 0\n",
+                "variables": ""
+              }
+            },
+            "version": "2.5.0"
+          }
+        }
+      },
+      "panel-peak": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdbwasm"
+                      },
+                      "group": "ubica-chaski-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "rawSql": "SELECT min(km2) AS \"km²\" FROM $iso WHERE mode = 'car' AND minutes = 20"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "The least ground 20 minutes by car cover, at the worst hour of the day.",
+          "id": 2,
+          "links": [],
+          "title": "Car, 20 min, peak",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "decimals": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "#EE5253",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "suffix: km²"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "/.*/",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              }
+            },
+            "version": "13.3.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "GridLayout",
+      "spec": {
+        "items": [
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-now"
+              },
+              "height": 4,
+              "width": 9,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-night"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 9,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-peak"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 14,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-lost"
+              },
+              "height": 4,
+              "width": 5,
+              "x": 19,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-brush"
+              },
+              "height": 6,
+              "width": 24,
+              "x": 0,
+              "y": 4
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-map"
+              },
+              "height": 24,
+              "width": 15,
+              "x": 0,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-curve"
+              },
+              "height": 13,
+              "width": 9,
+              "x": 15,
+              "y": 10
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-about"
+              },
+              "height": 13,
+              "width": 9,
+              "x": 15,
+              "y": 23
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-credit"
+              },
+              "height": 2,
+              "width": 15,
+              "x": 0,
+              "y": 34
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "chaski",
+      "city",
+      "duckdb",
+      "kepler",
+      "mobility",
+      "mosaic"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": true,
+      "timezone": "utc",
+      "to": "now"
+    },
+    "title": "Bogotá at rush hour: how far 5, 10 and 20 minutes take you, hour by hour, from where you choose",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "4.5981",
+            "value": "4.5981"
+          },
+          "hide": "hideVariable",
+          "label": "Start latitude",
+          "name": "origin_lat",
+          "query": "4.5981",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "-74.0759",
+            "value": "-74.0759"
+          },
+          "hide": "hideVariable",
+          "label": "Start longitude",
+          "name": "origin_lng",
+          "query": "-74.0759",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "QueryVariable",
+        "spec": {
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
+          "hide": "hideVariable",
+          "includeAll": false,
+          "multi": false,
+          "name": "iso",
+          "options": [],
+          "query": {
+            "datasource": {
+              "name": "duckdbwasm"
+            },
+            "group": "ubica-chaski-datasource",
+            "kind": "DataQuery",
+            "spec": {
+              "kind": "dataset",
+              "name": "iso",
+              "refId": "iso",
+              "source": {
+                "datasource": {
+                  "type": "motherduck-duckdb-datasource",
+                  "uid": "duckdb"
+                },
+                "query": {
+                  "datasource": {
+                    "type": "motherduck-duckdb-datasource",
+                    "uid": "duckdb"
+                  },
+                  "editorMode": "code",
+                  "format": 1,
+                  "rawQuery": true,
+                  "rawSql": "-- Server side: how far 5, 10 and 20 minutes take you from the map's marker (Plaza de Bolivar, in the centre of Bogota, at first),\n-- leaving every hour of a Tuesday (1 December 2026), by car in the traffic Mapbox expects for that\n-- weekday and hour (its Isochrone API, profile driving-traffic). Through the gateway (mapbox), which adds\n-- the token and keeps each answer a month: the 24 requests reach Mapbox once.\n--\n-- Times: Bogota's clock (UTC-5), which is what Mapbox is asked; time carries it as is, and the dashboard\n-- shows times in UTC, so every viewer reads Bogota's clock; hour is the same as a number.\n-- Areas in square kilometres on the WGS84 ellipsoid.\nSET force_download = true;\n-- The start: the map's marker (origin_lat, origin_lng), rounded to 0.002 degrees (about 220 m) so the\n-- gateway's copies serve nearby drops; outside Bogota and its outskirts, Plaza de Bolivar again.\nSET VARIABLE lat = coalesce(try_cast(${origin_lat:sqlstring} AS DOUBLE), 4.5981);\nSET VARIABLE lng = coalesce(try_cast(${origin_lng:sqlstring} AS DOUBLE), -74.0759);\nSET VARIABLE inside = getvariable('lat') BETWEEN 4.40 AND 4.90 AND getvariable('lng') BETWEEN -74.30 AND -73.95;\nSET VARIABLE start = CASE WHEN getvariable('inside')\n  THEN printf('%.3f,%.3f', round(getvariable('lng') * 500) / 500, round(getvariable('lat') * 500) / 500)\n  ELSE '-74.0759,4.5981' END;\nSET VARIABLE asks = (SELECT list({'mode': mode, 'local_time': local_time, 'url': url}) FROM (\n\n  SELECT 'car' AS mode, t AS local_time,\n         'http://feeds/mapbox/isochrone/driving-traffic/' || getvariable('start') || '/5,10,20/' || strftime(t, '%Y-%m-%dT%H:%M') || '.json' AS url\n  FROM (SELECT unnest(generate_series(TIMESTAMP '2026-12-01 00:00', TIMESTAMP '2026-12-01 23:00', INTERVAL 1 HOUR)) AS t)\n\n));\n-- The URLs as a list of their own: read_json takes a list variable, not one computed from another.\nSET VARIABLE urls = (SELECT list(a.url) FROM (SELECT unnest(getvariable('asks')) AS a));\nWITH asks AS (SELECT unnest(getvariable('asks'), recursive := true)),\nanswers AS (\n  SELECT filename AS url, unnest(features) AS f\n  FROM read_json(getvariable('urls'), filename = true, columns = {features: 'JSON[]'}, maximum_object_size = 50000000)\n),\nshapes AS (\n  SELECT a.mode, a.local_time, (f ->> '$.properties.contour')::INTEGER AS minutes,\n         ST_GeomFromGeoJSON(f -> '$.geometry') AS geom\n  FROM answers JOIN asks a USING (url)\n),\n-- By car, each contour less the shorter one inside it: rings that do not overlap, so a tilted map has\n-- no two shapes in one plane to fight over (they drew as spikes). km2 stays the whole contour's.\nrings AS (\n  SELECT *, CASE WHEN inner_geom IS NOT NULL\n                 THEN ST_MakeValid(ST_Difference(ST_MakeValid(geom), ST_MakeValid(inner_geom))) ELSE geom END AS ring\n  FROM (SELECT *, lag(geom) OVER (PARTITION BY mode, local_time ORDER BY minutes) AS inner_geom FROM shapes)\n)\n-- time is a minute past the departure: a window that ends on the hour (both ends in) then holds the\n-- departures before it, not the one at its end; leaving is the departure as text.\nSELECT mode, local_time + INTERVAL 1 MINUTE AS time, strftime(local_time, '%H:%M') AS leaving,\n       hour(local_time) + minute(local_time) / 60.0 AS hour,\n       minutes,\n       CASE WHEN mode = 'car' THEN minutes || ' min' END AS reach,\n       round(ST_Area_Spheroid(ST_FlipCoordinates(geom)) / 1e6, 1) AS km2,\n       ST_AsGeoJSON(ring)::VARCHAR AS geometry,\n       getvariable('start') AS origin\nFROM rings\nORDER BY mode, time, minutes DESC",
+                  "refId": "tides"
+                },
+                "type": "datasource"
+              }
+            },
+            "version": "v0"
+          },
+          "refresh": "onDashboardLoad",
+          "regex": "",
+          "regexApplyTo": "value",
+          "skipUrlSync": true,
+          "sort": "disabled"
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-12-01T00:00:00.000Z",
+            "value": "2026-12-01T00:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Departure from",
+          "name": "t0",
+          "query": "2026-12-01T00:00:00.000Z",
+          "skipUrlSync": false
+        }
+      },
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "2026-12-01T18:00:00.000Z",
+            "value": "2026-12-01T18:00:00.000Z"
+          },
+          "hide": "hideVariable",
+          "label": "Departure to",
+          "name": "t1",
+          "query": "2026-12-01T18:00:00.000Z",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
