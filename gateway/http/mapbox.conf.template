@@ -1,0 +1,27 @@
+# Mapbox behind bogota-rush-hour: a copy of each isochrone (the traffic it uses
+# is Mapbox's typical traffic for that weekday and hour, so an answer holds for
+# weeks) and a throttle that keeps what reaches Mapbox well under its 300
+# requests a minute.
+proxy_cache_path /var/cache/nginx/mapbox levels=1:2 keys_zone=mapbox:10m
+                 max_size=200m inactive=60d use_temp_path=off;
+map $host $mapbox_bucket {
+    default mapbox;
+}
+limit_req_zone $mapbox_bucket zone=mapbox_upstream:1m rate=3r/s;
+
+# The throttle: only the mapbox locations call it, from inside this container.
+# Past three a second requests wait in line rather than reach Mapbox at once.
+server {
+    listen 127.0.0.1:8092;
+    resolver 127.0.0.11 valid=300s ipv6=off;
+    proxy_ssl_server_name on;
+
+    location / {
+        limit_req zone=mapbox_upstream burst=500;
+        set $mapbox_api api.mapbox.com;
+        proxy_pass https://$mapbox_api$request_uri;
+        proxy_set_header Host $mapbox_api;
+        proxy_set_header User-Agent "Pacha (+https://github.com/ubica-ecuador/pacha-dashboards)";
+        proxy_read_timeout 60s;
+    }
+}
