@@ -31,12 +31,13 @@ test('follows the dashboards conventions', () => {
   }
   const [map] = findAll(dashboard, (n) => n.vizConfig?.group === 'ubica-keplerplus-panel');
   assert.equal(map.vizConfig.spec.options.mosaicSelection, 'tideFilters');
-  // The tide and the wind play on the map's own time slider; the callout cards read the whole
-  // window (query B).
+  // The tide, the wind and the callout cards play on the map's own time slider: the cards draw the
+  // whole window (query B) and mark the slider's end on it.
   const { layers, filters } = map.vizConfig.spec.options.mapConfig.config.visState;
   assert.deepEqual(layers.map((l) => [l.type, l.config.dataId]),
     [['point', 'grafana-A'], ['callout', 'grafana-B'], ['flowfield', 'grafana-C']]);
-  assert.deepEqual(filters[0].dataId, ['grafana-A', 'grafana-C']);
+  assert.deepEqual(filters[0].dataId, ['grafana-A', 'grafana-B', 'grafana-C']);
+  assert.deepEqual(filters[0].name, ['time', 'time', 'time']);
   // The gauge series crosshair moves the cards' crosshair.
   assert.equal(dashboard.spec.cursorSync, 'Crosshair');
 });

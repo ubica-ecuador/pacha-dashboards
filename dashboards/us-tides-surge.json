@@ -523,11 +523,13 @@
                           "animationWindow": "interval",
                           "dataId": [
                             "grafana-A",
+                            "grafana-B",
                             "grafana-C"
                           ],
                           "enabled": true,
                           "id": "time",
                           "name": [
+                            "time",
                             "time",
                             "time"
                           ],
