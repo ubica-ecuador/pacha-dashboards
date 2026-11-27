@@ -1,0 +1,3549 @@
+{
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "portoviejo-clima-prueba"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations \u0026 Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {},
+            "version": "v0"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Prueba desechable: sombra de 10 a 15 h, cielo visible y horas de sol en el suelo, los techos y cada panel de fachada del centro de Portoviejo, antes y después de plantar árboles en la calle Chile.",
+    "editable": true,
+    "elements": {
+      "panel-about": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 5,
+          "links": [],
+          "title": "Sobre los datos",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "### Qué es\n\n**Prueba desechable para DIGI-GADS** (indicador G05, sombra en rutas peatonales). El centro de Portoviejo, unos\n1,5 km², con tres valores calculados en el **suelo** (cada metro), en los **techos** y en **cada panel de fachada**\n(3 m de ancho por piso):\n\n- **Sombra de 10:00 a 15:00**: la parte de esas horas en que el punto está a la sombra, promedio de 12 días del año.\n  Es la medida que importa al peatón en la línea ecuatorial.\n- **Cielo visible (SVF)**: 1 = cielo abierto, 0 = encerrado. En las fachadas, 1 = una fachada sin nada enfrente.\n- **Horas de sol directo al día**, promedio del año.\n\nArriba, la **línea base** a la izquierda y el **escenario** a la derecha: 313 árboles cada 8 m en las dos aceras de la\ncalle Chile (copa de 3 m de radio y 8 m de alto). Arrastre la cortina para comparar. Abajo, cuánto cambia la sombra.\n\n### Con qué datos\n\n- Edificios: **Overture Maps** 2026-11-18. **Alturas: el 99,6 % estimadas con GHSL Built-H 2018** (altura media de lo\n  construido en celdas de 100 m), el resto por los pisos de OSM. Es la debilidad de la prueba: todos los edificios\n  de una manzana salen casi iguales.\n- Árboles: altura de dosel de **Meta/WRI** (1 m). Opacos para lo que está detrás; bajo una copa pasa el 20 %.\n- Suelo plano; sol calculado cada 15 minutos.\n\n### Límites\n\nNo es confort térmico (UTCI) ni temperatura: los TdR excluyen la modelación microclimática. Son valores geométricos\nde sombra y cielo para comparar escenarios. Con alturas del catastro o de un vuelo de dron los mismos cálculos\nservirían para el diagnóstico.",
+                "mode": "markdown"
+              }
+            },
+            "version": "13.0.0"
+          }
+        }
+      },
+      "panel-dif": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Escenario − línea base: the buildings as CityJSON tiles (datasets/portoviejo-clima/paint.py), every roof and wall\n-- panel a face coloured by its class. One row per tile: its URL and the box its buildings cover.\nSELECT '${site:raw}/datasets/portoviejo-clima/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/portoviejo-clima/tiles.parquet' WHERE conjunto = 'sombra-dif' ORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Escenario − línea base: the ground at 1 m, painted by Pacha's tile server from the colour table the file carries.\nSELECT 'http://feeds/datasets/portoviejo-clima/pintado-sombra-dif.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scenario's 313 street trees (datasets/portoviejo-clima/prep.py): every 8 m on both sides of calle Chile.\nSELECT longitude, latitude, altura_m, radio_copa_m FROM 'http://feeds/datasets/portoviejo-clima/arboles.parquet'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Escenario menos línea base, en puntos porcentuales de las horas de 10:00 a 15:00 en sombra.",
+          "id": 2,
+          "links": [],
+          "title": "Cuánta sombra gana cada metro de suelo y cada fachada (10:00–15:00)",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": 20,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": false,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -1.0552,
+                      "longitude": -80.4553,
+                      "mapSplitMode": "SINGLE_MAP",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 50,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 17.3
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "buildingShadows": false,
+                        "dayNightStyles": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "relief": false,
+                        "road": true,
+                        "streetLights": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {}
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "trees",
+                        "city-dif",
+                        "ground-dif"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Edificios: Escenario − línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "none",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 32,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "pierde \u003e 20 pts",
+                                    "#B2182B"
+                                  ],
+                                  [
+                                    "pierde 5–20",
+                                    "#EF8A62"
+                                  ],
+                                  [
+                                    "sin cambio (± 5)",
+                                    "#E6E6E6"
+                                  ],
+                                  [
+                                    "gana 5–20 pts",
+                                    "#67A9CF"
+                                  ],
+                                  [
+                                    "gana 20–40",
+                                    "#2166AC"
+                                  ],
+                                  [
+                                    "gana \u003e 40",
+                                    "#053061"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#B2182B",
+                                  "#EF8A62",
+                                  "#E6E6E6",
+                                  "#67A9CF",
+                                  "#2166AC",
+                                  "#053061"
+                                ],
+                                "name": "Edificios: Escenario − línea base",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city-dif",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Suelo: Escenario − línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "ground-dif",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              34,
+                              139,
+                              34
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Árboles nuevos (escenario)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "trees",
+                          "type": "point",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": []
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-heights": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "SELECT altura_de AS \"Fuente\", count(*) AS \"Edificios\", round(median(altura_m), 1) AS \"Mediana (m)\"\nFROM (SELECT DISTINCT building_id, height_from AS altura_de, height_m AS altura_m FROM 'http://feeds/datasets/portoviejo-clima/superficies.parquet')\nGROUP BY 1 ORDER BY 2 DESC"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 4,
+          "links": [],
+          "title": "De dónde sale la altura de cada edificio",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.0.0"
+          }
+        }
+      },
+      "panel-leg-sol_h": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 29,
+          "links": [],
+          "title": "Leyenda",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "\u003cdiv style=\"margin:2px 0 6px 0;font-weight:600\"\u003eSol directo al día\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#160B39;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e\u003c 1,5 h\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#420A68;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e1,5–3 h\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#6A176E;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e3–4,5 h\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#932667;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e4,5–6 h\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#BC3754;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e6–7,5 h\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#DD513A;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e7,5–9 h\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#F37819;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e9–10,5 h\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#FCC33A;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e≥ 10,5 h\u003c/div\u003e\n\u003cdiv style=\"margin-top:8px\"\u003e\u003cspan style=\"display:inline-block;width:10px;height:10px;border-radius:50%;background:#228B22;border:1px solid #fff;margin-right:8px\"\u003e\u003c/span\u003eÁrbol nuevo (escenario)\u003c/div\u003e\n\u003cdiv style=\"margin-top:8px;opacity:.8\"\u003eLas mismas clases en el suelo, los techos y cada panel de fachada; en los edificios la iluminación oscurece un poco el color.\u003c/div\u003e",
+                "mode": "html"
+              }
+            },
+            "version": "13.0.0"
+          }
+        }
+      },
+      "panel-leg-sombra": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 27,
+          "links": [],
+          "title": "Leyenda",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "\u003cdiv style=\"margin:2px 0 6px 0;font-weight:600\"\u003eSombra de 10 a 15 h (parte del tiempo)\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#FFE680;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e\u003c 10 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#F9C66B;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e10–25 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#E8A47A;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e25–40 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#C78897;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e40–55 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#9C76B0;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e55–70 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#6F68BE;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e70–85 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#4757B5;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e85–95 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#26408F;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e≥ 95 %\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0 6px 0;font-weight:600\"\u003eCambio de sombra, escenario − base (puntos)\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#B2182B;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003epierde \u003e 20 pts\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#EF8A62;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003epierde 5–20\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#E6E6E6;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003esin cambio (± 5)\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#67A9CF;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003egana 5–20 pts\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#2166AC;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003egana 20–40\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#053061;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003egana \u003e 40\u003c/div\u003e\n\u003cdiv style=\"margin-top:8px\"\u003e\u003cspan style=\"display:inline-block;width:10px;height:10px;border-radius:50%;background:#228B22;border:1px solid #fff;margin-right:8px\"\u003e\u003c/span\u003eÁrbol nuevo (escenario)\u003c/div\u003e\n\u003cdiv style=\"margin-top:8px;opacity:.8\"\u003eLas mismas clases en el suelo, los techos y cada panel de fachada; en los edificios la iluminación oscurece un poco el color.\u003c/div\u003e",
+                "mode": "html"
+              }
+            },
+            "version": "13.0.0"
+          }
+        }
+      },
+      "panel-leg-svf": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "",
+          "id": 28,
+          "links": [],
+          "title": "Leyenda",
+          "vizConfig": {
+            "group": "text",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "code": {
+                  "language": "plaintext",
+                  "showLineNumbers": false,
+                  "showMiniMap": false
+                },
+                "content": "\u003cdiv style=\"margin:2px 0 6px 0;font-weight:600\"\u003eCielo visible (SVF)\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#08306B;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e\u003c 0,2\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#08519C;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e0,2–0,3\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#2171B5;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e0,3–0,4\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#4292C6;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e0,4–0,5\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#6BAED6;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e0,5–0,6\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#9ECAE1;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e0,6–0,7\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#C6DBEF;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e0,7–0,85\u003c/div\u003e\n\u003cdiv style=\"margin:2px 0\"\u003e\u003cspan style=\"display:inline-block;width:16px;height:12px;background:#F2F8FF;border:1px solid #888;margin-right:8px;vertical-align:middle\"\u003e\u003c/span\u003e≥ 0,85\u003c/div\u003e\n\u003cdiv style=\"margin-top:8px\"\u003e\u003cspan style=\"display:inline-block;width:10px;height:10px;border-radius:50%;background:#228B22;border:1px solid #fff;margin-right:8px\"\u003e\u003c/span\u003eÁrbol nuevo (escenario)\u003c/div\u003e\n\u003cdiv style=\"margin-top:8px;opacity:.8\"\u003eLas mismas clases en el suelo, los techos y cada panel de fachada; en los edificios la iluminación oscurece un poco el color.\u003c/div\u003e",
+                "mode": "html"
+              }
+            },
+            "version": "13.0.0"
+          }
+        }
+      },
+      "panel-sol_h": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Línea base: the buildings as CityJSON tiles (datasets/portoviejo-clima/paint.py), every roof and wall\n-- panel a face coloured by its class. One row per tile: its URL and the box its buildings cover.\nSELECT '${site:raw}/datasets/portoviejo-clima/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/portoviejo-clima/tiles.parquet' WHERE conjunto = 'sol_h-base' ORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Línea base: the ground at 1 m, painted by Pacha's tile server from the colour table the file carries.\nSELECT 'http://feeds/datasets/portoviejo-clima/pintado-sol_h-base.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Árboles en la calle Chile: the buildings as CityJSON tiles (datasets/portoviejo-clima/paint.py), every roof and wall\n-- panel a face coloured by its class. One row per tile: its URL and the box its buildings cover.\nSELECT '${site:raw}/datasets/portoviejo-clima/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/portoviejo-clima/tiles.parquet' WHERE conjunto = 'sol_h-esc' ORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Árboles en la calle Chile: the ground at 1 m, painted by Pacha's tile server from the colour table the file carries.\nSELECT 'http://feeds/datasets/portoviejo-clima/pintado-sol_h-esc.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scenario's 313 street trees (datasets/portoviejo-clima/prep.py): every 8 m on both sides of calle Chile.\nSELECT longitude, latitude, altura_m, radio_copa_m FROM 'http://feeds/datasets/portoviejo-clima/arboles.parquet'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Horas de sol directo al día, promedio del año, en el suelo, los techos y cada panel de fachada. Arrastre la cortina para comparar.",
+          "id": 12,
+          "links": [],
+          "title": "Horas de sol directo al día: línea base (izquierda) | árboles en la calle Chile (derecha)",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -25,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": true,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -1.0552,
+                      "longitude": -80.4553,
+                      "mapSplitMode": "SWIPE_COMPARE",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 16.6
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "buildingShadows": false,
+                        "dayNightStyles": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "relief": false,
+                        "road": true,
+                        "streetLights": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {}
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "trees",
+                        "city-base",
+                        "ground-base",
+                        "city-esc",
+                        "ground-esc"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Edificios: Línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "none",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 32,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "\u003c 1,5 h",
+                                    "#160B39"
+                                  ],
+                                  [
+                                    "1,5–3 h",
+                                    "#420A68"
+                                  ],
+                                  [
+                                    "3–4,5 h",
+                                    "#6A176E"
+                                  ],
+                                  [
+                                    "4,5–6 h",
+                                    "#932667"
+                                  ],
+                                  [
+                                    "6–7,5 h",
+                                    "#BC3754"
+                                  ],
+                                  [
+                                    "7,5–9 h",
+                                    "#DD513A"
+                                  ],
+                                  [
+                                    "9–10,5 h",
+                                    "#F37819"
+                                  ],
+                                  [
+                                    "≥ 10,5 h",
+                                    "#FCC33A"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#160B39",
+                                  "#420A68",
+                                  "#6A176E",
+                                  "#932667",
+                                  "#BC3754",
+                                  "#DD513A",
+                                  "#F37819",
+                                  "#FCC33A"
+                                ],
+                                "name": "Edificios: Línea base",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city-base",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Suelo: Línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "ground-base",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Edificios: Árboles en la calle Chile",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "none",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 32,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "\u003c 1,5 h",
+                                    "#160B39"
+                                  ],
+                                  [
+                                    "1,5–3 h",
+                                    "#420A68"
+                                  ],
+                                  [
+                                    "3–4,5 h",
+                                    "#6A176E"
+                                  ],
+                                  [
+                                    "4,5–6 h",
+                                    "#932667"
+                                  ],
+                                  [
+                                    "6–7,5 h",
+                                    "#BC3754"
+                                  ],
+                                  [
+                                    "7,5–9 h",
+                                    "#DD513A"
+                                  ],
+                                  [
+                                    "9–10,5 h",
+                                    "#F37819"
+                                  ],
+                                  [
+                                    "≥ 10,5 h",
+                                    "#FCC33A"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#160B39",
+                                  "#420A68",
+                                  "#6A176E",
+                                  "#932667",
+                                  "#BC3754",
+                                  "#DD513A",
+                                  "#F37819",
+                                  "#FCC33A"
+                                ],
+                                "name": "Edificios: Árboles en la calle Chile",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city-esc",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-D-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Suelo: Árboles en la calle Chile",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "ground-esc",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              34,
+                              139,
+                              34
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Árboles nuevos (escenario)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "trees",
+                          "type": "point",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": [
+                        {
+                          "layers": {
+                            "city-base": true,
+                            "city-esc": false,
+                            "ground-base": true,
+                            "ground-esc": false,
+                            "trees": false
+                          }
+                        },
+                        {
+                          "layers": {
+                            "city-base": false,
+                            "city-esc": true,
+                            "ground-base": false,
+                            "ground-esc": true,
+                            "trees": true
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-sombra": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Línea base: the buildings as CityJSON tiles (datasets/portoviejo-clima/paint.py), every roof and wall\n-- panel a face coloured by its class. One row per tile: its URL and the box its buildings cover.\nSELECT '${site:raw}/datasets/portoviejo-clima/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/portoviejo-clima/tiles.parquet' WHERE conjunto = 'sombra-base' ORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Línea base: the ground at 1 m, painted by Pacha's tile server from the colour table the file carries.\nSELECT 'http://feeds/datasets/portoviejo-clima/pintado-sombra-base.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Árboles en la calle Chile: the buildings as CityJSON tiles (datasets/portoviejo-clima/paint.py), every roof and wall\n-- panel a face coloured by its class. One row per tile: its URL and the box its buildings cover.\nSELECT '${site:raw}/datasets/portoviejo-clima/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/portoviejo-clima/tiles.parquet' WHERE conjunto = 'sombra-esc' ORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Árboles en la calle Chile: the ground at 1 m, painted by Pacha's tile server from the colour table the file carries.\nSELECT 'http://feeds/datasets/portoviejo-clima/pintado-sombra-esc.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scenario's 313 street trees (datasets/portoviejo-clima/prep.py): every 8 m on both sides of calle Chile.\nSELECT longitude, latitude, altura_m, radio_copa_m FROM 'http://feeds/datasets/portoviejo-clima/arboles.parquet'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "La parte de las horas de 10:00 a 15:00 en que cada metro de suelo, cada techo y cada panel de fachada está a la sombra (promedio de 12 días del año). Arrastre la cortina para comparar.",
+          "id": 10,
+          "links": [],
+          "title": "Sombra de 10:00 a 15:00: línea base (izquierda) | árboles en la calle Chile (derecha)",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -25,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": true,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -1.0552,
+                      "longitude": -80.4553,
+                      "mapSplitMode": "SWIPE_COMPARE",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 16.6
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "buildingShadows": false,
+                        "dayNightStyles": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "relief": false,
+                        "road": true,
+                        "streetLights": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {}
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "trees",
+                        "city-base",
+                        "ground-base",
+                        "city-esc",
+                        "ground-esc"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Edificios: Línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "none",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 32,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "\u003c 10 %",
+                                    "#FFE680"
+                                  ],
+                                  [
+                                    "10–25 %",
+                                    "#F9C66B"
+                                  ],
+                                  [
+                                    "25–40 %",
+                                    "#E8A47A"
+                                  ],
+                                  [
+                                    "40–55 %",
+                                    "#C78897"
+                                  ],
+                                  [
+                                    "55–70 %",
+                                    "#9C76B0"
+                                  ],
+                                  [
+                                    "70–85 %",
+                                    "#6F68BE"
+                                  ],
+                                  [
+                                    "85–95 %",
+                                    "#4757B5"
+                                  ],
+                                  [
+                                    "≥ 95 %",
+                                    "#26408F"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FFE680",
+                                  "#F9C66B",
+                                  "#E8A47A",
+                                  "#C78897",
+                                  "#9C76B0",
+                                  "#6F68BE",
+                                  "#4757B5",
+                                  "#26408F"
+                                ],
+                                "name": "Edificios: Línea base",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city-base",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Suelo: Línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "ground-base",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Edificios: Árboles en la calle Chile",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "none",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 32,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "\u003c 10 %",
+                                    "#FFE680"
+                                  ],
+                                  [
+                                    "10–25 %",
+                                    "#F9C66B"
+                                  ],
+                                  [
+                                    "25–40 %",
+                                    "#E8A47A"
+                                  ],
+                                  [
+                                    "40–55 %",
+                                    "#C78897"
+                                  ],
+                                  [
+                                    "55–70 %",
+                                    "#9C76B0"
+                                  ],
+                                  [
+                                    "70–85 %",
+                                    "#6F68BE"
+                                  ],
+                                  [
+                                    "85–95 %",
+                                    "#4757B5"
+                                  ],
+                                  [
+                                    "≥ 95 %",
+                                    "#26408F"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#FFE680",
+                                  "#F9C66B",
+                                  "#E8A47A",
+                                  "#C78897",
+                                  "#9C76B0",
+                                  "#6F68BE",
+                                  "#4757B5",
+                                  "#26408F"
+                                ],
+                                "name": "Edificios: Árboles en la calle Chile",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city-esc",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-D-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Suelo: Árboles en la calle Chile",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "ground-esc",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              34,
+                              139,
+                              34
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Árboles nuevos (escenario)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "trees",
+                          "type": "point",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": [
+                        {
+                          "layers": {
+                            "city-base": true,
+                            "city-esc": false,
+                            "ground-base": true,
+                            "ground-esc": false,
+                            "trees": false
+                          }
+                        },
+                        {
+                          "layers": {
+                            "city-base": false,
+                            "city-esc": true,
+                            "ground-base": false,
+                            "ground-esc": true,
+                            "trees": true
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      },
+      "panel-street": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- datasets/portoviejo-clima/summary.py: suelo a 10 m del eje de la calle, fachadas a 15 m.\nSELECT zona AS \"Zona\", superficie AS \"Superficie\",\n  CASE indicador WHEN 'sombra' THEN 'Sombra 10–15 h (%)' WHEN 'svf' THEN 'Cielo visible' ELSE 'Sol directo (h/día)' END AS \"Indicador\",\n  round(CASE indicador WHEN 'sombra' THEN 100 * base ELSE base END, 2) AS \"Línea base\",\n  round(CASE indicador WHEN 'sombra' THEN 100 * esc ELSE esc END, 2) AS \"Con árboles\",\n  round(CASE indicador WHEN 'sombra' THEN 100 * (esc - base) ELSE esc - base END, 2) AS \"Cambio\"\nFROM 'http://feeds/datasets/portoviejo-clima/resumen.parquet' ORDER BY zona DESC, superficie DESC, indicador"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Promedios del suelo y de las fachadas.",
+          "id": 3,
+          "links": [],
+          "title": "Calle Chile y todo el centro: antes y después",
+          "vizConfig": {
+            "group": "table",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              },
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              }
+            },
+            "version": "13.0.0"
+          }
+        }
+      },
+      "panel-svf": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Línea base: the buildings as CityJSON tiles (datasets/portoviejo-clima/paint.py), every roof and wall\n-- panel a face coloured by its class. One row per tile: its URL and the box its buildings cover.\nSELECT '${site:raw}/datasets/portoviejo-clima/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/portoviejo-clima/tiles.parquet' WHERE conjunto = 'svf-base' ORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Línea base: the ground at 1 m, painted by Pacha's tile server from the colour table the file carries.\nSELECT 'http://feeds/datasets/portoviejo-clima/pintado-svf-base.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Árboles en la calle Chile: the buildings as CityJSON tiles (datasets/portoviejo-clima/paint.py), every roof and wall\n-- panel a face coloured by its class. One row per tile: its URL and the box its buildings cover.\nSELECT '${site:raw}/datasets/portoviejo-clima/cityjson/' || file AS city_url, west, south, east, north, buildings\nFROM 'http://feeds/datasets/portoviejo-clima/tiles.parquet' WHERE conjunto = 'svf-esc' ORDER BY file"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- Árboles en la calle Chile: the ground at 1 m, painted by Pacha's tile server from the colour table the file carries.\nSELECT 'http://feeds/datasets/portoviejo-clima/pintado-svf-esc.tif' AS raster_url"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "duckdb"
+                      },
+                      "group": "motherduck-duckdb-datasource",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "format": 1,
+                        "rawQuery": true,
+                        "rawSql": "-- The scenario's 313 street trees (datasets/portoviejo-clima/prep.py): every 8 m on both sides of calle Chile.\nSELECT longitude, latitude, altura_m, radio_copa_m FROM 'http://feeds/datasets/portoviejo-clima/arboles.parquet'"
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "E"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cuánto cielo ve cada punto: 1 abierto, 0 encerrado. En fachadas, 1 = una fachada sin nada enfrente. Arrastre la cortina para comparar.",
+          "id": 11,
+          "links": [],
+          "title": "Cielo visible (SVF): línea base (izquierda) | árboles en la calle Chile (derecha)",
+          "vizConfig": {
+            "group": "ubica-keplerplus-panel",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "alerts": {
+                  "show": false
+                },
+                "basemap": "auto",
+                "clickArea": false,
+                "clickAreaSizeMetres": 6000,
+                "clickConfirm": false,
+                "dayNight": "off",
+                "dayNightSun": false,
+                "dimUnselected": false,
+                "floors": {
+                  "defaultFloor": "",
+                  "enabled": false,
+                  "field": "",
+                  "variable": ""
+                },
+                "followGrafanaTheme": false,
+                "grafanaAnnotations": "show",
+                "haloStyle": "auto",
+                "hoverMaxAgeSeconds": 60,
+                "hoverPublishSpike": true,
+                "hoverSync": true,
+                "liveFollow": true,
+                "liveIntervalMs": 1000,
+                "mapConfig": {
+                  "config": {
+                    "mapState": {
+                      "bearing": -25,
+                      "dragRotate": true,
+                      "globe": {
+                        "config": {
+                          "adminLines": true,
+                          "adminLinesColor": [
+                            40,
+                            63,
+                            93
+                          ],
+                          "atmosphere": true,
+                          "azimuth": false,
+                          "azimuthAngle": 45,
+                          "backgroundColor": [
+                            4,
+                            9,
+                            17
+                          ],
+                          "basemap": true,
+                          "hugeHalo": true,
+                          "hugeHaloOpacity": 0.2,
+                          "hugeHaloRadius": 3.5,
+                          "labels": false,
+                          "labelsColor": [
+                            114.75,
+                            114.75,
+                            114.75
+                          ],
+                          "stars": true,
+                          "surface": true,
+                          "surfaceColor": [
+                            9,
+                            16,
+                            29
+                          ],
+                          "terminator": true,
+                          "terminatorOpacity": 0.35,
+                          "water": true,
+                          "waterColor": [
+                            17,
+                            35,
+                            48
+                          ]
+                        },
+                        "enabled": false
+                      },
+                      "isSplit": true,
+                      "isViewportSynced": true,
+                      "isZoomLocked": false,
+                      "latitude": -1.0552,
+                      "longitude": -80.4553,
+                      "mapSplitMode": "SWIPE_COMPARE",
+                      "mapViewMode": "MODE_2D",
+                      "maxPitch": 85,
+                      "pitch": 55,
+                      "splitMapViewports": [],
+                      "swipeComparePercentage": 50,
+                      "zoom": 16.6
+                    },
+                    "mapStyle": {
+                      "backgroundColor": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "mapStyles": {},
+                      "styleType": "openfreemap-positron",
+                      "threeDBuildingColor": [
+                        15,
+                        15,
+                        15
+                      ],
+                      "topLayerGroups": {
+                        "label": true,
+                        "poi": true,
+                        "road": false
+                      },
+                      "visibleLayerGroups": {
+                        "3d building": false,
+                        "border": false,
+                        "building": false,
+                        "buildingShadows": false,
+                        "dayNightStyles": false,
+                        "label": true,
+                        "land": true,
+                        "poi": false,
+                        "relief": false,
+                        "road": true,
+                        "streetLights": false,
+                        "water": true
+                      }
+                    },
+                    "uiState": {
+                      "locale": "en",
+                      "mapControls": {
+                        "cameraBookmarks": {
+                          "settings": {
+                            "contentHeight": -1,
+                            "position": {
+                              "anchorX": "right",
+                              "anchorY": "top",
+                              "x": 60,
+                              "y": 20
+                            }
+                          },
+                          "show": false
+                        },
+                        "chart": {
+                          "active": false
+                        },
+                        "mapInfo": {
+                          "active": true,
+                          "show": true
+                        },
+                        "mapLegend": {
+                          "active": true
+                        }
+                      },
+                      "theme": "dark"
+                    },
+                    "visState": {
+                      "animationConfig": {
+                        "speed": 1
+                      },
+                      "annotations": [],
+                      "editor": {
+                        "features": [],
+                        "visible": true
+                      },
+                      "effects": [],
+                      "filters": [],
+                      "groupBys": [],
+                      "interactionConfig": {
+                        "annotation": {
+                          "enabled": false
+                        },
+                        "brush": {
+                          "enabled": false,
+                          "size": 2.5
+                        },
+                        "coordinate": {
+                          "enabled": false
+                        },
+                        "geocoder": {
+                          "color": [
+                            255,
+                            0,
+                            0
+                          ],
+                          "enabled": false,
+                          "limitSearch": false
+                        },
+                        "legend": {
+                          "enabled": true,
+                          "hideInvisibleLayers": true
+                        },
+                        "tooltip": {
+                          "compareMode": false,
+                          "compareType": "absolute",
+                          "enabled": true,
+                          "fieldsToShow": {}
+                        },
+                        "zoomOpacity": {
+                          "controllers": [],
+                          "enabled": false
+                        }
+                      },
+                      "joins": [],
+                      "layerBlending": "normal",
+                      "layerOrder": [
+                        "trees",
+                        "city-base",
+                        "ground-base",
+                        "city-esc",
+                        "ground-esc"
+                      ],
+                      "layers": [
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-A",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Edificios: Línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "none",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 32,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "\u003c 0,2",
+                                    "#08306B"
+                                  ],
+                                  [
+                                    "0,2–0,3",
+                                    "#08519C"
+                                  ],
+                                  [
+                                    "0,3–0,4",
+                                    "#2171B5"
+                                  ],
+                                  [
+                                    "0,4–0,5",
+                                    "#4292C6"
+                                  ],
+                                  [
+                                    "0,5–0,6",
+                                    "#6BAED6"
+                                  ],
+                                  [
+                                    "0,6–0,7",
+                                    "#9ECAE1"
+                                  ],
+                                  [
+                                    "0,7–0,85",
+                                    "#C6DBEF"
+                                  ],
+                                  [
+                                    "≥ 0,85",
+                                    "#F2F8FF"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#08306B",
+                                  "#08519C",
+                                  "#2171B5",
+                                  "#4292C6",
+                                  "#6BAED6",
+                                  "#9ECAE1",
+                                  "#C6DBEF",
+                                  "#F2F8FF"
+                                ],
+                                "name": "Edificios: Línea base",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city-base",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-B-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Suelo: Línea base",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "ground-base",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              248,
+                              149,
+                              112
+                            ],
+                            "columnMode": "files",
+                            "columns": {},
+                            "dataId": "grafana-C",
+                            "hidden": false,
+                            "highlightColor": [
+                              252,
+                              242,
+                              26,
+                              255
+                            ],
+                            "isVisible": true,
+                            "label": "Edificios: Árboles en la calle Chile",
+                            "textLabel": [],
+                            "visConfig": {
+                              "allowHover": true,
+                              "cardAlertLabel": "",
+                              "cardExtras": [],
+                              "cardMax": "auto",
+                              "cardMin": 0,
+                              "cardNameField": "auto",
+                              "cardPinned": [],
+                              "cardPlacement": "above",
+                              "cardScale": "common",
+                              "cardShow": "tooltip",
+                              "cardSize": "M",
+                              "cardTimeField": "auto",
+                              "cardUnit": "",
+                              "cardValueField": "color",
+                              "cityApplyTo": "all",
+                              "cityBuildingField": "auto",
+                              "cityClassField": "auto",
+                              "cityColorAttribute": "",
+                              "cityColourBy": "material",
+                              "cityCrs": "",
+                              "cityFootprints": "none",
+                              "cityGroundColor": [
+                                110,
+                                110,
+                                110
+                              ],
+                              "cityHeights": "auto",
+                              "cityKeyAttribute": "id",
+                              "cityKeyField": "auto",
+                              "cityLod": "highest",
+                              "cityMaxTiles": 32,
+                              "cityMaxTriangles": 3000000,
+                              "cityOtherColor": [
+                                170,
+                                170,
+                                170
+                              ],
+                              "cityPick": "building",
+                              "cityReduce": "last",
+                              "cityRoofColor": [
+                                196,
+                                84,
+                                64
+                              ],
+                              "cityShowClosure": false,
+                              "cityShowGround": false,
+                              "citySolarGhi": 1000,
+                              "cityTileField": "auto",
+                              "cityUrl": "",
+                              "cityUrlField": "auto",
+                              "cityWallColor": [
+                                226,
+                                222,
+                                214
+                              ],
+                              "colorRange": {
+                                "category": "Custom",
+                                "colorLegends": {},
+                                "colorMap": [
+                                  [
+                                    "\u003c 0,2",
+                                    "#08306B"
+                                  ],
+                                  [
+                                    "0,2–0,3",
+                                    "#08519C"
+                                  ],
+                                  [
+                                    "0,3–0,4",
+                                    "#2171B5"
+                                  ],
+                                  [
+                                    "0,4–0,5",
+                                    "#4292C6"
+                                  ],
+                                  [
+                                    "0,5–0,6",
+                                    "#6BAED6"
+                                  ],
+                                  [
+                                    "0,6–0,7",
+                                    "#9ECAE1"
+                                  ],
+                                  [
+                                    "0,7–0,85",
+                                    "#C6DBEF"
+                                  ],
+                                  [
+                                    "≥ 0,85",
+                                    "#F2F8FF"
+                                  ]
+                                ],
+                                "colors": [
+                                  "#08306B",
+                                  "#08519C",
+                                  "#2171B5",
+                                  "#4292C6",
+                                  "#6BAED6",
+                                  "#9ECAE1",
+                                  "#C6DBEF",
+                                  "#F2F8FF"
+                                ],
+                                "name": "Edificios: Árboles en la calle Chile",
+                                "type": "custom"
+                              },
+                              "elevationOffset": 0,
+                              "elevationOffsetRange": [
+                                0,
+                                500
+                              ],
+                              "elevationScale": 1,
+                              "enable3d": false,
+                              "filled": false,
+                              "fixedElevation": true,
+                              "fixedHeight": false,
+                              "heightRange": [
+                                0,
+                                500
+                              ],
+                              "invertHeight": false,
+                              "opacity": 1,
+                              "radius": 10,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "sizeRange": [
+                                0,
+                                10
+                              ],
+                              "strokeColorRange": {
+                                "category": "Uber",
+                                "colors": [
+                                  "#4C0035",
+                                  "#880030",
+                                  "#B72F15",
+                                  "#D6610A",
+                                  "#EF9100",
+                                  "#FFC300"
+                                ],
+                                "name": "Global Warming",
+                                "type": "sequential"
+                              },
+                              "strokeOpacity": 0.8,
+                              "stroked": true,
+                              "thickness": 0.5,
+                              "wireframe": false
+                            }
+                          },
+                          "id": "city-esc",
+                          "type": "citymodel",
+                          "visualChannels": {
+                            "colorScale": "quantile",
+                            "elevationOffsetScale": "linear"
+                          }
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              246,
+                              209,
+                              138
+                            ],
+                            "columns": {},
+                            "dataId": "grafana-D-raster",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Suelo: Árboles en la calle Chile",
+                            "textLabel": [],
+                            "visConfig": {
+                              "opacity": 0.9
+                            }
+                          },
+                          "id": "ground-esc",
+                          "type": "cogPainted",
+                          "visualChannels": {}
+                        },
+                        {
+                          "config": {
+                            "color": [
+                              34,
+                              139,
+                              34
+                            ],
+                            "columns": {
+                              "lat": "latitude",
+                              "lng": "longitude"
+                            },
+                            "dataId": "grafana-E",
+                            "hidden": false,
+                            "isVisible": true,
+                            "label": "Árboles nuevos (escenario)",
+                            "textLabel": [],
+                            "visConfig": {
+                              "filled": true,
+                              "fixedRadius": false,
+                              "opacity": 0.95,
+                              "outline": true,
+                              "radius": 5,
+                              "radiusRange": [
+                                0,
+                                50
+                              ],
+                              "strokeColor": [
+                                255,
+                                255,
+                                255
+                              ],
+                              "thickness": 1
+                            }
+                          },
+                          "id": "trees",
+                          "type": "point",
+                          "visualChannels": {}
+                        }
+                      ],
+                      "overlayBlending": "normal",
+                      "splitMaps": [
+                        {
+                          "layers": {
+                            "city-base": true,
+                            "city-esc": false,
+                            "ground-base": true,
+                            "ground-esc": false,
+                            "trees": false
+                          }
+                        },
+                        {
+                          "layers": {
+                            "city-base": false,
+                            "city-esc": true,
+                            "ground-base": false,
+                            "ground-esc": true,
+                            "trees": true
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "version": "v1"
+                },
+                "maxZoom": 22,
+                "mosaicArea": true,
+                "mosaicViewport": false,
+                "peerTimeSync": false,
+                "places": {},
+                "publishIntervalMs": 1500,
+                "publishWhilePlaying": false,
+                "rasterBands": "",
+                "rasterColormap": "",
+                "rasterPainted": true,
+                "rasterServerUrl": "/titiler",
+                "showSidePanel": false,
+                "timeSync": "off",
+                "variableMappings": []
+              }
+            },
+            "version": "1.6.0"
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-sombra"
+                        },
+                        "height": 22,
+                        "width": 18,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-leg-sombra"
+                        },
+                        "height": 10,
+                        "width": 6,
+                        "x": 18,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-about"
+                        },
+                        "height": 12,
+                        "width": 6,
+                        "x": 18,
+                        "y": 10
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-dif"
+                        },
+                        "height": 18,
+                        "width": 14,
+                        "x": 0,
+                        "y": 22
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-street"
+                        },
+                        "height": 11,
+                        "width": 10,
+                        "x": 14,
+                        "y": 22
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-heights"
+                        },
+                        "height": 7,
+                        "width": 10,
+                        "x": 14,
+                        "y": 33
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Sombra de 10 a 15 h"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-svf"
+                        },
+                        "height": 24,
+                        "width": 19,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-leg-svf"
+                        },
+                        "height": 10,
+                        "width": 5,
+                        "x": 19,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Cielo visible (SVF)"
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-sol_h"
+                        },
+                        "height": 24,
+                        "width": 19,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-leg-sol_h"
+                        },
+                        "height": 10,
+                        "width": 5,
+                        "x": 19,
+                        "y": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "title": "Horas de sol"
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "buildings",
+      "city",
+      "duckdb",
+      "kepler",
+      "plus",
+      "unlisted"
+    ],
+    "timeSettings": {
+      "autoRefresh": "",
+      "autoRefreshIntervals": [
+        "5m",
+        "15m",
+        "1h"
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": true,
+      "timezone": "America/Guayaquil",
+      "to": "now"
+    },
+    "title": "Portoviejo: sombra, cielo y sol en suelo y fachadas (prueba DIGI-GADS)",
+    "variables": [
+      {
+        "kind": "TextVariable",
+        "spec": {
+          "current": {
+            "text": "https://pacha.ubica.dev",
+            "value": "https://pacha.ubica.dev"
+          },
+          "hide": "hideVariable",
+          "label": "This site's https address (the CityJSON tiles)",
+          "name": "site",
+          "query": "https://pacha.ubica.dev",
+          "skipUrlSync": false
+        }
+      }
+    ]
+  }
+}
