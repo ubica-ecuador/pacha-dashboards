@@ -94,7 +94,7 @@ test('the week: rooms hour by hour, indoor temperatures, the PMV moves with the 
 test('opens with no panel in error', { skip: skip || unrecorded, timeout: 240_000 }, async () => {
   const view = await openDashboard(`/d/${UID}`, { datasets: ['comfort', 'plan', 'shell'], timeoutMs: 180_000 });
   try {
-    for (const title of ['How every room feels, floor by floor', 'Rooms, coolest first']) await view.panel(title);
+    for (const title of ['How every room feels, floor by floor', 'Feels, on average']) await view.panel(title);
     assert.equal(await view.panelErrors(), 0);
   } finally {
     await view.browser.close();
