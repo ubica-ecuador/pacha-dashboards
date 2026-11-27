@@ -957,7 +957,7 @@
               "transformations": []
             }
           },
-          "description": "The building's floors, stacked: pick one on the map's floor picker (it shows the share of people who would be uncomfortable on each floor) and the others fade. Rooms are coloured by how they would feel at the end of the window brushed above, for the clothes and activity picked; a dial per room gives its PMV then, with its temperature under it, and its card charts the room's week. Rooms without a reading in grey, corridors, stairs and plant in white. Click a room for the charts below.",
+          "description": "The building's floors, stacked: pick one on the map's floor picker (it shows, per floor, the share of people who would be uncomfortable, on average over the week) and the others fade. Rooms are coloured by how they would feel at the end of the window brushed above, for the clothes and activity picked; a dial per room gives its PMV then, with its temperature under it, and its card charts the room's week. Rooms without a reading in grey, corridors, stairs and plant in white. Click a room for the charts below.",
           "id": 1,
           "links": [],
           "title": "How every room feels, floor by floor",
@@ -998,7 +998,7 @@
                     "agg": "avg",
                     "alert": 20,
                     "field": "ppd",
-                    "label": "% would be uncomfortable",
+                    "label": "% uncomfortable, week average",
                     "warn": 10
                   },
                   "defaultFloor": "1",
