@@ -1004,12 +1004,12 @@
                   "defaultFloor": "1",
                   "enabled": true,
                   "field": "level",
-                  "ghostOpacity": 0.1,
+                  "ghostOpacity": 0.03,
                   "nameField": "floor_name",
                   "others": "ghost",
                   "selectField": "room_key",
                   "selectVariable": "room",
-                  "spacing": 10,
+                  "spacing": 3,
                   "variable": "floor"
                 },
                 "followGrafanaTheme": false,
@@ -1023,7 +1023,7 @@
                 "mapConfig": {
                   "config": {
                     "mapState": {
-                      "bearing": -2.876759527951524,
+                      "bearing": -18.37042090288829,
                       "dragRotate": true,
                       "globe": {
                         "config": {
@@ -1072,15 +1072,15 @@
                       "isSplit": false,
                       "isViewportSynced": true,
                       "isZoomLocked": false,
-                      "latitude": 54.973739377845256,
-                      "longitude": -1.62543397224924,
+                      "latitude": 54.97365930107821,
+                      "longitude": -1.625444948853263,
                       "mapSplitMode": "SINGLE_MAP",
                       "mapViewMode": "MODE_3D",
                       "maxPitch": 85,
-                      "pitch": 60.496338573102435,
+                      "pitch": 64.37891115588985,
                       "splitMapViewports": [],
                       "swipeComparePercentage": 50,
-                      "zoom": 18.705464402299498
+                      "zoom": 18.551762326790374
                     },
                     "mapStyle": {
                       "backgroundColor": [
@@ -1179,7 +1179,7 @@
                           "speed": 1,
                           "type": "timeRange",
                           "value": [
-                            1795788000000,
+                            1795855681518,
                             1795872600000
                           ],
                           "view": "side"
